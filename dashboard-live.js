@@ -13,11 +13,7 @@
  */
 'use strict';
 
-const DashboardLive = {
-
-  config: {
-    marketEndpoint: '/api/market',
-    newsEndpoint:   '/api/news',
+const DashboardLive = { config: { marketEndpoint: './api/market', newsEndpoint: './api/news'
     refreshRate:     30000,   // 30 s — stock prices
     newsRefreshRate: 120000,  // 2 min — news RSS
     watchlist: ['XOM', 'LMT', 'RTX', 'DAL', 'GLD', 'SPY', 'BRENT', 'WTI', 'NG', 'VIX'],
