@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -423,10 +424,12 @@ body.beginner-mode body.beginner-mode
   font-size:9px;color:var(--text-sec);line-height:1.7}
 .sp-ai-insight strong{color:var(--purple);font-size:10px;font-weight:700;display:block;margin-bottom:4px}
 </style>
+
 </head>
 <body>
 
 <!-- ═══════════════ HEADER (Fix 2.7 — decluttered) ═══════════════ -->
+
 <header class="header" role="banner">
   <div class="header-brand">
     <div class="logo" aria-label="DELAX GEO-RISK">DELAX | GEO-RISK</div>
@@ -452,6 +455,7 @@ body.beginner-mode body.beginner-mode
 </header>
 
 <!-- SETTINGS DRAWER — houses controls moved from header (Fix 2.7) -->
+
 <div class="drawer-overlay" id="settingsOverlay" onclick="closeSettingsDrawer()"></div>
 <div class="drawer" id="settingsDrawer" role="dialog" aria-label="Settings" aria-modal="true">
   <div class="drawer-header">
@@ -494,6 +498,7 @@ body.beginner-mode body.beginner-mode
 <!-- Ticker strip removed — Fix 2.2 -->
 
 <!-- SCENARIO BUILDER DRAWER -->
+
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeScenarioBuilder()"></div>
 <div class="drawer" id="scenarioDrawer" role="dialog" aria-label="Custom Scenario Builder" aria-modal="true">
   <div class="drawer-header">
@@ -554,9 +559,11 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ MAIN ═══ -->
+
 <main role="main">
 
 <!-- NAV TABS — sticky right above Global News banner -->
+
 <div class="tabs-wrapper" role="tablist" aria-label="Dashboard sections">
   <button class="tab-btn active" role="tab" aria-selected="true"  onclick="switchTab('tab-charts')"     >📈 Charts</button>
   <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-exec')"       >📋 Summary</button>
@@ -569,6 +576,7 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ALERT BANNER — Global News, now with AI auto-summary -->
+
 <div class="alert-banner" id="alertBanner" role="alert" aria-live="polite">
   <div class="alert-label" id="alertLabel">⚠ LOADING</div>
   <div class="alert-text" id="alertText"><span style="color:var(--text-dim)">Fetching latest news…</span></div>
@@ -579,6 +587,7 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- LIVE MARKET NEWS — right below alert banner -->
+
 <div style="background:var(--bg-card);border:1px solid var(--border-dim);
   border-left:3px solid var(--cyan);margin-bottom:0;overflow:hidden">
   <div style="padding:.6rem 1.1rem;border-bottom:1px solid var(--border-dim);
@@ -606,15 +615,16 @@ body.beginner-mode body.beginner-mode
   </div>
 </div>
 
-
 <!-- MODE STRIP and KPI GRID moved to bottom of page — see below footer -->
 
 <!-- Globe removed — Fix 2.1 -->
+
 <!-- ═══ TAB: CHARTS ═══ -->
+
 <div id="tab-charts" class="tab-content active" role="tabpanel">
 
-
   <!-- KPI HERO ROW — top of Charts tab, Fix 2.6 -->
+
   <div style="margin-bottom:1.5rem">
     <div class="mode-strip" style="padding:.4rem 0 .6rem;border-bottom:none">
       <div class="section-label" style="margin-bottom:0">
@@ -633,79 +643,143 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-click-hint">🤖 Click for AI</div>
     </div>
 
-    <div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
-        <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
-      <div class="kpi-value" id="kpiCPI">+3.8%</div>
-      <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
-      <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
+```
+<div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
+  <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
+    <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
+  <div class="kpi-value" id="kpiCPI">+3.8%</div>
+  <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
+  <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
+  <div class="kpi-click-hint">🤖 Click for AI</div>
+</div>
 
-    <div class="kpi-card warn clickable" onclick="showKPINarrative('gdp','Global GDP Loss (Yr 1)',document.getElementById('kpiGDP').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Global <span data-jargon="GDP">GDP</span> Loss (Yr 1)
-        <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
-      <div class="kpi-value" id="kpiGDP">−1.9%</div>
-      <div class="kpi-plain">~$1.7T in lost global output.</div>
-      <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
+<div class="kpi-card warn clickable" onclick="showKPINarrative('gdp','Global GDP Loss (Yr 1)',document.getElementById('kpiGDP').textContent)" role="button" tabindex="0">
+  <div class="kpi-label">Global <span data-jargon="GDP">GDP</span> Loss (Yr 1)
+    <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
+  <div class="kpi-value" id="kpiGDP">−1.9%</div>
+  <div class="kpi-plain">~$1.7T in lost global output.</div>
+  <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
+  <div class="kpi-click-hint">🤖 Click for AI</div>
+</div>
 
-    <div class="kpi-card up clickable" onclick="showKPINarrative('ship','Shipping Cost Index',document.getElementById('kpiShip').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Shipping Index
-        <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
-      <div class="kpi-value" id="kpiShip">+310%</div>
-      <div class="kpi-plain">3× more to ship globally via Cape of Good Hope.</div>
-      <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
+<div class="kpi-card up clickable" onclick="showKPINarrative('ship','Shipping Cost Index',document.getElementById('kpiShip').textContent)" role="button" tabindex="0">
+  <div class="kpi-label">Shipping Index
+    <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
+  <div class="kpi-value" id="kpiShip">+310%</div>
+  <div class="kpi-plain">3× more to ship globally via Cape of Good Hope.</div>
+  <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
+  <div class="kpi-click-hint">🤖 Click for AI</div>
+</div>
 
-    <div class="kpi-card up clickable" onclick="showKPINarrative('def','Global Defense Spend ΔYr1',document.getElementById('kpiDef').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Defense Spend ΔYr1
-        <i class="info-icon" data-prov="Source: SIPRI 2026 · NATO + Gulf states · Confidence: 87%">i</i></div>
-      <div class="kpi-value" id="kpiDef">+$680B</div>
-      <div class="kpi-plain">$680B extra in global defense budgets.</div>
-      <div class="kpi-delta">NATO · Gulf · Israel · India</div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
+<div class="kpi-card up clickable" onclick="showKPINarrative('def','Global Defense Spend ΔYr1',document.getElementById('kpiDef').textContent)" role="button" tabindex="0">
+  <div class="kpi-label">Defense Spend ΔYr1
+    <i class="info-icon" data-prov="Source: SIPRI 2026 · NATO + Gulf states · Confidence: 87%">i</i></div>
+  <div class="kpi-value" id="kpiDef">+$680B</div>
+  <div class="kpi-plain">$680B extra in global defense budgets.</div>
+  <div class="kpi-delta">NATO · Gulf · Israel · India</div>
+  <div class="kpi-click-hint">🤖 Click for AI</div>
+</div>
 
-    <div class="kpi-card down clickable" onclick="showKPINarrative('fao','Food Price Index (FAO)',document.getElementById('kpiFAO').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Food Price (<span data-jargon="FAO">FAO</span>)
-        <i class="info-icon" data-prov="Source: FAO FFPI · Fertilizer + fuel inputs · Confidence: 83%">i</i></div>
-      <div class="kpi-value" id="kpiFAO">+27%</div>
-      <div class="kpi-plain">Food 27% more expensive. Africa & S. Asia hardest hit.</div>
-      <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
+<div class="kpi-card down clickable" onclick="showKPINarrative('fao','Food Price Index (FAO)',document.getElementById('kpiFAO').textContent)" role="button" tabindex="0">
+  <div class="kpi-label">Food Price (<span data-jargon="FAO">FAO</span>)
+    <i class="info-icon" data-prov="Source: FAO FFPI · Fertilizer + fuel inputs · Confidence: 83%">i</i></div>
+  <div class="kpi-value" id="kpiFAO">+27%</div>
+  <div class="kpi-plain">Food 27% more expensive. Africa & S. Asia hardest hit.</div>
+  <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
+  <div class="kpi-click-hint">🤖 Click for AI</div>
+</div>
 
-    <div class="kpi-card info clickable" onclick="showKPINarrative('fx','USD / EM FX Pressure',document.getElementById('kpiFX').textContent)" role="button" tabindex="0">
-      <div class="kpi-label"><span data-jargon="USD">USD</span>/<span data-jargon="EM FX">EM FX</span>
-        <i class="info-icon" data-prov="Source: BIS FX · EM basket: TRY, BRL, INR, EGP, PKR · Confidence: 80%">i</i></div>
-      <div class="kpi-value" id="kpiFX">−14%</div>
-      <div class="kpi-plain">EM currencies lose 14% vs USD. Imports cost more.</div>
-      <div class="kpi-delta">Flight-to-safety inflows</div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
+<div class="kpi-card info clickable" onclick="showKPINarrative('fx','USD / EM FX Pressure',document.getElementById('kpiFX').textContent)" role="button" tabindex="0">
+  <div class="kpi-label"><span data-jargon="USD">USD</span>/<span data-jargon="EM FX">EM FX</span>
+    <i class="info-icon" data-prov="Source: BIS FX · EM basket: TRY, BRL, INR, EGP, PKR · Confidence: 80%">i</i></div>
+  <div class="kpi-value" id="kpiFX">−14%</div>
+  <div class="kpi-plain">EM currencies lose 14% vs USD. Imports cost more.</div>
+  <div class="kpi-delta">Flight-to-safety inflows</div>
+  <div class="kpi-click-hint">🤖 Click for AI</div>
+</div>
 
-    <div class="kpi-card warn clickable" onclick="showKPINarrative('dur','Conflict Duration Estimate',document.getElementById('kpiDur').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Conflict Duration
-        <i class="info-icon" data-prov="Source: DELAX duration model · Gulf War 7M, Ukraine 30M+ · Confidence: 65%">i</i></div>
-      <div class="kpi-value" id="kpiDur">18–36M</div>
-      <div class="kpi-plain">18–36 months active conflict expected.</div>
-      <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
+<div class="kpi-card warn clickable" onclick="showKPINarrative('dur','Conflict Duration Estimate',document.getElementById('kpiDur').textContent)" role="button" tabindex="0">
+  <div class="kpi-label">Conflict Duration
+    <i class="info-icon" data-prov="Source: DELAX duration model · Gulf War 7M, Ukraine 30M+ · Confidence: 65%">i</i></div>
+  <div class="kpi-value" id="kpiDur">18–36M</div>
+  <div class="kpi-plain">18–36 months active conflict expected.</div>
+  <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
+  <div class="kpi-click-hint">🤖 Click for AI</div>
+</div>
 
-    </div><!-- end kpi-grid -->
+</div><!-- end kpi-grid -->
+```
+
   </div><!-- end KPI hero row -->
-  <!-- WHAT-IF BOX — powered by Claude AI via /api/whatif -->
-  <div class="whatif-box">
-    <span style="font-family:var(--mono);font-size:.6rem;color:var(--purple);white-space:nowrap">🤖 AI WHAT IF:</span>
-    <input class="whatif-input" id="whatifInput" type="text"
-      placeholder="e.g. 'What if the conflict lasts 5 years?' or 'What if oil hits $200?'"
-      aria-label="What-if scenario question"
-      onkeydown="if(event.key==='Enter')runWhatIf()"/>
-    <button class="btn cyan" id="whatifBtn" onclick="runWhatIf()" aria-label="Run AI analysis">▶ ANALYZE</button>
+  <!-- INVESTOR INTELLIGENCE BOX — Option B redesign, plain language -->
+  <div style="background:var(--bg-panel);border:1px solid var(--border-dim);
+    border-left:3px solid var(--purple);padding:1.1rem 1.25rem;margin-bottom:1.1rem">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem">
+      <span style="font-size:1rem">🧠</span>
+      <div>
+        <div style="font-family:var(--display);font-size:1rem;letter-spacing:.06em;
+          color:var(--text-pri)">Investor Intelligence</div>
+        <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+          letter-spacing:.08em;margin-top:.1rem">
+          Ask anything about how this conflict affects your investments · Powered by Gemini 2.5
+        </div>
+      </div>
+    </div>
+    <!-- Prompt chips — investor-friendly examples -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem" aria-label="Example questions">
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        What happens to my energy stocks if Hormuz closes?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        How does this affect inflation over the next 2 years?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        Should I be buying defense stocks right now?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        What if a ceasefire is announced next month?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        How exposed is my portfolio if oil hits $200?
+      </button>
+    </div>
+    <!-- Input row -->
+    <div style="display:flex;gap:.6rem;align-items:center">
+      <input class="whatif-input" id="whatifInput" type="text"
+        placeholder="Ask your own question about how this war affects your investments…"
+        aria-label="Investor intelligence question"
+        onkeydown="if(event.key==='Enter')runWhatIf()"
+        style="flex:1"/>
+      <button class="btn cyan" id="whatifBtn" onclick="runWhatIf()" aria-label="Get AI analysis">
+        Ask →
+      </button>
+    </div>
     <!-- AI result panel — hidden until first query -->
     <div id="whatifResult" style="display:none;width:100%;margin-top:.85rem;
       background:var(--bg-deep);border:1px solid var(--border);border-left:3px solid var(--purple);
@@ -716,7 +790,7 @@ body.beginner-mode body.beginner-mode
         background:rgba(179,136,255,.06)">
         <div style="display:flex;align-items:center;gap:.5rem">
           <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
-            text-transform:uppercase;color:var(--purple)">AI Analysis Output:</span>
+            text-transform:uppercase;color:var(--purple)">Investor Intelligence · Gemini 2.5</span>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
           <span id="whatifTimestamp" style="font-family:var(--mono);font-size:.55rem;color:var(--text-dim)"></span>
@@ -725,14 +799,14 @@ body.beginner-mode body.beginner-mode
             font-size:.8rem;padding:.1rem .3rem" aria-label="Close analysis">✕</button>
         </div>
       </div>
-      <!-- Loading spinner -->
+      <!-- Loading -->
       <div id="whatifLoading" style="display:none;padding:1.25rem;text-align:center">
         <div style="font-family:var(--mono);font-size:.65rem;color:var(--purple);
           letter-spacing:.1em;animation:pulse 1.5s infinite">
-          ◉ CLAUDE IS REASONING…
+          ◉ ANALYZING…
         </div>
         <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);margin-top:.4rem">
-          Analyzing current oil price, scenario data, and live headlines…
+          Reading live oil price, scenario data, and current headlines…
         </div>
       </div>
       <!-- Analysis content -->
@@ -746,6 +820,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- CONTROLS -->
+
   <div class="controls-row">
     <div class="control-group">
       <span class="control-label">Scenario:</span>
@@ -761,6 +836,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- OIL CHART 1: NEAR-TERM — Current month + next 11 months -->
+
   <div class="chart-box">
     <div class="chart-header">
       <div>
@@ -777,6 +853,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- OIL CHART 2: LONG-TERM — Year 2 through Year 11 (annual) -->
+
   <div class="chart-box">
     <div class="chart-header">
       <div>
@@ -793,6 +870,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- GDP + INFLATION -->
+
   <div class="two-col">
     <div class="chart-box">
       <div class="chart-header"><div>
@@ -815,6 +893,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- RADAR + SHIPPING -->
+
   <div class="two-col">
     <div class="chart-box">
       <div class="chart-header"><div>
@@ -837,6 +916,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- HEATMAP -->
+
   <div class="chart-box">
     <div class="chart-header"><div>
       <div class="chart-title">Continental Economic Stress Heatmap
@@ -865,6 +945,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- SPEND -->
+
   <div class="chart-box">
     <div class="chart-header"><div>
       <div class="chart-title">Defense, Energy & Reconstruction Surge
@@ -878,6 +959,7 @@ body.beginner-mode body.beginner-mode
 </div><!-- end tab-charts -->
 
 <!-- ═══ TAB: EXEC SUMMARY ═══ -->
+
 <div id="tab-exec" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportPDF()" aria-label="Export report as PDF">📄 Export PDF Report</button>
@@ -937,44 +1019,49 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: PORTFOLIO SIMULATOR ═══ -->
+
 <div id="tab-portfolio" class="tab-content" role="tabpanel">
   <div class="portfolio-section">
     <h4>💼 Portfolio Impact Simulator</h4>
     <p style="font-family:var(--mono);font-size:.65rem;color:var(--text-sec);margin-bottom:.85rem">Enter your holdings to see estimated scenario impact. Data stored locally only.</p>
 
-    <!-- Presets -->
-    <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Load a preset:</div>
-    <div class="portfolio-presets">
-      <button class="btn" onclick="loadPreset('defense')" aria-label="Load defense-heavy portfolio">🛡 Defense-Heavy</button>
-      <button class="btn" onclick="loadPreset('energy')"  aria-label="Load energy-heavy portfolio">⚡ Energy-Heavy</button>
-      <button class="btn" onclick="loadPreset('retail')"  aria-label="Load retail investor portfolio">👤 Retail Balanced</button>
-      <button class="btn" onclick="loadPreset('retiree')" aria-label="Load retiree portfolio">🏠 Retiree Conservative</button>
-      <button class="btn" onclick="clearPortfolio()"     aria-label="Clear all holdings">✕ Clear</button>
-    </div>
+```
+<!-- Presets -->
+<div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Load a preset:</div>
+<div class="portfolio-presets">
+  <button class="btn" onclick="loadPreset('defense')" aria-label="Load defense-heavy portfolio">🛡 Defense-Heavy</button>
+  <button class="btn" onclick="loadPreset('energy')"  aria-label="Load energy-heavy portfolio">⚡ Energy-Heavy</button>
+  <button class="btn" onclick="loadPreset('retail')"  aria-label="Load retail investor portfolio">👤 Retail Balanced</button>
+  <button class="btn" onclick="loadPreset('retiree')" aria-label="Load retiree portfolio">🏠 Retiree Conservative</button>
+  <button class="btn" onclick="clearPortfolio()"     aria-label="Clear all holdings">✕ Clear</button>
+</div>
 
-    <!-- Holdings entry -->
-    <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Your holdings:</div>
-    <div class="portfolio-row" style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);letter-spacing:.08em;margin-bottom:.3rem">
-      <span>TICKER</span><span>SHARES</span><span>AVG COST ($)</span><span></span>
-    </div>
-    <div class="portfolio-grid" id="portfolioGrid"></div>
-    <button class="btn green" onclick="addPortfolioRow()" style="margin-top:.5rem" aria-label="Add holding">+ Add Holding</button>
+<!-- Holdings entry -->
+<div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Your holdings:</div>
+<div class="portfolio-row" style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);letter-spacing:.08em;margin-bottom:.3rem">
+  <span>TICKER</span><span>SHARES</span><span>AVG COST ($)</span><span></span>
+</div>
+<div class="portfolio-grid" id="portfolioGrid"></div>
+<button class="btn green" onclick="addPortfolioRow()" style="margin-top:.5rem" aria-label="Add holding">+ Add Holding</button>
 
-    <!-- Results -->
-    <div style="margin-top:1.25rem">
-      <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.6rem;letter-spacing:.1em;text-transform:uppercase">
-        Scenario Impact — <span id="portfolioScenarioLabel">Baseline</span>
-      </div>
-      <div class="portfolio-results" id="portfolioResults">
-        <div class="portfolio-result-row">
-          <span style="color:var(--text-dim)">Add holdings above to see impact estimates</span>
-        </div>
-      </div>
+<!-- Results -->
+<div style="margin-top:1.25rem">
+  <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.6rem;letter-spacing:.1em;text-transform:uppercase">
+    Scenario Impact — <span id="portfolioScenarioLabel">Baseline</span>
+  </div>
+  <div class="portfolio-results" id="portfolioResults">
+    <div class="portfolio-result-row">
+      <span style="color:var(--text-dim)">Add holdings above to see impact estimates</span>
     </div>
+  </div>
+</div>
+```
+
   </div>
 </div>
 
 <!-- ═══ TAB: MONTHLY ═══ -->
+
 <div id="tab-monthly" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportCSV('monthly')" aria-label="Export monthly data to CSV">📊 Export Monthly Data CSV</button>
@@ -984,6 +1071,7 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: CONTINENTAL ═══ -->
+
 <div id="tab-continental" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportCSV('continental')" aria-label="Export continental data to CSV">📊 Export Continental Data CSV</button>
@@ -1022,6 +1110,7 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: SECTORS ═══ -->
+
 <div id="tab-sectors" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportCSV('sectors')" aria-label="Export sector signals to CSV">📊 Export Sector CSV</button>
@@ -1040,6 +1129,7 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: RISKS ═══ -->
+
 <div id="tab-risks" class="tab-content" role="tabpanel">
   <div class="section-label">Major Risk Factors & Black-Swan Triggers</div>
   <div class="two-col">
@@ -1107,9 +1197,11 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: GEO INTELLIGENCE ═══ -->
+
 <div id="tab-geointel" class="tab-content" role="tabpanel" style="padding:0;margin:0">
 
   <!-- Iframe header bar — scenario sync + external controls -->
+
   <div style="display:flex;align-items:center;justify-content:space-between;
     padding:.6rem 1rem;background:var(--bg-card);border:1px solid var(--border-dim);
     border-bottom:2px solid var(--amber);flex-wrap:wrap;gap:.5rem">
@@ -1128,6 +1220,7 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- Full intelligence platform in iframe -->
+
   <iframe
     id="geointelFrame"
     src="/georisk-intelligence.html"
@@ -1143,6 +1236,7 @@ body.beginner-mode body.beginner-mode
 </main><!-- end main -->
 
 <!-- KPI NARRATIVE PANEL — slides up from bottom on card click -->
+
 <div id="kpiNarrativePanel" role="dialog" aria-modal="true" aria-label="KPI AI Analysis">
   <div class="kpi-panel-header">
     <div style="display:flex;align-items:center;gap:.5rem;min-width:0">
@@ -1168,12 +1262,15 @@ body.beginner-mode body.beginner-mode
   style="display:none;position:fixed;inset:0;z-index:799;background:rgba(0,0,0,.3)"></div>
 
 <!-- FOOTER -->
+
 <!-- ═══ KPI GRID — sticky bottom, always visible regardless of scroll ═══ -->
+
 <!-- position:sticky bottom:0 keeps this locked above the footer as user scrolls -->
 
-
 <!-- MODEL TRANSPARENCY — moved below content Fix 2.5 -->
+
 <!-- MODEL TRANSPARENCY PANEL — methodology reference below content —  Fix 2.5 -->
+
 <div class="transparency-panel" id="transparencyPanel">
   <button class="transparency-toggle" onclick="toggleTransparency()" aria-expanded="false" aria-controls="transBody">
     <span>🔬 MODEL TRANSPARENCY & ASSUMPTIONS</span>
@@ -1235,6 +1332,7 @@ body.beginner-mode body.beginner-mode
 </footer>
 
 <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+
 <script>
 'use strict';
 
@@ -1707,21 +1805,23 @@ async function fetchEIABrent() {
     OIL_DATA.optimistic  = OIL_DATA.optimistic.map((v,i)  => i===0 ? Math.round(liveBrentPrice*0.76) : v);
     OIL_DATA.pessimistic = OIL_DATA.pessimistic.map((v,i) => i===0 ? Math.round(liveBrentPrice*1.04) : v);
 
-    // Fix 1.2: update KPI card to show live price, delta line to show vs model peak
+    // Hotfix A: kpiOil shows MODEL PROJECTED PEAK (not live spot — that belongs in header pill)
+    // Header pill = live EIA spot. KPI card = what the model projects Brent will peak at.
     const oilKPI = document.getElementById('kpiOil');
-    if (oilKPI) oilKPI.textContent = `$${liveBrentPrice.toFixed(2)}`;
+    if (oilKPI) oilKPI.textContent = KPI_MAP[scenario].oil;
     const oilCard  = oilKPI && oilKPI.closest('.kpi-card');
     const oilDelta = oilCard && oilCard.querySelector('.kpi-delta');
     if (oilDelta) {
-      const trendStr = data.trend7d >= 0 ? `▲ ${data.trend7d}%` : `▼ ${Math.abs(data.trend7d)}%`;
-      oilDelta.innerHTML = `Live EIA · ${liveDataDate} · <span>${trendStr} 7d</span>`;
+      const premium = ((liveBrentPrice / 78 - 1) * 100).toFixed(1);
+      const sign    = premium >= 0 ? '+' : '';
+      oilDelta.innerHTML = `EIA Spot: $${liveBrentPrice.toFixed(2)} · <span>${sign}${premium}% vs pre-conflict</span>`;
     }
-    // Fix 1.2: flip badge to LIVE MODEL when EIA succeeds
+    // Flip badge to LIVE MODEL when EIA succeeds
     const liveBadge    = document.querySelector('.live-badge');
     const offlineBadge = document.getElementById('offlineBadge');
     if (liveBadge)    liveBadge.innerHTML = '<div class="live-dot"></div>LIVE MODEL';
     if (offlineBadge) offlineBadge.classList.remove('show');
-    // Fix 1.2: update Brent header pill if present
+    // Update Brent header pill with live EIA spot price
     const brentPillPrice = document.getElementById('brentHeaderPrice');
     const brentPillChg   = document.getElementById('brentHeaderChg');
     if (brentPillPrice) brentPillPrice.textContent = `$${liveBrentPrice.toFixed(2)}`;
@@ -1928,6 +2028,16 @@ function toggleTransparency() {
    - Live EIA Brent price + date
    - Latest news headlines from the alert banner
    ═════════════════════════════════════════ */
+/* Investor Intelligence chip click handler — Option B */
+function setWhatIfChip(btn) {
+  const input = document.getElementById('whatifInput');
+  if (input) {
+    input.value = btn.textContent.trim();
+    input.focus();
+    runWhatIf();
+  }
+}
+
 async function runWhatIf() {
   const input  = document.getElementById('whatifInput').value.trim();
   if (!input) return;
@@ -3175,12 +3285,15 @@ function exportCSV(type) {
   showToast('✓ Intelligence signals CSV downloaded');
 }
 </script>
+
 <!-- FIX 7.3: /index_patches.js removed — file does not exist, was causing 404 on every load -->
+
 <!-- ══════════════════════════════════════════════════════════
      STOCK INSIGHTS POPUP — ported from georisk-intelligence.html
      Triggered by globe country clicks. Shows AI analysis +
      live Finnhub prices for country-relevant stocks.
      ══════════════════════════════════════════════════════════ -->
+
 <div id="stock-backdrop" onclick="closeStockPopup()"></div>
 <div id="stock-popup" role="dialog" aria-modal="true" aria-label="Investor Stock Insights">
   <div class="sp-header">
@@ -3473,5 +3586,6 @@ function _spGetCountryData(countryName) {
   return {};
 }
 </script>
+
 </body>
 </html>
