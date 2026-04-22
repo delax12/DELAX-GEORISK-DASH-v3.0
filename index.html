@@ -1793,8 +1793,9 @@ async function fetchEIABrent() {
   try {
     const res = await fetch('/api/eia-oil');
     if (res.status === 404) { applyModelJitter(); return; }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    let data = null;
+    try { data = await res.json(); } catch(_) { /* noop */ }
+    if (!res.ok) throw new Error((data && data.error) ? data.error : `HTTP ${res.status}`);
     if (data.error) throw new Error(data.error);
 
     liveBrentPrice = data.price;
@@ -1834,6 +1835,22 @@ async function fetchEIABrent() {
     const trend = data.trend7d >= 0 ? `▲ ${data.trend7d}%` : `▼ ${Math.abs(data.trend7d)}%`;
     showToast(`✓ EIA Live: Brent = $${liveBrentPrice.toFixed(2)}/bbl · ${trend} (7d) · ${liveDataDate}`);
   } catch(err) {
+    const brentPillPrice = document.getElementById('brentHeaderPrice');
+    const brentPillChg   = document.getElementById('brentHeaderChg');
+    const liveBadge      = document.querySelector('.live-badge');
+    const fallbackBrent  = (window.tickerData || []).find(t => t.id === 'BRENT')?.price;
+
+    if (brentPillPrice) {
+      brentPillPrice.textContent =
+        (typeof fallbackBrent === 'number' && isFinite(fallbackBrent))
+          ? `$${fallbackBrent.toFixed(2)}`
+          : 'N/A';
+    }
+    if (brentPillChg) {
+      brentPillChg.textContent = 'EIA unavailable';
+      brentPillChg.style.color = 'var(--amber)';
+    }
+    if (liveBadge) liveBadge.innerHTML = '<div class="live-dot"></div>CACHED MODEL';
     applyModelJitter();
     showToast(`⚠ EIA error: ${err.message} — model estimate active`, true);
   }
@@ -2112,7 +2129,9 @@ async function runWhatIf() {
     errorDiv.style.display = 'block';
 
     // ── Friendly error messages ──
-    if (err.message.includes('ANTHROPIC_API_KEY')) {
+    if (err.message.includes('No AI API key configured')) {
+      errorDiv.textContent = '⚠ No AI key configured in Vercel. Add GEMINI_API_KEY or GROQ_API_KEY or ANTHROPIC_API_KEY, then redeploy.';
+    } else if (err.message.includes('ANTHROPIC_API_KEY')) {
       errorDiv.textContent = '⚠ ANTHROPIC_API_KEY not set in Vercel — add it to Environment Variables and redeploy.';
     } else if (err.message.includes('404')) {
       errorDiv.textContent = '⚠ /api/whatif.js not found — make sure api/whatif.js is deployed to Vercel.';
@@ -2990,9 +3009,11 @@ async function fetchHeatmapNarrative() {
     if (loadEl) loadEl.style.display = 'none';
     if (errEl) {
       errEl.style.display = 'block';
-      errEl.textContent = err.message.includes('ANTHROPIC_API_KEY')
-        ? '⚠ Add ANTHROPIC_API_KEY to Vercel Environment Variables to enable AI narratives.'
-        : `⚠ Narrative unavailable: ${err.message}`;
+      errEl.textContent = err.message.includes('No AI API key configured')
+        ? '⚠ Add GEMINI_API_KEY or GROQ_API_KEY or ANTHROPIC_API_KEY in Vercel Environment Variables to enable AI narratives.'
+        : err.message.includes('ANTHROPIC_API_KEY')
+          ? '⚠ Add ANTHROPIC_API_KEY to Vercel Environment Variables to enable AI narratives.'
+          : `⚠ Narrative unavailable: ${err.message}`;
     }
     if (pulseEl) pulseEl.style.background = 'var(--red)';
     console.warn('[heatmapNarrative]', err.message);
@@ -3083,9 +3104,11 @@ async function showKPINarrative(kpiId, kpiLabel, kpiValue) {
     if (loadEl) loadEl.style.display = 'none';
     if (errEl) {
       errEl.style.display = 'block';
-      errEl.textContent = err.message.includes('ANTHROPIC_API_KEY')
-        ? '⚠ Add ANTHROPIC_API_KEY to Vercel Environment Variables to enable KPI analysis.'
-        : `⚠ Analysis failed: ${err.message}`;
+      errEl.textContent = err.message.includes('No AI API key configured')
+        ? '⚠ Add GEMINI_API_KEY or GROQ_API_KEY or ANTHROPIC_API_KEY in Vercel Environment Variables to enable KPI analysis.'
+        : err.message.includes('ANTHROPIC_API_KEY')
+          ? '⚠ Add ANTHROPIC_API_KEY to Vercel Environment Variables to enable KPI analysis.'
+          : `⚠ Analysis failed: ${err.message}`;
     }
     console.warn('[kpiNarrative]', err.message);
   }
