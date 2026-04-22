@@ -1882,7 +1882,7 @@ function setScenario(s) {
     const el = document.getElementById('kpi'+k);
     if(el) el.textContent = Object.values(kpi)[i];
   });
-  if(liveBrentPrice) document.getElementById('kpiOil').textContent = `$${Math.round(liveBrentPrice)}`;
+  // Keep KPI Oil as scenario projected peak; live Brent spot is shown in header pill/delta.
   updateCharts();
   calcPortfolioImpact();
   // Refresh heatmap narrative for new scenario (clears KPI cache for old scenario)
