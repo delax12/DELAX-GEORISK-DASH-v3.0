@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -226,6 +225,59 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 /* ═══ SCENARIO BUILDER DRAWER ═══ */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;opacity:0;pointer-events:none;transition:opacity .3s}
 .drawer-overlay.open{opacity:1;pointer-events:all}
+
+/* ══ PRO PAYWALL MODAL — gates AI features for Free tier users ══ */
+.pro-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);
+  z-index:900;display:none;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .25s}
+.pro-modal-overlay.open{display:flex;opacity:1}
+.pro-modal{background:var(--bg-card);border:1px solid var(--border);border-top:3px solid var(--purple);
+  border-radius:4px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.7);
+  transform:scale(.95);transition:transform .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.pro-modal-overlay.open .pro-modal{transform:scale(1)}
+.pro-modal-header{padding:1.5rem 1.75rem 1rem;text-align:center;border-bottom:1px solid var(--border-dim);
+  background:linear-gradient(180deg,rgba(179,136,255,.08),transparent)}
+.pro-modal-lock{font-size:2rem;margin-bottom:.5rem;filter:drop-shadow(0 0 12px rgba(179,136,255,.5))}
+.pro-modal-title{font-family:var(--display);font-size:1.35rem;letter-spacing:.04em;color:var(--text-pri);margin-bottom:.35rem}
+.pro-modal-tier{display:inline-block;font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--purple);background:rgba(179,136,255,.12);
+  border:1px solid rgba(179,136,255,.3);padding:.22rem .7rem;border-radius:2px}
+.pro-modal-body{padding:1.25rem 1.75rem}
+.pro-modal-desc{font-family:var(--sans);font-size:.85rem;color:#c8d4e8;line-height:1.65;margin-bottom:1rem;text-align:center}
+.pro-modal-benefits{list-style:none;padding:0;margin:0 0 1.1rem}
+.pro-modal-benefits li{font-family:var(--sans);font-size:.78rem;color:var(--text-sec);
+  padding:.42rem 0;display:flex;align-items:flex-start;gap:.6rem;line-height:1.55}
+.pro-modal-benefits li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:.05rem}
+.pro-modal-form{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.5rem}
+.pro-modal-input{background:var(--bg-deep);border:1px solid var(--border);color:var(--text-pri);
+  font-family:var(--sans);font-size:.82rem;padding:.65rem .85rem;border-radius:2px;outline:none;
+  transition:border-color .15s;width:100%}
+.pro-modal-input:focus{border-color:var(--purple)}
+.pro-modal-input::placeholder{color:var(--text-dim)}
+.pro-modal-btn{font-family:var(--display);font-size:.82rem;letter-spacing:.08em;
+  background:linear-gradient(135deg,var(--purple),#8b5cf6);color:#fff;border:none;padding:.8rem 1rem;
+  border-radius:2px;cursor:pointer;transition:transform .15s,box-shadow .15s;width:100%;font-weight:600}
+.pro-modal-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(179,136,255,.4)}
+.pro-modal-btn:disabled{opacity:.5;cursor:wait;transform:none}
+.pro-modal-footer{padding:.85rem 1.75rem 1.25rem;border-top:1px solid var(--border-dim);
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.pro-modal-contact{font-family:var(--mono);font-size:.6rem;color:var(--text-dim);letter-spacing:.04em}
+.pro-modal-contact a{color:var(--cyan);text-decoration:none}
+.pro-modal-contact a:hover{text-decoration:underline}
+.pro-modal-later{background:transparent;border:1px solid var(--border-dim);color:var(--text-sec);
+  font-family:var(--mono);font-size:.6rem;padding:.4rem .8rem;border-radius:2px;cursor:pointer;
+  letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.pro-modal-later:hover{color:var(--text-pri);border-color:var(--text-sec)}
+.pro-modal-success{display:none;text-align:center;padding:1rem 0}
+.pro-modal-success.show{display:block}
+.pro-modal-success-icon{font-size:2rem;margin-bottom:.6rem}
+.pro-modal-success-text{font-family:var(--sans);font-size:.85rem;color:#c8d4e8;line-height:1.6}
+
+/* Pro lock badge overlay on gated elements (visible on hover) */
+.pro-lock-hint{position:absolute;top:.5rem;right:.5rem;font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.1em;color:var(--purple);background:rgba(179,136,255,.12);
+  border:1px solid rgba(179,136,255,.3);padding:.2rem .5rem;border-radius:2px;pointer-events:none;
+  z-index:3;opacity:.75;transition:opacity .2s}
+.kpi-card:hover .pro-lock-hint{opacity:1}
 .drawer{position:fixed;top:0;right:0;width:380px;max-width:95vw;height:100vh;background:var(--bg-card);border-left:1px solid var(--border);z-index:401;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
 .drawer.open{transform:translateX(0)}
 .drawer-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-dim);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-card);z-index:1}
@@ -424,12 +476,10 @@ body.beginner-mode body.beginner-mode
   font-size:9px;color:var(--text-sec);line-height:1.7}
 .sp-ai-insight strong{color:var(--purple);font-size:10px;font-weight:700;display:block;margin-bottom:4px}
 </style>
-
 </head>
 <body>
 
 <!-- ═══════════════ HEADER (Fix 2.7 — decluttered) ═══════════════ -->
-
 <header class="header" role="banner">
   <div class="header-brand">
     <div class="logo" aria-label="DELAX GEO-RISK">DELAX | GEO-RISK</div>
@@ -455,7 +505,6 @@ body.beginner-mode body.beginner-mode
 </header>
 
 <!-- SETTINGS DRAWER — houses controls moved from header (Fix 2.7) -->
-
 <div class="drawer-overlay" id="settingsOverlay" onclick="closeSettingsDrawer()"></div>
 <div class="drawer" id="settingsDrawer" role="dialog" aria-label="Settings" aria-modal="true">
   <div class="drawer-header">
@@ -498,7 +547,6 @@ body.beginner-mode body.beginner-mode
 <!-- Ticker strip removed — Fix 2.2 -->
 
 <!-- SCENARIO BUILDER DRAWER -->
-
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeScenarioBuilder()"></div>
 <div class="drawer" id="scenarioDrawer" role="dialog" aria-label="Custom Scenario Builder" aria-modal="true">
   <div class="drawer-header">
@@ -559,10 +607,25 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ MAIN ═══ -->
-
 <main role="main">
 
 <!-- NAV TABS — sticky right above Global News banner -->
+<!-- AMBIENT NEWS STRIP — 28px, always visible, rotates top headline — Fix 2.3 -->
+<div id="newsStatusBar" style="background:#060b16;border-bottom:1px solid #111d33;
+  height:28px;display:flex;align-items:center;padding:0 1.25rem;gap:10px;overflow:hidden;
+  cursor:pointer" onclick="switchTab('tab-news')" title="Click to open News tab"
+  role="button" aria-label="Latest news — click to open News tab">
+  <div id="newsStatusBadge" style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+    color:#080c14;background:var(--amber);padding:2px 8px;border-radius:2px;white-space:nowrap;
+    font-weight:700;flex-shrink:0;font-family:var(--mono)">⚡ NEWS</div>
+  <div id="newsStatusText" style="font-size:11px;color:#7a91b3;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;flex:1;font-family:var(--sans)">
+    Loading latest headlines…</div>
+  <div id="newsStatusMeta" style="font-size:9px;color:#2d4060;white-space:nowrap;
+    flex-shrink:0;font-family:var(--mono)"></div>
+  <div style="font-size:9px;color:#1e3a50;border-left:1px solid #111d33;
+    padding-left:10px;white-space:nowrap;flex-shrink:0;font-family:var(--mono)">↻ live</div>
+</div>
 
 <div class="tabs-wrapper" role="tablist" aria-label="Dashboard sections">
   <button class="tab-btn active" role="tab" aria-selected="true"  onclick="switchTab('tab-charts')"     >📈 Charts</button>
@@ -572,59 +635,21 @@ body.beginner-mode body.beginner-mode
   <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-continental')">🌍 Continental</button>
   <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-sectors')"   >🏭 Sectors</button>
   <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-risks')"     >⚡ Risks</button>
+  <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-news')">📰 News</button>
   <button class="tab-btn" id="btn-geointel" role="tab" aria-selected="false" onclick="switchTab('tab-geointel')" style="color:var(--amber);border-bottom-color:transparent">🛡 GEO Intel</button>
 </div>
 
-<!-- ALERT BANNER — Global News, now with AI auto-summary -->
+<!-- Alert banner + news feed moved to 📰 News tab — Fix 2.3 -->
 
-<div class="alert-banner" id="alertBanner" role="alert" aria-live="polite">
-  <div class="alert-label" id="alertLabel">⚠ LOADING</div>
-  <div class="alert-text" id="alertText"><span style="color:var(--text-dim)">Fetching latest news…</span></div>
-  <div style="display:flex;align-items:center;gap:.75rem;flex-shrink:0">
-    <div id="alertDots" style="display:flex;gap:5px;align-items:center"></div>
-    <div id="alertSource" style="font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--text-dim);white-space:nowrap"></div>
-  </div>
-</div>
-
-<!-- LIVE MARKET NEWS — right below alert banner -->
-
-<div style="background:var(--bg-card);border:1px solid var(--border-dim);
-  border-left:3px solid var(--cyan);margin-bottom:0;overflow:hidden">
-  <div style="padding:.6rem 1.1rem;border-bottom:1px solid var(--border-dim);
-    display:flex;align-items:center;justify-content:space-between;gap:1rem">
-    <div>
-      <span style="font-family:var(--display);font-size:.95rem;letter-spacing:.06em;
-        color:var(--text-pri)">⚡ Live Market News</span>
-      <span style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
-        margin-left:.75rem;letter-spacing:.08em;text-transform:uppercase">
-        Reuters · MarketWatch · BBC Business · Updates every 2 min
-      </span>
-    </div>
-    <div id="feedStatusDot" style="display:flex;align-items:center;gap:.4rem;
-      font-family:var(--mono);font-size:.58rem;color:var(--text-dim)">
-      <div style="width:6px;height:6px;border-radius:50%;background:var(--text-dim);
-        animation:pulse 2s infinite"></div>
-      Connecting…
-    </div>
-  </div>
-  <div id="geopolitical-feed" style="padding:.65rem 1.1rem;min-height:50px">
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--text-dim);
-      padding:.3rem 0">
-      Connecting to live news feed…
-    </div>
-  </div>
-</div>
 
 <!-- MODE STRIP and KPI GRID moved to bottom of page — see below footer -->
 
 <!-- Globe removed — Fix 2.1 -->
-
 <!-- ═══ TAB: CHARTS ═══ -->
-
 <div id="tab-charts" class="tab-content active" role="tabpanel">
 
-  <!-- KPI HERO ROW — top of Charts tab, Fix 2.6 -->
 
+  <!-- KPI HERO ROW — top of Charts tab, Fix 2.6 -->
   <div style="margin-bottom:1.5rem">
     <div class="mode-strip" style="padding:.4rem 0 .6rem;border-bottom:none">
       <div class="section-label" style="margin-bottom:0">
@@ -640,76 +665,73 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-value" id="kpiOil">$148</div>
       <div class="kpi-plain">Oil near $148/bbl — nearly double pre-conflict price of $78.</div>
       <div class="kpi-delta">Pre-conflict: $78 · <span>+89.7%</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
     </div>
 
-```
-<div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
-  <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
-    <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
-  <div class="kpi-value" id="kpiCPI">+3.8%</div>
-  <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
-  <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
-  <div class="kpi-click-hint">🤖 Click for AI</div>
-</div>
+    <div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
+        <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
+      <div class="kpi-value" id="kpiCPI">+3.8%</div>
+      <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
+      <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
 
-<div class="kpi-card warn clickable" onclick="showKPINarrative('gdp','Global GDP Loss (Yr 1)',document.getElementById('kpiGDP').textContent)" role="button" tabindex="0">
-  <div class="kpi-label">Global <span data-jargon="GDP">GDP</span> Loss (Yr 1)
-    <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
-  <div class="kpi-value" id="kpiGDP">−1.9%</div>
-  <div class="kpi-plain">~$1.7T in lost global output.</div>
-  <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
-  <div class="kpi-click-hint">🤖 Click for AI</div>
-</div>
+    <div class="kpi-card warn clickable" onclick="showKPINarrative('gdp','Global GDP Loss (Yr 1)',document.getElementById('kpiGDP').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Global <span data-jargon="GDP">GDP</span> Loss (Yr 1)
+        <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
+      <div class="kpi-value" id="kpiGDP">−1.9%</div>
+      <div class="kpi-plain">~$1.7T in lost global output.</div>
+      <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
 
-<div class="kpi-card up clickable" onclick="showKPINarrative('ship','Shipping Cost Index',document.getElementById('kpiShip').textContent)" role="button" tabindex="0">
-  <div class="kpi-label">Shipping Index
-    <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
-  <div class="kpi-value" id="kpiShip">+310%</div>
-  <div class="kpi-plain">3× more to ship globally via Cape of Good Hope.</div>
-  <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
-  <div class="kpi-click-hint">🤖 Click for AI</div>
-</div>
+    <div class="kpi-card up clickable" onclick="showKPINarrative('ship','Shipping Cost Index',document.getElementById('kpiShip').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Shipping Index
+        <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
+      <div class="kpi-value" id="kpiShip">+310%</div>
+      <div class="kpi-plain">3× more to ship globally via Cape of Good Hope.</div>
+      <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
 
-<div class="kpi-card up clickable" onclick="showKPINarrative('def','Global Defense Spend ΔYr1',document.getElementById('kpiDef').textContent)" role="button" tabindex="0">
-  <div class="kpi-label">Defense Spend ΔYr1
-    <i class="info-icon" data-prov="Source: SIPRI 2026 · NATO + Gulf states · Confidence: 87%">i</i></div>
-  <div class="kpi-value" id="kpiDef">+$680B</div>
-  <div class="kpi-plain">$680B extra in global defense budgets.</div>
-  <div class="kpi-delta">NATO · Gulf · Israel · India</div>
-  <div class="kpi-click-hint">🤖 Click for AI</div>
-</div>
+    <div class="kpi-card up clickable" onclick="showKPINarrative('def','Global Defense Spend ΔYr1',document.getElementById('kpiDef').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Defense Spend ΔYr1
+        <i class="info-icon" data-prov="Source: SIPRI 2026 · NATO + Gulf states · Confidence: 87%">i</i></div>
+      <div class="kpi-value" id="kpiDef">+$680B</div>
+      <div class="kpi-plain">$680B extra in global defense budgets.</div>
+      <div class="kpi-delta">NATO · Gulf · Israel · India</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
 
-<div class="kpi-card down clickable" onclick="showKPINarrative('fao','Food Price Index (FAO)',document.getElementById('kpiFAO').textContent)" role="button" tabindex="0">
-  <div class="kpi-label">Food Price (<span data-jargon="FAO">FAO</span>)
-    <i class="info-icon" data-prov="Source: FAO FFPI · Fertilizer + fuel inputs · Confidence: 83%">i</i></div>
-  <div class="kpi-value" id="kpiFAO">+27%</div>
-  <div class="kpi-plain">Food 27% more expensive. Africa & S. Asia hardest hit.</div>
-  <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
-  <div class="kpi-click-hint">🤖 Click for AI</div>
-</div>
+    <div class="kpi-card down clickable" onclick="showKPINarrative('fao','Food Price Index (FAO)',document.getElementById('kpiFAO').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Food Price (<span data-jargon="FAO">FAO</span>)
+        <i class="info-icon" data-prov="Source: FAO FFPI · Fertilizer + fuel inputs · Confidence: 83%">i</i></div>
+      <div class="kpi-value" id="kpiFAO">+27%</div>
+      <div class="kpi-plain">Food 27% more expensive. Africa & S. Asia hardest hit.</div>
+      <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
 
-<div class="kpi-card info clickable" onclick="showKPINarrative('fx','USD / EM FX Pressure',document.getElementById('kpiFX').textContent)" role="button" tabindex="0">
-  <div class="kpi-label"><span data-jargon="USD">USD</span>/<span data-jargon="EM FX">EM FX</span>
-    <i class="info-icon" data-prov="Source: BIS FX · EM basket: TRY, BRL, INR, EGP, PKR · Confidence: 80%">i</i></div>
-  <div class="kpi-value" id="kpiFX">−14%</div>
-  <div class="kpi-plain">EM currencies lose 14% vs USD. Imports cost more.</div>
-  <div class="kpi-delta">Flight-to-safety inflows</div>
-  <div class="kpi-click-hint">🤖 Click for AI</div>
-</div>
+    <div class="kpi-card info clickable" onclick="showKPINarrative('fx','USD / EM FX Pressure',document.getElementById('kpiFX').textContent)" role="button" tabindex="0">
+      <div class="kpi-label"><span data-jargon="USD">USD</span>/<span data-jargon="EM FX">EM FX</span>
+        <i class="info-icon" data-prov="Source: BIS FX · EM basket: TRY, BRL, INR, EGP, PKR · Confidence: 80%">i</i></div>
+      <div class="kpi-value" id="kpiFX">−14%</div>
+      <div class="kpi-plain">EM currencies lose 14% vs USD. Imports cost more.</div>
+      <div class="kpi-delta">Flight-to-safety inflows</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
 
-<div class="kpi-card warn clickable" onclick="showKPINarrative('dur','Conflict Duration Estimate',document.getElementById('kpiDur').textContent)" role="button" tabindex="0">
-  <div class="kpi-label">Conflict Duration
-    <i class="info-icon" data-prov="Source: DELAX duration model · Gulf War 7M, Ukraine 30M+ · Confidence: 65%">i</i></div>
-  <div class="kpi-value" id="kpiDur">18–36M</div>
-  <div class="kpi-plain">18–36 months active conflict expected.</div>
-  <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
-  <div class="kpi-click-hint">🤖 Click for AI</div>
-</div>
+    <div class="kpi-card warn clickable" onclick="showKPINarrative('dur','Conflict Duration Estimate',document.getElementById('kpiDur').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Conflict Duration
+        <i class="info-icon" data-prov="Source: DELAX duration model · Gulf War 7M, Ukraine 30M+ · Confidence: 65%">i</i></div>
+      <div class="kpi-value" id="kpiDur">18–36M</div>
+      <div class="kpi-plain">18–36 months active conflict expected.</div>
+      <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
 
-</div><!-- end kpi-grid -->
-```
-
+    </div><!-- end kpi-grid -->
   </div><!-- end KPI hero row -->
   <!-- INVESTOR INTELLIGENCE BOX — Option B redesign, plain language -->
   <div style="background:var(--bg-panel);border:1px solid var(--border-dim);
@@ -820,7 +842,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- CONTROLS -->
-
   <div class="controls-row">
     <div class="control-group">
       <span class="control-label">Scenario:</span>
@@ -836,7 +857,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- OIL CHART 1: NEAR-TERM — Current month + next 11 months -->
-
   <div class="chart-box">
     <div class="chart-header">
       <div>
@@ -853,7 +873,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- OIL CHART 2: LONG-TERM — Year 2 through Year 11 (annual) -->
-
   <div class="chart-box">
     <div class="chart-header">
       <div>
@@ -870,7 +889,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- GDP + INFLATION -->
-
   <div class="two-col">
     <div class="chart-box">
       <div class="chart-header"><div>
@@ -893,7 +911,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- RADAR + SHIPPING -->
-
   <div class="two-col">
     <div class="chart-box">
       <div class="chart-header"><div>
@@ -916,7 +933,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- HEATMAP -->
-
   <div class="chart-box">
     <div class="chart-header"><div>
       <div class="chart-title">Continental Economic Stress Heatmap
@@ -945,7 +961,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- SPEND -->
-
   <div class="chart-box">
     <div class="chart-header"><div>
       <div class="chart-title">Defense, Energy & Reconstruction Surge
@@ -959,7 +974,6 @@ body.beginner-mode body.beginner-mode
 </div><!-- end tab-charts -->
 
 <!-- ═══ TAB: EXEC SUMMARY ═══ -->
-
 <div id="tab-exec" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportPDF()" aria-label="Export report as PDF">📄 Export PDF Report</button>
@@ -1019,49 +1033,44 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: PORTFOLIO SIMULATOR ═══ -->
-
 <div id="tab-portfolio" class="tab-content" role="tabpanel">
   <div class="portfolio-section">
     <h4>💼 Portfolio Impact Simulator</h4>
     <p style="font-family:var(--mono);font-size:.65rem;color:var(--text-sec);margin-bottom:.85rem">Enter your holdings to see estimated scenario impact. Data stored locally only.</p>
 
-```
-<!-- Presets -->
-<div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Load a preset:</div>
-<div class="portfolio-presets">
-  <button class="btn" onclick="loadPreset('defense')" aria-label="Load defense-heavy portfolio">🛡 Defense-Heavy</button>
-  <button class="btn" onclick="loadPreset('energy')"  aria-label="Load energy-heavy portfolio">⚡ Energy-Heavy</button>
-  <button class="btn" onclick="loadPreset('retail')"  aria-label="Load retail investor portfolio">👤 Retail Balanced</button>
-  <button class="btn" onclick="loadPreset('retiree')" aria-label="Load retiree portfolio">🏠 Retiree Conservative</button>
-  <button class="btn" onclick="clearPortfolio()"     aria-label="Clear all holdings">✕ Clear</button>
-</div>
-
-<!-- Holdings entry -->
-<div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Your holdings:</div>
-<div class="portfolio-row" style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);letter-spacing:.08em;margin-bottom:.3rem">
-  <span>TICKER</span><span>SHARES</span><span>AVG COST ($)</span><span></span>
-</div>
-<div class="portfolio-grid" id="portfolioGrid"></div>
-<button class="btn green" onclick="addPortfolioRow()" style="margin-top:.5rem" aria-label="Add holding">+ Add Holding</button>
-
-<!-- Results -->
-<div style="margin-top:1.25rem">
-  <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.6rem;letter-spacing:.1em;text-transform:uppercase">
-    Scenario Impact — <span id="portfolioScenarioLabel">Baseline</span>
-  </div>
-  <div class="portfolio-results" id="portfolioResults">
-    <div class="portfolio-result-row">
-      <span style="color:var(--text-dim)">Add holdings above to see impact estimates</span>
+    <!-- Presets -->
+    <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Load a preset:</div>
+    <div class="portfolio-presets">
+      <button class="btn" onclick="loadPreset('defense')" aria-label="Load defense-heavy portfolio">🛡 Defense-Heavy</button>
+      <button class="btn" onclick="loadPreset('energy')"  aria-label="Load energy-heavy portfolio">⚡ Energy-Heavy</button>
+      <button class="btn" onclick="loadPreset('retail')"  aria-label="Load retail investor portfolio">👤 Retail Balanced</button>
+      <button class="btn" onclick="loadPreset('retiree')" aria-label="Load retiree portfolio">🏠 Retiree Conservative</button>
+      <button class="btn" onclick="clearPortfolio()"     aria-label="Clear all holdings">✕ Clear</button>
     </div>
-  </div>
-</div>
-```
 
+    <!-- Holdings entry -->
+    <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase">Your holdings:</div>
+    <div class="portfolio-row" style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);letter-spacing:.08em;margin-bottom:.3rem">
+      <span>TICKER</span><span>SHARES</span><span>AVG COST ($)</span><span></span>
+    </div>
+    <div class="portfolio-grid" id="portfolioGrid"></div>
+    <button class="btn green" onclick="addPortfolioRow()" style="margin-top:.5rem" aria-label="Add holding">+ Add Holding</button>
+
+    <!-- Results -->
+    <div style="margin-top:1.25rem">
+      <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.6rem;letter-spacing:.1em;text-transform:uppercase">
+        Scenario Impact — <span id="portfolioScenarioLabel">Baseline</span>
+      </div>
+      <div class="portfolio-results" id="portfolioResults">
+        <div class="portfolio-result-row">
+          <span style="color:var(--text-dim)">Add holdings above to see impact estimates</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- ═══ TAB: MONTHLY ═══ -->
-
 <div id="tab-monthly" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportCSV('monthly')" aria-label="Export monthly data to CSV">📊 Export Monthly Data CSV</button>
@@ -1071,7 +1080,6 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: CONTINENTAL ═══ -->
-
 <div id="tab-continental" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportCSV('continental')" aria-label="Export continental data to CSV">📊 Export Continental Data CSV</button>
@@ -1110,7 +1118,6 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: SECTORS ═══ -->
-
 <div id="tab-sectors" class="tab-content" role="tabpanel">
   <div class="export-row">
     <button class="btn" onclick="exportCSV('sectors')" aria-label="Export sector signals to CSV">📊 Export Sector CSV</button>
@@ -1129,7 +1136,6 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <!-- ═══ TAB: RISKS ═══ -->
-
 <div id="tab-risks" class="tab-content" role="tabpanel">
   <div class="section-label">Major Risk Factors & Black-Swan Triggers</div>
   <div class="two-col">
@@ -1196,12 +1202,67 @@ body.beginner-mode body.beginner-mode
   </div>
 </div>
 
-<!-- ═══ TAB: GEO INTELLIGENCE ═══ -->
+<!-- ═══ TAB: NEWS ═══ — Step 10 Fix 2.3 -->
+<div id="tab-news" class="tab-content" role="tabpanel">
 
+  <!-- TOP ALERT BANNER — moved from persistent area -->
+  <div class="alert-banner" id="alertBanner" role="alert" aria-live="polite">
+    <div class="alert-label" id="alertLabel">⚠ LOADING</div>
+    <div class="alert-text" id="alertText"><span style="color:var(--text-dim)">Fetching latest news…</span></div>
+    <div style="display:flex;align-items:center;gap:.75rem;flex-shrink:0">
+      <div id="alertDots" style="display:flex;gap:5px;align-items:center"></div>
+      <div id="alertSource" style="font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--text-dim);white-space:nowrap"></div>
+    </div>
+  </div>
+
+  <!-- LIVE MARKET NEWS FEED -->
+  <div style="background:var(--bg-card);border:1px solid var(--border-dim);
+    border-left:3px solid var(--cyan);margin-top:1rem;overflow:hidden">
+    <div style="padding:.6rem 1.1rem;border-bottom:1px solid var(--border-dim);
+      display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <div>
+        <span style="font-family:var(--display);font-size:.95rem;letter-spacing:.06em;
+          color:var(--text-pri)">⚡ Live Market News</span>
+        <span style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+          margin-left:.75rem;letter-spacing:.08em;text-transform:uppercase">
+          Reuters · MarketWatch · BBC Business · Updates every 8 min
+        </span>
+      </div>
+      <div id="feedStatusDot" style="display:flex;align-items:center;gap:.4rem;
+        font-family:var(--mono);font-size:.58rem;color:var(--text-dim)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--text-dim);
+          animation:pulse 2s infinite"></div>
+        Connecting…
+      </div>
+    </div>
+    <div id="geopolitical-feed" style="padding:.65rem 1.1rem;min-height:50px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--text-dim);
+        padding:.3rem 0">
+        Connecting to live news feed…
+      </div>
+    </div>
+  </div>
+
+  <!-- GDELT CONFLICT ALERTS — injected here when isAlarm:true events detected -->
+  <div id="gdeltAlertPanel" style="display:none;margin-top:1rem;background:var(--bg-card);
+    border:1px solid var(--border-dim);border-left:3px solid var(--red);overflow:hidden">
+    <div style="padding:.5rem 1.1rem;border-bottom:1px solid var(--border-dim);
+      display:flex;align-items:center;gap:.6rem;background:rgba(255,61,74,.06)">
+      <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
+        text-transform:uppercase;color:var(--red)">⚡ GDELT Conflict Alerts</span>
+      <span style="font-family:var(--mono);font-size:.55rem;color:var(--text-dim)">
+        · No API key · Updates every 15 min
+      </span>
+    </div>
+    <div id="gdeltAlertFeed" style="padding:.65rem 1.1rem"></div>
+  </div>
+
+</div><!-- end tab-news -->
+
+<!-- ═══ TAB: GEO INTELLIGENCE ═══ -->
 <div id="tab-geointel" class="tab-content" role="tabpanel" style="padding:0;margin:0">
 
   <!-- Iframe header bar — scenario sync + external controls -->
-
   <div style="display:flex;align-items:center;justify-content:space-between;
     padding:.6rem 1rem;background:var(--bg-card);border:1px solid var(--border-dim);
     border-bottom:2px solid var(--amber);flex-wrap:wrap;gap:.5rem">
@@ -1220,7 +1281,6 @@ body.beginner-mode body.beginner-mode
   </div>
 
   <!-- Full intelligence platform in iframe -->
-
   <iframe
     id="geointelFrame"
     src="/georisk-intelligence.html"
@@ -1236,7 +1296,6 @@ body.beginner-mode body.beginner-mode
 </main><!-- end main -->
 
 <!-- KPI NARRATIVE PANEL — slides up from bottom on card click -->
-
 <div id="kpiNarrativePanel" role="dialog" aria-modal="true" aria-label="KPI AI Analysis">
   <div class="kpi-panel-header">
     <div style="display:flex;align-items:center;gap:.5rem;min-width:0">
@@ -1262,15 +1321,12 @@ body.beginner-mode body.beginner-mode
   style="display:none;position:fixed;inset:0;z-index:799;background:rgba(0,0,0,.3)"></div>
 
 <!-- FOOTER -->
-
 <!-- ═══ KPI GRID — sticky bottom, always visible regardless of scroll ═══ -->
-
 <!-- position:sticky bottom:0 keeps this locked above the footer as user scrolls -->
 
+
 <!-- MODEL TRANSPARENCY — moved below content Fix 2.5 -->
-
 <!-- MODEL TRANSPARENCY PANEL — methodology reference below content —  Fix 2.5 -->
-
 <div class="transparency-panel" id="transparencyPanel">
   <button class="transparency-toggle" onclick="toggleTransparency()" aria-expanded="false" aria-controls="transBody">
     <span>🔬 MODEL TRANSPARENCY & ASSUMPTIONS</span>
@@ -1332,7 +1388,6 @@ body.beginner-mode body.beginner-mode
 </footer>
 
 <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
-
 <script>
 'use strict';
 
@@ -2028,6 +2083,93 @@ function toggleTransparency() {
    - Live EIA Brent price + date
    - Latest news headlines from the alert banner
    ═════════════════════════════════════════ */
+/* ═════════════════════════════════════════
+   PRO PAYWALL — gates all AI features for Free tier
+   Until Supabase auth ships (Step 16), every user is
+   Free by default. Users who successfully submit the
+   waitlist form get a local "pro_waitlist" flag so they
+   don't re-see the modal during the session.
+   ═════════════════════════════════════════ */
+const PRO_MODAL = {
+  // Per-feature title and pitch — shown in the modal header
+  whatif:    { title: 'AI Investor Intelligence',      pitch: 'Ask our AI any question about how this conflict affects your investments.' },
+  kpi:       { title: 'AI KPI Deep-Dive',              pitch: 'Click any metric for a plain-English explanation of what\'s driving it.' },
+  heatmap:   { title: 'AI Heatmap Narrative',          pitch: 'Scenario-aware AI commentary on the regional risk map.' },
+  news:      { title: 'AI News Summary',               pitch: 'Real-time AI one-line summaries of breaking geopolitical headlines.' },
+  geointel:  { title: 'AI GEO Intelligence Briefing',  pitch: 'On-demand AI briefings synthesizing live conflict signals.' },
+};
+
+function isProUser() {
+  // TODO (Step 16): replace with Supabase session check
+  // For now: anyone who joined the waitlist gets a soft "preview" until auth lands
+  return false;
+}
+
+function showProModal(feature = 'whatif') {
+  const overlay = document.getElementById('proModalOverlay');
+  const title   = document.getElementById('proModalTitle');
+  const desc    = overlay && overlay.querySelector('.pro-modal-desc');
+  const body    = document.getElementById('proModalBody');
+  const success = document.getElementById('proModalSuccess');
+  const meta    = PRO_MODAL[feature] || PRO_MODAL.whatif;
+  if (title) title.textContent = meta.title;
+  if (desc)  desc.innerHTML    = `${meta.pitch} Plus full access to every AI feature on DELAX GEO-RISK.`;
+  if (body)    body.style.display    = '';
+  if (success) success.classList.remove('show');
+  if (overlay) overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Focus email input for immediate typing
+  setTimeout(() => {
+    const inp = document.getElementById('proModalEmail');
+    if (inp) inp.focus();
+  }, 250);
+}
+
+function closeProModal() {
+  const overlay = document.getElementById('proModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitProWaitlist(e) {
+  e.preventDefault();
+  const email  = document.getElementById('proModalEmail').value.trim();
+  const btn    = document.getElementById('proModalSubmit');
+  const body   = document.getElementById('proModalBody');
+  const success= document.getElementById('proModalSuccess');
+  const echo   = document.getElementById('proModalEmailEcho');
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Adding you…';
+
+  // Store locally so we can later sync to Supabase when Step 16 ships
+  try {
+    const list = JSON.parse(localStorage.getItem('delax_pro_waitlist') || '[]');
+    if (!list.includes(email)) list.push(email);
+    localStorage.setItem('delax_pro_waitlist',          JSON.stringify(list));
+    localStorage.setItem('delax_pro_waitlist_latest',   email);
+    localStorage.setItem('delax_pro_waitlist_joined_at', new Date().toISOString());
+  } catch(_) {}
+
+  // Simulate async submit — replace with real endpoint when backend is live
+  await new Promise(r => setTimeout(r, 600));
+
+  if (echo)    echo.textContent = email;
+  if (body)    body.style.display = 'none';
+  if (success) success.classList.add('show');
+  btn.disabled = false;
+  btn.textContent = 'Join Pro Waitlist →';
+}
+
+// ESC closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('proModalOverlay');
+    if (overlay && overlay.classList.contains('open')) closeProModal();
+  }
+});
+
 /* Investor Intelligence chip click handler — Option B */
 function setWhatIfChip(btn) {
   const input = document.getElementById('whatifInput');
@@ -2039,6 +2181,8 @@ function setWhatIfChip(btn) {
 }
 
 async function runWhatIf() {
+  // Pro gate — Investor Intelligence is Pro only
+  if (!isProUser()) { showProModal('whatif'); return; }
   const input  = document.getElementById('whatifInput').value.trim();
   if (!input) return;
 
@@ -2396,6 +2540,8 @@ async function fetchNewsArticles() {
     alertArticles = combined; alertIndex = 0;
     buildAlertDots(); renderAlert(0); startAlertRotation();
     autoGenerateNewsSummary(combined);
+    // Fix 2.3: update ambient news strip with top story
+    updateNewsStrip(combined[0]);
 
   } catch (err) {
     console.warn('[news] fetchNewsArticles error:', err.message);
@@ -2442,6 +2588,28 @@ function updateAlertDots(idx) {
   alertArticles.forEach((_,i)=>{ const d=document.getElementById(`adot-${i}`); if(d) d.style.background=i===idx?'var(--amber)':'var(--border)'; });
 }
 function jumpAlert(idx) { alertIndex=idx; renderAlert(idx); startAlertRotation(); }
+
+/* Fix 2.3: ambient 28px strip — always shows top headline, clickable to News tab */
+function updateNewsStrip(article) {
+  if (!article) return;
+  const badge = document.getElementById('newsStatusBadge');
+  const text  = document.getElementById('newsStatusText');
+  const meta  = document.getElementById('newsStatusMeta');
+  if (badge) {
+    badge.textContent = (article.catIcon || '⚡') + ' ' + (article.catLabel || 'NEWS');
+    badge.style.background = article.color || 'var(--amber)';
+    badge.style.color = '#080c14';
+  }
+  if (text) text.innerHTML = `<strong style="color:#c8d4e8">${escHtml(article.title)}</strong>`;
+  if (meta && article.published) meta.textContent = newsTimeAgo(article.published) + ' · ' + (article.source || '');
+}
+/* Called by GDELT when isAlarm events arrive — updates strip immediately without NewsAPI call */
+function updateNewsStripGdelt(country, count) {
+  const badge = document.getElementById('newsStatusBadge');
+  const text  = document.getElementById('newsStatusText');
+  if (badge) { badge.textContent = '🚨 ALERT'; badge.style.background = 'var(--red)'; }
+  if (text)  text.innerHTML = `<strong style="color:#c8d4e8">GDELT CONFLICT ALERT: ${escHtml(country)} — ${count} events in 48h</strong>`;
+}
 function setAlertFallback() {
   const label=document.getElementById('alertLabel'); const text=document.getElementById('alertText');
   if(label){label.innerHTML='🌐 GLOBAL NEWS';label.style.color='var(--amber)';}
@@ -2459,6 +2627,8 @@ function setAlertFallback() {
    Runs every time news refreshes (20 min).
    ═════════════════════════════════════════ */
 async function autoGenerateNewsSummary(articles) {
+  // Pro gate — silently skip for Free users. News still shows, just no AI one-liner.
+  if (!isProUser()) return;
   if (!articles || !articles.length) return;
 
   // Show generating state in alert banner
@@ -2593,6 +2763,8 @@ function buildSectorTable() {
     const b3=r.sig3==='buy'?`<span class="badge badge-buy">▲ Buy</span>`:r.sig3==='avoid'?`<span class="badge badge-avoid">▼ Avoid</span>`:`<span class="badge badge-monitor">● Monitor</span>`;
     const rc12=r.ret12.startsWith('+')?'#00e676':'#ff3d4a';
     const rc3 =r.ret3.startsWith('+')?'#00e676':'#ff3d4a';
+    // Step 12: extract first ticker from names for live price hydration
+    const firstTicker = r.names.split(',')[0].trim().replace('Short ','');
     return `<tr>
       <td data-label="Sector" style="font-weight:600;white-space:nowrap">${r.sector}</td>
       <td data-label="12M">${b12}</td><td data-label="3Yr">${b3}</td>
@@ -2600,9 +2772,43 @@ function buildSectorTable() {
       <td data-label="3Yr Return" style="color:${rc3};font-family:var(--mono);font-size:.63rem">${r.ret3}</td>
       <td data-label="Driver" style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec)">${r.driver}</td>
       <td data-label="Risk" style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim)">${r.risk}</td>
-      <td data-label="Names" style="font-family:var(--mono);font-size:.6rem;color:var(--cyan)">${r.names}</td>
+      <td data-label="Names" style="font-family:var(--mono);font-size:.6rem;color:var(--cyan)"
+          data-ticker="${firstTicker}">${r.names}
+        <span class="sector-live-price" id="slp-${firstTicker}"
+          style="display:inline-block;margin-left:.4rem;font-size:.55rem;
+          color:var(--text-dim);letter-spacing:.04em"></span>
+      </td>
     </tr>`;
   }).join('');
+  // Step 12: hydrate live prices 500ms after table builds (non-blocking)
+  setTimeout(hydrateSectorPrices, 500);
+}
+
+/* Step 12 — Sector table live price hydration via /api/market */
+const _sectorPriceCache = {};
+async function hydrateSectorPrices() {
+  const tickers = [...new Set(SECTOR_ROWS.map(r => r.names.split(',')[0].trim().replace('Short ','')))];
+  const results = await Promise.allSettled(
+    tickers.map(sym => {
+      if (_sectorPriceCache[sym] && Date.now() - _sectorPriceCache[sym].ts < 30000)
+        return Promise.resolve({ sym, data: _sectorPriceCache[sym].data });
+      return fetch(`/api/market?symbol=${encodeURIComponent(sym)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if(data && data.price) _sectorPriceCache[sym] = {data, ts:Date.now()}; return {sym, data}; });
+    })
+  );
+  results.forEach(r => {
+    if (r.status !== 'fulfilled' || !r.value?.data?.price) return;
+    const { sym, data } = r.value;
+    const el = document.getElementById(`slp-${sym}`);
+    if (!el) return;
+    const chg  = data.percentChange || 0;
+    const sign = chg >= 0 ? '+' : '';
+    const col  = chg >= 0 ? 'var(--green)' : 'var(--red)';
+    el.innerHTML = `<span style="color:var(--text-sec)">$${data.price.toFixed(2)}</span>` +
+      `<span style="color:${col};margin-left:.2rem">${sign}${chg.toFixed(1)}%</span>` +
+      (data.isEstimated ? `<span style="color:var(--text-dim)"> est</span>` : '');
+  });
 }
 
 /* ═════════════════════════════════════════
@@ -2932,6 +3138,25 @@ let kpiPanelOpen = false;
    Caches result per scenario to avoid repeat calls.
    ─────────────────────────────────────────── */
 async function fetchHeatmapNarrative() {
+  // Pro gate — show inline upsell in the narrative body, don't pop a modal for auto-runs
+  if (!isProUser()) {
+    const tagEl = document.getElementById('narrativeScenarioTag');
+    if (tagEl) tagEl.textContent = scenario.charAt(0).toUpperCase() + scenario.slice(1);
+    const body    = document.getElementById('heatmapNarrativeBody');
+    const loading = document.getElementById('heatmapNarrativeLoading');
+    const errDiv  = document.getElementById('heatmapNarrativeError');
+    if (loading) loading.style.display = 'none';
+    if (errDiv)  errDiv.style.display  = 'none';
+    if (body) {
+      body.style.display = 'block';
+      body.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.5rem 0">' +
+        '<div><strong style="color:var(--text-pri)">🔒 AI Heatmap Narrative is a Pro feature.</strong><br>' +
+        '<span style="font-size:.72rem;color:var(--text-sec)">Get scenario-aware commentary on regional risk.</span></div>' +
+        '<button class="btn" style="background:rgba(179,136,255,.12);border-color:rgba(179,136,255,.4);color:var(--purple);font-weight:600" onclick="showProModal(\'heatmap\')">Unlock with Pro →</button>' +
+        '</div>';
+    }
+    return;
+  }
   const cacheKey = `heatmap_${scenario}`;
 
   // Update scenario tag label
@@ -3005,6 +3230,8 @@ async function fetchHeatmapNarrative() {
    Args: kpiId (string), kpiLabel, kpiValue
    ─────────────────────────────────────────── */
 async function showKPINarrative(kpiId, kpiLabel, kpiValue) {
+  // Pro gate — user clicked a KPI card expecting AI analysis
+  if (!isProUser()) { showProModal('kpi'); return; }
   const cacheKey = `kpi_${kpiId}_${scenario}`;
 
   const panel    = document.getElementById('kpiNarrativePanel');
@@ -3160,6 +3387,8 @@ function mirrorFeedToGeoIntel() {
 }
 
 async function requestGeoIntelBriefing() {
+  // Pro gate — user clicked "Generate briefing" expecting AI output
+  if (!isProUser()) { showProModal('geointel'); return; }
   const panel   = document.getElementById('geointelBriefPanel');
   const loading = document.getElementById('geointelLoading');
   const body    = document.getElementById('geointelBriefBody');
@@ -3285,15 +3514,12 @@ function exportCSV(type) {
   showToast('✓ Intelligence signals CSV downloaded');
 }
 </script>
-
 <!-- FIX 7.3: /index_patches.js removed — file does not exist, was causing 404 on every load -->
-
 <!-- ══════════════════════════════════════════════════════════
      STOCK INSIGHTS POPUP — ported from georisk-intelligence.html
      Triggered by globe country clicks. Shows AI analysis +
      live Finnhub prices for country-relevant stocks.
      ══════════════════════════════════════════════════════════ -->
-
 <div id="stock-backdrop" onclick="closeStockPopup()"></div>
 <div id="stock-popup" role="dialog" aria-modal="true" aria-label="Investor Stock Insights">
   <div class="sp-header">
@@ -3586,6 +3812,49 @@ function _spGetCountryData(countryName) {
   return {};
 }
 </script>
-
+<!-- ═══════════════ PRO PAYWALL MODAL ═══════════════ -->
+<div class="pro-modal-overlay" id="proModalOverlay" onclick="if(event.target===this)closeProModal()" role="dialog" aria-modal="true" aria-labelledby="proModalTitle">
+  <div class="pro-modal">
+    <div class="pro-modal-header">
+      <div class="pro-modal-lock">🔒</div>
+      <div class="pro-modal-title" id="proModalTitle">AI Investor Intelligence</div>
+      <div class="pro-modal-tier">Pro Feature</div>
+    </div>
+    <!-- Primary state: pitch + waitlist form -->
+    <div class="pro-modal-body" id="proModalBody">
+      <p class="pro-modal-desc">
+        Get plain-English AI analysis of how the Iran conflict affects <strong style="color:var(--text-pri)">your specific investments</strong> — from energy stocks to inflation exposure to portfolio hedges.
+      </p>
+      <ul class="pro-modal-benefits">
+        <li>Ask unlimited natural-language questions about the conflict's market impact</li>
+        <li>Click any KPI for a deep-dive AI explanation of what's really happening</li>
+        <li>Real-time AI news summaries of breaking headlines</li>
+        <li>Scenario-aware heatmap narratives tailored to your active outlook</li>
+        <li>Priority access to new investor features as they launch</li>
+      </ul>
+      <form class="pro-modal-form" onsubmit="submitProWaitlist(event)">
+        <input type="email" class="pro-modal-input" id="proModalEmail" required
+          placeholder="your@email.com — join the Pro waitlist" aria-label="Email address" />
+        <button type="submit" class="pro-modal-btn" id="proModalSubmit">
+          Join Pro Waitlist →
+        </button>
+      </form>
+    </div>
+    <!-- Success state: confirmation after email submit -->
+    <div class="pro-modal-body pro-modal-success" id="proModalSuccess">
+      <div class="pro-modal-success-icon">✉</div>
+      <div class="pro-modal-success-text">
+        <strong style="color:var(--text-pri)">You're on the list.</strong><br>
+        We'll reach out to <span id="proModalEmailEcho" style="color:var(--cyan)"></span> the moment Pro launches.
+      </div>
+    </div>
+    <div class="pro-modal-footer">
+      <div class="pro-modal-contact">
+        Questions? <a href="mailto:contact@delaxcom.com">contact@delaxcom.com</a>
+      </div>
+      <button class="pro-modal-later" onclick="closeProModal()">Maybe later</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
