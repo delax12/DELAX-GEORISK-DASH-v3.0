@@ -4900,7 +4900,7 @@ window.addEventListener('resize', eqInitMobileUI);
 /* Fix 3 (mobile) — hook into tab switch to init mobile UI */
 let eqInitialised = false;
 const _origSwitchTab = switchTab;
-function switchTab(id) {
+switchTab = function(id) {
   _origSwitchTab(id);
   if (id === 'tab-equities' && !eqInitialised) {
     eqInitialised = true;
@@ -4910,7 +4910,7 @@ function switchTab(id) {
   if (id === 'tab-equities' && eqCurrentData) {
     eqRenderProjections(eqCurrentData);
   }
-}
+};
 </script>
 <!-- ═══════════════ PRO PAYWALL MODAL ═══════════════ -->
 <div class="pro-modal-overlay" id="proModalOverlay" onclick="if(event.target===this)closeProModal()" role="dialog" aria-modal="true" aria-labelledby="proModalTitle">
