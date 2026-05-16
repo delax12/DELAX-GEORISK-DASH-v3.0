@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "functions": {
+    "api/market-equity.js": { "maxDuration": 30 },
+    "api/market-search.js": { "maxDuration": 15 },
+    "api/analyze.js":       { "maxDuration": 30 },
+    "api/whatif.js":        { "maxDuration": 30 },
+    "api/eia-oil.js":       { "maxDuration": 15 },
+    "api/news.js":          { "maxDuration": 15 }
+  },
+  "rewrites": [
+    { "source": "/georisk-intelligence.html", "destination": "/georisk-intelligence.html" },
+    { "source": "/sw.js",                     "destination": "/sw.js"                     },
+    { "source": "/dashboard-live.js",         "destination": "/dashboard-live.js"         }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*"                  },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type"       }
+      ]
+    }
+  ]
+}
