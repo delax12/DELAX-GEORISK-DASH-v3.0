@@ -1548,11 +1548,11 @@ body.beginner-mode body.beginner-mode
         <!-- Candlestick chart -->
         <div class="eq-chart-box">
           <div class="eq-chart-header">
-            <div class="eq-chart-title" id="eqChartLabel">30-Day Price History</div>
+            <div class="eq-chart-title" id="eqChartLabel">6-Month Price History</div>
             <div class="eq-range-btns">
-              <button class="eq-range-btn active" onclick="eqSetRange(30,this)">1M</button>
-              <button class="eq-range-btn" onclick="eqSetRange(60,this)">2M</button>
-              <button class="eq-range-btn" onclick="eqSetRange(90,this)">3M</button>
+              <button class="eq-range-btn active" onclick="eqSetRange(126,this)">6M</button>
+              <button class="eq-range-btn" onclick="eqSetRange(252,this)">1Y</button>
+              <button class="eq-range-btn" onclick="eqSetRange(756,this)">3Y</button>
             </div>
           </div>
           <canvas id="eq-chart-canvas" width="600" height="240"
@@ -4350,7 +4350,7 @@ function _spGetCountryData(countryName) {
 let eqCurrentSymbol  = null;
 let eqCurrentData    = null;   // last /api/market-equity response
 let eqAllCandles     = [];     // full 90-day candle set
-let eqRangeDays      = 30;
+let eqRangeDays      = 126;
 let eqWatchPrices    = {};     // { sym: { price, percentChange } }
 const EQ_WATCH_META  = [
   { id:'XOM',    name:'ExxonMobil'       },
@@ -4559,6 +4559,16 @@ async function eqLoadTicker(sym) {
 
     eqRenderHeader(data);
     eqRenderStats(data);
+    // Update chart label to reflect actual data received
+    const chartLabelEl = document.getElementById('eqChartLabel');
+    if (chartLabelEl) {
+      const avail   = eqAllCandles.length;
+      const labels  = { 126:'6-Month', 252:'1-Year', 756:'3-Year' };
+      const moLabel = labels[eqRangeDays] || (eqRangeDays + '-Day');
+      chartLabelEl.textContent = avail
+        ? `${moLabel} Price History · ${Math.min(eqRangeDays, avail)} trading days · Alpha Vantage`
+        : 'Chart unavailable for this exchange';
+    }
     eqRenderChart(eqRangeDays);
     eqRenderProjections(data);
     eqUpdateSidebar();
@@ -4588,7 +4598,7 @@ function eqRenderHeader(data) {
 
   if (nameEl) nameEl.textContent = name;
   if (symEl)  symEl.textContent  = data.symbol;
-  if (srcEl)  srcEl.textContent  = q.source || fund.source || 'Finnhub';
+  if (srcEl)  srcEl.textContent  = data.candleSource ? `${data.candleSource} candles · ${q.source || 'Finnhub'} quote` : (q.source || fund.source || 'Finnhub');
   if (priceEl && q.price) priceEl.textContent = `$${q.price.toFixed(2)}`;
 
   if (chgEl && q.percentChange != null) {
@@ -4639,81 +4649,119 @@ function eqRenderChart(days) {
   const canvas = document.getElementById('eq-chart-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  const W   = canvas.width  = canvas.offsetWidth  || 600;
-  const H   = canvas.height = 240;
+  const W   = canvas.width  = canvas.offsetWidth || 600;
+  const H   = canvas.height = 260;
 
-  // Slice to requested range
-  const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
-  if (!candles.length) {
-    ctx.clearRect(0,0,W,H);
+  ctx.clearRect(0, 0, W, H);
+
+  /* ── No data state — clear message with exchange note ── */
+  if (!eqAllCandles || !eqAllCandles.length) {
+    ctx.fillStyle = 'rgba(30,46,74,.3)';
+    ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = '#5a7299';
-    ctx.font = '12px IBM Plex Mono, monospace';
+    ctx.font = 'bold 13px IBM Plex Mono, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('No chart data available', W/2, H/2);
+    ctx.fillText('Chart unavailable for this exchange', W / 2, H / 2 - 12);
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.fillStyle = '#3d5270';
+    ctx.fillText('Alpha Vantage free tier does not cover this symbol's exchange.', W / 2, H / 2 + 10);
+    ctx.fillText('Price and fundamentals above sourced from Finnhub.', W / 2, H / 2 + 26);
     return;
   }
 
-  const pad   = { t:20, r:16, b:32, l:58 };
+  /* ── Slice to requested range ── */
+  const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
+
+  /* ── Layout ── */
+  const pad   = { t: 18, r: 12, b: 38, l: 62 };
   const cW    = W - pad.l - pad.r;
   const cH    = H - pad.t - pad.b;
-  const prices= candles.flatMap(c => [c.high, c.low]);
-  const minP  = Math.min(...prices);
-  const maxP  = Math.max(...prices);
-  const range = maxP - minP || 1;
-  const xStep = cW / candles.length;
 
-  const toX   = i  => pad.l + i * xStep + xStep / 2;
-  const toY   = p  => pad.t + cH - ((p - minP) / range) * cH;
+  /* ── Price range with 5% padding so candles don't touch edges ── */
+  const prices = candles.flatMap(c => [c.high, c.low]).filter(p => isFinite(p));
+  if (!prices.length) return;
+  const rawMin = Math.min(...prices);
+  const rawMax = Math.max(...prices);
+  const pad5   = (rawMax - rawMin) * 0.05 || rawMax * 0.01;
+  const minP   = rawMin - pad5;
+  const maxP   = rawMax + pad5;
+  const range  = maxP - minP || 1;
 
-  ctx.clearRect(0,0,W,H);
+  const xStep = cW / Math.max(candles.length, 1);
+  const toX   = i => pad.l + i * xStep + xStep / 2;
+  const toY   = p => pad.t + cH - ((p - minP) / range) * cH;
 
-  // Grid lines + price labels
-  ctx.strokeStyle = 'rgba(30,46,74,.6)';
+  /* ── Background ── */
+  ctx.fillStyle = 'rgba(8,12,20,.5)';
+  ctx.fillRect(pad.l, pad.t, cW, cH);
+
+  /* ── Horizontal grid lines + Y-axis price labels ── */
+  const gridCount = 5;
+  ctx.strokeStyle = 'rgba(30,46,74,.7)';
   ctx.lineWidth   = 1;
   ctx.fillStyle   = '#5a7299';
   ctx.font        = '10px IBM Plex Mono, monospace';
   ctx.textAlign   = 'right';
-  for (let i = 0; i <= 4; i++) {
-    const p = minP + (range / 4) * i;
+  for (let i = 0; i <= gridCount; i++) {
+    const p = minP + (range / gridCount) * i;
     const y = toY(p);
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y);
-    ctx.stroke();
-    ctx.fillText(`$${p.toFixed(0)}`, pad.l - 4, y + 3);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    ctx.fillText('$' + p.toFixed(p < 10 ? 2 : 0), pad.l - 5, y + 3);
   }
 
-  // Date labels (every ~5 candles)
-  ctx.textAlign  = 'center';
-  ctx.fillStyle  = '#3d5270';
-  ctx.font       = '9px IBM Plex Mono, monospace';
+  /* ── X-axis date labels — smart spacing for any range ── */
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const labelEvery = Math.max(1, Math.ceil(candles.length / 8));
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#3d5270';
+  ctx.font      = '9px IBM Plex Mono, monospace';
+  let lastYear  = null;
   candles.forEach((c, i) => {
-    if (i % Math.max(1, Math.floor(candles.length / 5)) === 0) {
-      const d = new Date(c.time * 1000);
-      ctx.fillText(`${d.getMonth()+1}/${d.getDate()}`, toX(i), H - pad.b + 14);
-    }
+    if (i % labelEvery !== 0 && i !== candles.length - 1) return;
+    const d    = new Date(c.time * 1000);
+    const mo   = MONTHS[d.getMonth()];
+    const yr   = d.getFullYear();
+    // Show year when it changes — avoids repeating "2024 2024 2024"
+    const label = (yr !== lastYear) ? `${mo} '${String(yr).slice(2)}` : mo;
+    lastYear    = yr;
+    ctx.fillText(label, toX(i), H - pad.b + 13);
+    // Vertical tick mark
+    ctx.strokeStyle = 'rgba(30,46,74,.5)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(toX(i), H - pad.b);
+    ctx.lineTo(toX(i), H - pad.b + 4);
+    ctx.stroke();
   });
 
-  // Volume bars (faint, in lower 20% of chart)
+  /* ── Volume bars — bottom 15% of chart area ── */
+  const volH   = cH * 0.15;
+  const volBase= pad.t + cH;
   const maxVol = Math.max(...candles.map(c => c.volume || 0));
   if (maxVol > 0) {
     candles.forEach((c, i) => {
-      const barH  = ((c.volume || 0) / maxVol) * (cH * 0.18);
-      const isUp  = c.close >= c.open;
-      ctx.fillStyle = isUp ? 'rgba(0,230,118,.15)' : 'rgba(255,61,74,.15)';
-      ctx.fillRect(toX(i) - xStep * 0.35, H - pad.b - barH, xStep * 0.7, barH);
+      const bH   = ((c.volume || 0) / maxVol) * volH;
+      const isUp = c.close >= c.open;
+      ctx.fillStyle = isUp ? 'rgba(0,230,118,.18)' : 'rgba(255,61,74,.18)';
+      const bW   = Math.max(xStep * 0.7, 1);
+      ctx.fillRect(toX(i) - bW / 2, volBase - bH, bW, bH);
     });
   }
 
-  // Candles
+  /* ── Candlesticks — adaptive width for large datasets ── */
+  /* For 3Y (756 candles) individual candle bodies become 1px lines —
+     the close-price area fill below provides readability at that scale */
+  const bodyW = Math.max(xStep * 0.65, 1);
   candles.forEach((c, i) => {
-    const isUp  = c.close >= c.open;
-    const col   = isUp ? '#00e676' : '#ff3d4a';
-    const x     = toX(i);
-    const oY    = toY(c.open);
-    const cY    = toY(c.close);
-    const hY    = toY(c.high);
-    const lY    = toY(c.low);
+    const isUp = c.close >= c.open;
+    const col  = isUp ? '#00e676' : '#ff3d4a';
+    const x    = toX(i);
+    const oY   = toY(c.open);
+    const cY   = toY(c.close);
+    const hY   = toY(c.high);
+    const lY   = toY(c.low);
 
-    // Wick
+    // Wick — always 1px
     ctx.strokeStyle = col;
     ctx.lineWidth   = 1;
     ctx.beginPath(); ctx.moveTo(x, hY); ctx.lineTo(x, lY); ctx.stroke();
@@ -4722,11 +4770,26 @@ function eqRenderChart(days) {
     ctx.fillStyle = col;
     const bodyTop = Math.min(oY, cY);
     const bodyH   = Math.max(Math.abs(oY - cY), 1);
-    ctx.fillRect(x - xStep * 0.35, bodyTop, xStep * 0.7, bodyH);
+    ctx.fillRect(x - bodyW / 2, bodyTop, bodyW, bodyH);
   });
 
-  // Close-price trend line (subtle overlay)
-  ctx.strokeStyle = 'rgba(0,212,255,.35)';
+  /* ── Close-price area fill — especially readable for 1Y/3Y ── */
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + cH);
+  grad.addColorStop(0, 'rgba(0,212,255,.22)');
+  grad.addColorStop(1, 'rgba(0,212,255,0)');
+  ctx.beginPath();
+  candles.forEach((c, i) => {
+    if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+    else         ctx.lineTo(toX(i), toY(c.close));
+  });
+  ctx.lineTo(toX(candles.length - 1), pad.t + cH);
+  ctx.lineTo(toX(0), pad.t + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  /* ── Close-price line on top ── */
+  ctx.strokeStyle = 'rgba(0,212,255,.7)';
   ctx.lineWidth   = 1.5;
   ctx.lineJoin    = 'round';
   ctx.beginPath();
@@ -4735,14 +4798,34 @@ function eqRenderChart(days) {
     else         ctx.lineTo(toX(i), toY(c.close));
   });
   ctx.stroke();
+
+  /* ── Latest price label pinned to right edge ── */
+  if (candles.length) {
+    const last  = candles[candles.length - 1];
+    const lx    = toX(candles.length - 1);
+    const ly    = toY(last.close);
+    const isUp  = last.close >= candles[candles.length - 2]?.close;
+    ctx.fillStyle   = isUp ? '#00e676' : '#ff3d4a';
+    ctx.font        = 'bold 10px IBM Plex Mono, monospace';
+    ctx.textAlign   = 'left';
+    ctx.fillText('$' + last.close.toFixed(2), Math.min(lx + 4, W - 55), ly + 3);
+  }
 }
 
 function eqSetRange(days, btn) {
   eqRangeDays = days;
   document.querySelectorAll('.eq-range-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  const label = document.getElementById('eqChartLabel');
-  if (label) label.textContent = `${days === 30 ? '30' : days === 60 ? '60' : '90'}-Day Price History`;
+  const labels = { 126: '6-Month', 252: '1-Year', 756: '3-Year' };
+  const label  = document.getElementById('eqChartLabel');
+  const avail  = eqAllCandles.length;
+  const actual = Math.min(days, avail);
+  const moLabel = labels[days] || (days + '-Day');
+  if (label) {
+    label.textContent = avail
+      ? `${moLabel} Price History · ${actual} trading days · Alpha Vantage`
+      : 'Chart unavailable for this exchange';
+  }
   eqRenderChart(days);
 }
 
