@@ -2380,7 +2380,7 @@ function updateKpiTimestamps(oilOverride) {
   });
 }
 
-function switchTab(id, event) {
+function switchTabBase(id, event) {
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el=>{
     el.classList.remove('active');
@@ -4925,9 +4925,8 @@ window.addEventListener('resize', eqInitMobileUI);
 
 /* Fix 3 (mobile) — hook into tab switch to init mobile UI */
 let eqInitialised = false;
-const _origSwitchTab = switchTab;
 function switchTab(id, event) {
-  _origSwitchTab(id, event);
+  switchTabBase(id, event);
   if (id === 'tab-equities' && !eqInitialised) {
     eqInitialised = true;
     eqUpdateSidebar();
