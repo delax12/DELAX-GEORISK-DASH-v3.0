@@ -2387,10 +2387,10 @@ function switchTab(id, event) {
     el.setAttribute('aria-selected','false');
   });
   document.getElementById(id).classList.add('active');
-  const target = event?.target || document.activeElement;
-  if (target && target.classList && target.classList.contains('tab-btn')) {
-    target.classList.add('active');
-    target.setAttribute('aria-selected','true');
+  const btn = event?.target?.closest?.('.tab-btn') || document.querySelector(`.tab-btn[data-tab="${id}"]`);
+  if (btn) {
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected','true');
   }
   setTimeout(()=>Object.values(allCharts).forEach(c=>{try{c.resize()}catch(e){}}),120);
   if (id==='tab-continental') setTimeout(initContCharts, 180);
