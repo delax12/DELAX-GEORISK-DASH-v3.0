@@ -387,7 +387,7 @@ body::before {
 .cd-chart { height: 80px; }
 
 .cd-insights {
-  padding: 10px 12px; flex: 1;
+  padding: 10px 12px; flex: 1; min-height: 250px; overflow-y: auto;
 }
 .cd-insight-item {
   padding: 6px 0; border-bottom: 1px solid var(--border);
@@ -1211,7 +1211,7 @@ input  { cursor: pointer; }
       </div>
       <div class="ai-insight" style="margin:0;font-size:7px">
         <strong>MODEL ACTIVE</strong>
-        Simulating contagion from Iran conflict across 60 countries using trade-finance-energy coupling.
+        <span id="shock-msg-dynamic">Monitoring geopolitical & market stress propagation across 60 countries…</span>
       </div>
       <div id="shock-scenario-label">⚡ BASE SCENARIO</div>
     </div>
@@ -1534,7 +1534,7 @@ function updateTicker() {
     const pct = (Math.abs(delta)/t.prev*100).toFixed(2);
     const dir = Math.abs(delta) < 0.001 ? 'flat' : delta>0?'up':'dn';
     const arrow = dir==='up'?'▲':dir==='dn'?'▼':'—';
-    const pfx = t.unit.startsWith('$')?t.unit:'';
+    const pfx = t.unit.startsWith('$')?t.unit+' ':'';
     const sfx = !t.unit.startsWith('$')&&t.unit?' '+t.unit:'';
     const dispPrice = t.price>1000 ? t.price.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0}) :
                       t.price>10   ? t.price.toFixed(2) : t.price.toFixed(3);
@@ -1610,6 +1610,39 @@ function buildShockImpactList() {
       <span class="shock-impact-val" style="color:${color}">${item.impact.toFixed(1)}</span>
     </div>`;
   }).join('');
+}
+
+/* Update shock engine message with dynamic GDELT + market alerts */
+function updateShockEngineMessage() {
+  const msgEl = document.getElementById('shock-msg-dynamic');
+  if (!msgEl) return;
+  
+  const alerts = [];
+  
+  /* Collect GDELT geopolitical events */
+  if (gdeltData && gdeltData.length > 0) {
+    const topEvent = gdeltData[0]?.name || gdeltData[0];
+    if (topEvent) alerts.push(topEvent);
+  }
+  
+  /* Collect market stress signals from ticker data */
+  const brent = tickerData.find(t => t.id === 'BRENT');
+  const vix = tickerData.find(t => t.id === 'VIX');
+  const emcs = tickerData.find(t => t.id === 'EMCS');
+  
+  if (brent && brent.price > 120) alerts.push(`Oil spike to $${brent.price.toFixed(0)}`);
+  if (vix && vix.price > 28) alerts.push(`VIX stress ${vix.price.toFixed(1)}`);
+  if (emcs && emcs.price > 350) alerts.push(`EM spreads +${Math.round(emcs.price)}bp`);
+  
+  /* Fallback message if no live data */
+  if (alerts.length === 0) {
+    alerts.push('Monitoring geopolitical & market stress propagation');
+  }
+  
+  /* Rotate through alerts, cycling every 8 seconds */
+  const msgIndex = Math.floor(Date.now() / 8000) % alerts.length;
+  const horizonLabel = timeHorizon > 0 ? ` (${timeHorizon}M outlook)` : ' (live)';
+  msgEl.textContent = alerts[msgIndex] + horizonLabel;
 }
 
 /* ═══════════════════════════════════════
@@ -1966,6 +1999,7 @@ async function fetchGDELTRings() {
     ];
     if (activeLayer === 'gdelt' && globeInstance) applyGDELTLayer();
   }
+  updateShockEngineMessage();
 }
 
 function applyGDELTLayer() {
@@ -2045,6 +2079,8 @@ function setLayer(layer, el) {
     if (layer === 'climate') return stressColor(climateScore(name));
     return stressColor(getCountryStress(name));
   });
+  
+  updateShockEngineMessage();
 }
 
 function setScenario(sc, el) {
@@ -2063,6 +2099,7 @@ function setScenario(sc, el) {
     de:   '🟢 DE-ESCALATION: Ceasefire signals emerging · Oil retreat to $95 expected · Supply chains normalizing · Risk-on rotation anticipated',
   };
   document.getElementById('alertScrollText').textContent = texts[sc];
+  updateShockEngineMessage();
 }
 
 function flyToChokepoint(key) {
@@ -2911,6 +2948,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Rebuild shock list every 15 seconds
   setInterval(buildShockImpactList, 15000);
+
+  // Update shock engine message every 8 seconds (rotate through GDELT/market alerts)
+  updateShockEngineMessage();
+  setInterval(updateShockEngineMessage, 8000);
 
   // Set initial active layer
   setLayer('macro', document.querySelector('.layer-btn.macro'));
