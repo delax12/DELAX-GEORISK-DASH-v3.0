@@ -19,7 +19,7 @@ const DashboardLive = {
     marketEndpoint: '/api/market',
     newsEndpoint:   '/api/news',
     refreshRate:     30000,   // 30 s — stock prices
-    newsRefreshRate: 120000,  // 2 min — news RSS
+    newsRefreshRate: 480000,  // 8 min — Fix 1.4: was 120000 (2min = ~720 req/day, blows free quota of 100)
     // FIX 7.2: IDs must exactly match TICKER_SEEDS ids in index.html.
     // Previous list had SPY/WTI/VIX/NG — none exist in TICKER_SEEDS.
     // findIndex() returned -1 for all four → prices fetched then silently discarded.

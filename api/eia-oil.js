@@ -30,6 +30,7 @@ module.exports = async function handler(req, res) {
   const apiKey = process.env.EIA_API_KEY;
 
   if (!apiKey) {
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(500).json({
       error: 'EIA_API_KEY environment variable is not set.',
       fix:   'Vercel Dashboard → Your Project → Settings → Environment Variables → Add EIA_API_KEY',
@@ -39,7 +40,7 @@ module.exports = async function handler(req, res) {
 
   /**
    * EIA v2 API — Petroleum Spot Prices
-   * Series : RBRTE = Europe Brent Spot Price FOB (Dollars per Barrel, daily)
+   * Series : RWTC = Cushing, OK WTI Spot Price FOB (Dollars per Barrel, daily)
    * Docs   : https://www.eia.gov/opendata/browser/petroleum/pri/spt
    */
   const EIA_URL =
@@ -47,7 +48,7 @@ module.exports = async function handler(req, res) {
     '?api_key=' + encodeURIComponent(apiKey) +
     '&frequency=daily' +
     '&data[0]=value' +
-    '&facets[series][]=RBRTE' +
+    '&facets[series][]=RWTC' +
     '&sort[0][column]=period' +
     '&sort[0][direction]=desc' +
     '&length=30';   // last 30 trading days for trend + sparkline
@@ -59,6 +60,7 @@ module.exports = async function handler(req, res) {
 
     if (!upstream.ok) {
       const body = await upstream.text();
+      res.setHeader('Cache-Control', 'no-store');
       return res.status(upstream.status).json({
         error:  'EIA API returned an error',
         status: upstream.status,
@@ -70,6 +72,7 @@ module.exports = async function handler(req, res) {
     const rows = json && json.response && json.response.data;
 
     if (!rows || rows.length === 0) {
+      res.setHeader('Cache-Control', 'no-store');
       return res.status(502).json({ error: 'EIA returned an empty dataset' });
     }
 
@@ -78,6 +81,7 @@ module.exports = async function handler(req, res) {
     const price  = parseFloat(latest.value);
 
     if (isNaN(price)) {
+      res.setHeader('Cache-Control', 'no-store');
       return res.status(502).json({
         error: 'EIA price value is not a number',
         raw:   latest
@@ -99,8 +103,8 @@ module.exports = async function handler(req, res) {
     const payload = {
       price:      price,
       date:       latest.period,               // "YYYY-MM-DD"
-      series:     'RBRTE',
-      seriesName: 'Europe Brent Spot Price FOB',
+      series:     'RWTC',
+      seriesName: 'WTI Cushing Spot Price FOB',
       unit:       'Dollars per Barrel',
       trend7d:    trend7d,                     // positive = rising, negative = falling
       history:    history,                     // [{date, price}, ...] newest first
@@ -114,6 +118,7 @@ module.exports = async function handler(req, res) {
 
   } catch (err) {
     console.error('[eia-oil] fetch error:', err.message);
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(500).json({
       error:  'Upstream fetch to EIA failed',
       detail: err.message

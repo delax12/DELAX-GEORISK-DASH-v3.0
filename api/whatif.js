@@ -56,31 +56,32 @@ module.exports = async function handler(req, res) {
     ? newsHeadlines.slice(0, 5).map((h, i) => `${i + 1}. ${h}`).join('\n')
     : 'No live headlines — reasoning from model priors.';
 
-  const prompt = `You are DELAX GEO-RISK, an elite geopolitical financial analyst for an investor dashboard.
+  const prompt = `You are a senior investment advisor on the DELAX GEO-RISK platform. A client is asking about the Iran war and its impact on their investments. Speak directly to them in plain, confident English — like a trusted advisor giving a clear briefing, not a financial terminal spitting out jargon.
 
-LIVE DASHBOARD STATE:
-- Scenario: ${scenarioDesc}
-- Brent Crude: $${oilPrice}/bbl (${liveDate})
-- Global CPI Add (Yr1): ${cpi}
-- Global GDP Impact: ${gdp}
-- Shipping Index: ${shipping}
-- Pre-conflict oil anchor: $78/bbl
-- Strait of Hormuz: 20% of global oil at risk
+CURRENT MARKET CONTEXT:
+- Active scenario: ${scenarioDesc}
+- WTI Crude today: $${oilPrice}/bbl (as of ${liveDate}, pre-conflict was $78/bbl)
+- Inflation impact year 1: ${cpi}
+- Global GDP impact year 1: ${gdp}
+- Shipping costs: ${shipping} above normal
+- Key chokepoint: Strait of Hormuz carries 20% of the world\'s oil
 
-RECENT NEWS:
+RECENT HEADLINES:
 ${headlines}
 
-USER QUESTION: "${query}"
+CLIENT QUESTION: "${query}"
 
-Respond with exactly 5 sections using **bold labels**:
+Answer in exactly 4 sections. Write in plain English — no jargon, no acronym soup. Every number must be concrete and meaningful to a real investor.
 
-**SCENARIO ASSESSMENT:** What the query implies and which scenario (Baseline/Optimistic/Pessimistic) it maps to. 2-3 sentences.
-**MARKET IMPACT:** 3-4 bullet points with specific price/index effects and ranges (e.g. "Oil: $165-$195/bbl").
-**INVESTOR ACTION:** 2-3 bullet points with concrete buy/avoid/hedge recommendations and specific tickers.
-**KEY RISK:** The single biggest uncertainty in this scenario. 1 sentence.
-**CONFIDENCE:** Low/Medium/High with one-line rationale.
+**What This Means:** In 2-3 plain sentences, explain what the client is really asking and which direction this pushes the outlook — better, worse, or unchanged from the current scenario.
 
-Maximum 280 words. Sharp, data-driven, specific numbers. No preamble.`;
+**Impact on Markets:** 3-4 bullet points. For each, state the asset, the likely price move with a range, and one sentence on why. Example: "Oil could rise to $165–$195/bbl because a Hormuz closure removes 20% of global supply overnight."
+
+**What You Should Consider:** 2-3 bullet points with specific, actionable ideas — which sectors or ETFs benefit, which to reduce, and one hedge worth knowing about. Name real tickers where relevant (XOM, LMT, GLD, TLT, etc.).
+
+**The One Thing That Could Change Everything:** One sentence. The single biggest unknown that would flip this analysis.
+
+Keep it under 300 words. Be direct. Investors are busy and need clarity, not complexity.`;
 
   /* ── Route to correct provider ── */
   let result;
@@ -113,7 +114,7 @@ Maximum 280 words. Sharp, data-driven, specific numbers. No preamble.`;
 
 async function callGemini(apiKey, prompt, maxTokens) {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`;
     const r = await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -126,7 +127,7 @@ async function callGemini(apiKey, prompt, maxTokens) {
     if (!r.ok) return { error: body?.error?.message || `Gemini HTTP ${r.status}`, status: r.status };
     const text = body?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     if (!text) return { error: 'Gemini returned empty content', status: 502 };
-    return { text, model: 'gemini-1.5-flash' };
+    return { text, model: 'gemini-2.5-flash-preview-04-17' };
   } catch (err) {
     return { error: `Gemini network error: ${err.message}`, status: 500 };
   }

@@ -106,8 +106,10 @@ module.exports = async function handler(req, res) {
     const sources = [...new Set(deduped.map(i => i.source).filter(Boolean))].slice(0, 6);
     const news    = deduped.map(({ _score, ...item }) => item); // strip internal score
 
-    /* Only cache successful responses */
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
+    /* Cache successful responses for 5 min — protects NewsAPI 100 req/day free quota.
+       At 5-min CDN cache: fetchNewsArticles (20-min poll) + DashboardLive (8-min poll)
+       = at most ~12 real NewsAPI calls/day per edge node. Well within free tier. */
+    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
 
     return res.status(200).json({
       news,

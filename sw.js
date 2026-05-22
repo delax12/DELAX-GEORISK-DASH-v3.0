@@ -6,13 +6,13 @@
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v2.3';
+const CACHE_NAME  = 'delax-georisk-v2.4'; // bumped — globe.gl removed Fix 2.1
 const CACHE_URLS  = [
   '/',
   '/index.html',
   '/dashboard-live.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
-  'https://cdn.jsdelivr.net/npm/globe.gl@2.30.0/dist/globe.gl.min.js',
+  // globe.gl removed — Fix 2.1 (saves 820KB from precache)
 ];
 
 /* Install — pre-cache critical assets */

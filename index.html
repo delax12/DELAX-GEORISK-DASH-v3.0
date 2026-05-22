@@ -14,7 +14,7 @@
 <!-- Live Data Controller — Yahoo Finance prices + RSS geopolitical news feed -->
 <script src="/dashboard-live.js" defer></script>
 <!-- Globe.gl — 3D interactive globe (spinnable, zoomable, country labels) -->
-<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.30.0/dist/globe.gl.min.js"></script>
+<!-- globe.gl removed — Fix 2.1 -->
 <!-- html2pdf for export -->
 <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
 <!-- Google Fonts -->
@@ -84,12 +84,6 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .refresh-btn:disabled{opacity:.5;pointer-events:none}
 
 /* TICKER STRIP — sticky below header so it stays visible while scrolling */
-.ticker-strip{background:var(--bg-card);border-bottom:1px solid var(--border-dim);overflow:hidden;height:32px;display:flex;align-items:center;position:sticky;top:60px;z-index:199;}
-.ticker-strip::before,.ticker-strip::after{content:'';position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none}
-.ticker-strip::before{left:0;background:linear-gradient(90deg,var(--bg-card),transparent)}
-.ticker-strip::after{right:0;background:linear-gradient(270deg,var(--bg-card),transparent)}
-.ticker-track{display:flex;align-items:center;animation:tickerScroll 40s linear infinite;white-space:nowrap;padding-left:100%}
-.ticker-track:hover{animation-play-state:paused}
 @keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 .ticker-item{display:inline-flex;align-items:center;gap:.5rem;padding:0 1.5rem;border-right:1px solid var(--border-dim);font-family:var(--mono);font-size:.62rem;letter-spacing:.05em}
 .ticker-symbol{color:var(--text-sec);font-weight:600}
@@ -119,8 +113,8 @@ main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 
 .mode-badge.expert{background:rgba(179,136,255,.1);border-color:var(--purple);color:var(--purple)}
 
 /* KPI GRID */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--border-dim);border:1px solid var(--border-dim);margin-bottom:1.25rem}
-.kpi-card{background:var(--bg-card);padding:1.1rem 1.25rem;transition:background .2s;position:relative;overflow:hidden}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border-dim);border:1px solid var(--border-dim);margin-bottom:1.25rem}/* Fix 2.6: 4-wide */@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:500px){.kpi-grid{grid-template-columns:1fr 1fr}}
+.kpi-card{background:var(--bg-card);padding:1.6rem 1.5rem 1.4rem;transition:background .2s;position:relative;overflow:hidden}
 .kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
 .kpi-card.up::after{background:linear-gradient(90deg,var(--red),transparent)}
 .kpi-card.down::after{background:linear-gradient(90deg,var(--green),transparent)}
@@ -128,7 +122,7 @@ main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 
 .kpi-card.info::after{background:linear-gradient(90deg,var(--cyan),transparent)}
 .kpi-card:hover{background:var(--bg-panel)}
 .kpi-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-sec);margin-bottom:.45rem;display:flex;align-items:center;gap:.4rem}
-.kpi-value{font-family:var(--display);font-size:2rem;line-height:1;letter-spacing:.03em;margin-bottom:.3rem}
+.kpi-value{font-family:var(--display);font-size:2.2rem;line-height:1;letter-spacing:.03em;margin-bottom:.3rem}
 .kpi-card.up .kpi-value{color:var(--red)}
 .kpi-card.down .kpi-value{color:var(--green)}
 .kpi-card.warn .kpi-value{color:var(--amber)}
@@ -152,9 +146,11 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 
 /* TABS */
 /* TABS — sticky right above Global News banner */
-.tabs-wrapper{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:0;overflow-x:auto;
-  position:sticky;top:92px;z-index:197;
-  background:var(--bg-deep);backdrop-filter:blur(12px);}
+.tabs-wrapper{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:0;overflow-x:auto;
+  position:sticky;top:60px;z-index:197;/* Fix 2.4: was top:92px — ticker removed */
+  background:rgba(8,12,20,.98);backdrop-filter:blur(16px);
+  box-shadow:0 4px 24px rgba(0,0,0,.5);transition:box-shadow .2s,border-bottom-color .2s;}
+.tabs-wrapper.is-sticky{border-bottom-color:var(--amber);box-shadow:0 4px 32px rgba(0,0,0,.7);}
 .tab-btn{background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-sec);font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1.1rem;cursor:pointer;transition:all .2s;white-space:nowrap}
 .tab-btn:hover{color:var(--text-pri)}
 .tab-btn.active{color:var(--amber);border-bottom-color:var(--amber)}
@@ -201,7 +197,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 /* EXEC SUMMARY */
 .exec-card{background:var(--bg-card);border:1px solid var(--border-dim);border-left:3px solid var(--amber);padding:1.4rem;margin-bottom:1.1rem}
 .exec-card h3{font-family:var(--display);font-size:1.25rem;letter-spacing:.06em;color:var(--amber);margin-bottom:.65rem}
-.exec-card p{color:var(--text-sec);font-size:.84rem;line-height:1.7;margin-bottom:.7rem}
+.exec-card p{color:#c8d4e8;font-size:.84rem;line-height:1.7;margin-bottom:.7rem}
 .exec-card p:last-child{margin-bottom:0}
 .exec-card strong{color:var(--text-pri)}
 
@@ -229,6 +225,59 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 /* ═══ SCENARIO BUILDER DRAWER ═══ */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;opacity:0;pointer-events:none;transition:opacity .3s}
 .drawer-overlay.open{opacity:1;pointer-events:all}
+
+/* ══ PRO PAYWALL MODAL — gates AI features for Free tier users ══ */
+.pro-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);
+  z-index:900;display:none;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .25s}
+.pro-modal-overlay.open{display:flex;opacity:1}
+.pro-modal{background:var(--bg-card);border:1px solid var(--border);border-top:3px solid var(--purple);
+  border-radius:4px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.7);
+  transform:scale(.95);transition:transform .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.pro-modal-overlay.open .pro-modal{transform:scale(1)}
+.pro-modal-header{padding:1.5rem 1.75rem 1rem;text-align:center;border-bottom:1px solid var(--border-dim);
+  background:linear-gradient(180deg,rgba(179,136,255,.08),transparent)}
+.pro-modal-lock{font-size:2rem;margin-bottom:.5rem;filter:drop-shadow(0 0 12px rgba(179,136,255,.5))}
+.pro-modal-title{font-family:var(--display);font-size:1.35rem;letter-spacing:.04em;color:var(--text-pri);margin-bottom:.35rem}
+.pro-modal-tier{display:inline-block;font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--purple);background:rgba(179,136,255,.12);
+  border:1px solid rgba(179,136,255,.3);padding:.22rem .7rem;border-radius:2px}
+.pro-modal-body{padding:1.25rem 1.75rem}
+.pro-modal-desc{font-family:var(--sans);font-size:.85rem;color:#c8d4e8;line-height:1.65;margin-bottom:1rem;text-align:center}
+.pro-modal-benefits{list-style:none;padding:0;margin:0 0 1.1rem}
+.pro-modal-benefits li{font-family:var(--sans);font-size:.78rem;color:var(--text-sec);
+  padding:.42rem 0;display:flex;align-items:flex-start;gap:.6rem;line-height:1.55}
+.pro-modal-benefits li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:.05rem}
+.pro-modal-form{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.5rem}
+.pro-modal-input{background:var(--bg-deep);border:1px solid var(--border);color:var(--text-pri);
+  font-family:var(--sans);font-size:.82rem;padding:.65rem .85rem;border-radius:2px;outline:none;
+  transition:border-color .15s;width:100%}
+.pro-modal-input:focus{border-color:var(--purple)}
+.pro-modal-input::placeholder{color:var(--text-dim)}
+.pro-modal-btn{font-family:var(--display);font-size:.82rem;letter-spacing:.08em;
+  background:linear-gradient(135deg,var(--purple),#8b5cf6);color:#fff;border:none;padding:.8rem 1rem;
+  border-radius:2px;cursor:pointer;transition:transform .15s,box-shadow .15s;width:100%;font-weight:600}
+.pro-modal-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(179,136,255,.4)}
+.pro-modal-btn:disabled{opacity:.5;cursor:wait;transform:none}
+.pro-modal-footer{padding:.85rem 1.75rem 1.25rem;border-top:1px solid var(--border-dim);
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.pro-modal-contact{font-family:var(--mono);font-size:.6rem;color:var(--text-dim);letter-spacing:.04em}
+.pro-modal-contact a{color:var(--cyan);text-decoration:none}
+.pro-modal-contact a:hover{text-decoration:underline}
+.pro-modal-later{background:transparent;border:1px solid var(--border-dim);color:var(--text-sec);
+  font-family:var(--mono);font-size:.6rem;padding:.4rem .8rem;border-radius:2px;cursor:pointer;
+  letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.pro-modal-later:hover{color:var(--text-pri);border-color:var(--text-sec)}
+.pro-modal-success{display:none;text-align:center;padding:1rem 0}
+.pro-modal-success.show{display:block}
+.pro-modal-success-icon{font-size:2rem;margin-bottom:.6rem}
+.pro-modal-success-text{font-family:var(--sans);font-size:.85rem;color:#c8d4e8;line-height:1.6}
+
+/* Pro lock badge overlay on gated elements (visible on hover) */
+.pro-lock-hint{position:absolute;top:.5rem;right:.5rem;font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.1em;color:var(--purple);background:rgba(179,136,255,.12);
+  border:1px solid rgba(179,136,255,.3);padding:.2rem .5rem;border-radius:2px;pointer-events:none;
+  z-index:3;opacity:.75;transition:opacity .2s}
+.kpi-card:hover .pro-lock-hint{opacity:1}
 .drawer{position:fixed;top:0;right:0;width:380px;max-width:95vw;height:100vh;background:var(--bg-card);border-left:1px solid var(--border);z-index:401;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
 .drawer.open{transform:translateX(0)}
 .drawer-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-dim);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-card);z-index:1}
@@ -301,7 +350,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 .narrative-header-left{display:flex;align-items:center;gap:.6rem}
 .narrative-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:var(--purple)}
 .narrative-scenario{font-family:var(--mono);font-size:.55rem;color:var(--text-dim)}
-.narrative-body{padding:1rem 1.1rem;font-family:var(--sans);font-size:.78rem;line-height:1.75;color:var(--text-sec)}
+.narrative-body{padding:1rem 1.1rem;font-family:var(--sans);font-size:.78rem;line-height:1.75;color:#c8d4e8}
 .narrative-loading{display:flex;align-items:center;gap:.6rem;padding:1rem 1.1rem;font-family:var(--mono);font-size:.62rem;color:var(--purple)}
 .narrative-pulse{width:8px;height:8px;border-radius:50%;background:var(--purple);animation:pulse 1.4s infinite;flex-shrink:0}
 .narrative-error{padding:.85rem 1.1rem;font-family:var(--mono);font-size:.62rem;color:var(--red)}
@@ -325,7 +374,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 .kpi-panel-close:hover{border-color:var(--red);color:var(--red)}
 .kpi-panel-body{padding:1.1rem 1.25rem;font-family:var(--sans);font-size:.82rem;
-  line-height:1.8;color:var(--text-sec);max-width:900px}
+  line-height:1.8;color:#c8d4e8;max-width:900px}
 .kpi-panel-body strong{color:var(--text-pri)}
 .kpi-panel-loading{display:flex;align-items:center;gap:.6rem;padding:1.1rem 1.25rem;
   font-family:var(--mono);font-size:.62rem;color:var(--cyan)}
@@ -336,20 +385,14 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 .kpi-card.clickable{cursor:pointer}
 .kpi-card.clickable:hover{background:var(--bg-panel)}
 .kpi-card.clickable:hover .kpi-value{text-shadow:0 0 20px currentColor}
+.kpi-ts{font-family:var(--mono);font-size:.5rem;color:var(--text-dim);letter-spacing:.06em;
+  margin-top:.25rem;opacity:.6}
 .kpi-click-hint{font-family:var(--mono);font-size:.52rem;color:var(--text-dim);
   margin-top:.4rem;letter-spacing:.08em;display:flex;align-items:center;gap:.3rem;
   opacity:.7;transition:opacity .2s}
 .kpi-card:hover .kpi-click-hint{opacity:1}
 
 /* GLOBE LEGEND SIDEBAR */
-.legend-entry{display:flex;align-items:flex-start;gap:.55rem;padding:.4rem 0;border-bottom:1px solid var(--border-dim)}
-.legend-entry:last-of-type{border-bottom:none}
-.legend-dot{width:12px;height:12px;border-radius:50%;background:var(--lc);border:1px solid rgba(255,255,255,.15);flex-shrink:0;margin-top:.15rem}
-.legend-text{flex:1}
-.legend-score{font-family:var(--mono);font-size:.58rem;color:var(--amber);font-weight:600;letter-spacing:.04em}
-.legend-label{font-family:var(--mono);font-size:.6rem;color:var(--text-pri);margin:.1rem 0}
-.legend-desc{font-family:var(--sans);font-size:.62rem;color:var(--text-dim);line-height:1.5}
-@media(max-width:768px){#globeLegend{display:none}}
 
 /* GEO INTELLIGENCE TAB — conflict timeline */
 .timeline-phase{display:flex;align-items:flex-start;gap:1rem;margin-bottom:1.4rem;position:relative}
@@ -360,24 +403,9 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   font-weight:600;margin-bottom:.25rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 .tl-period{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.06em}
 .tl-desc{font-family:var(--sans);font-size:.75rem;color:var(--text-sec);line-height:1.65}
-#worldMap{height:500px;background:#010a18;border-radius:2px;overflow:hidden;cursor:grab;position:relative}
-#worldMap:active{cursor:grabbing}
-#globeControls{position:absolute;top:.75rem;right:.75rem;z-index:10;display:flex;flex-direction:column;gap:.4rem}
-.globe-btn{background:rgba(13,21,37,.85);border:1px solid #1e3055;color:#7a91b3;font-family:'IBM Plex Mono',monospace;font-size:.58rem;padding:.35rem .6rem;border-radius:2px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:all .2s;backdrop-filter:blur(4px)}
-.globe-btn:hover{border-color:var(--amber);color:var(--amber)}
-.globe-btn.active{border-color:var(--green);color:var(--green);background:rgba(0,230,118,.1)}
 
 /* KPI BOTTOM BAR — scrolls with page, sits right above footer */
-.kpi-bottom-bar{
-  background:var(--bg-deep);
-  border-top:2px solid var(--border);
-  box-shadow:0 -2px 16px rgba(0,0,0,.3);
-}
-.kpi-bottom-bar .kpi-value{font-size:1.5rem}
-.kpi-bottom-bar .kpi-plain{display:none}
-body.beginner-mode .kpi-bottom-bar .kpi-plain{display:block;font-size:.65rem}
-body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
-
+body.beginner-mode body.beginner-mode 
 /* FOOTER */
 .footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.25rem;margin-top:2.5rem;font-family:var(--mono);font-size:.58rem;color:var(--text-dim);text-align:center;letter-spacing:.08em;line-height:1.8}
 .footer strong{color:var(--text-sec)}
@@ -397,8 +425,7 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
   .header{padding:0 .75rem;height:auto;padding-top:.5rem;padding-bottom:.5rem}
   .subtitle{display:none}
   /* On mobile the header is shorter (~50px) since subtitle is hidden */
-  .ticker-strip{top:50px}
-  main{padding:1rem .75rem 3rem}
+    main{padding:1rem .75rem 3rem}
   .kpi-value{font-size:1.75rem}
   .drawer{width:100%}
 }
@@ -450,11 +477,185 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
   background:rgba(179,136,255,.08);border-left:3px solid var(--purple);border-radius:2px;
   font-size:9px;color:var(--text-sec);line-height:1.7}
 .sp-ai-insight strong{color:var(--purple);font-size:10px;font-weight:700;display:block;margin-bottom:4px}
+
+/* ══ EQUITIES TAB — Step 15 ══ */
+.eq-layout{display:grid;grid-template-columns:1fr 280px;gap:1.25rem;align-items:start}
+@media(max-width:900px){.eq-layout{grid-template-columns:1fr}}
+/* Mobile sidebar: hidden by default, toggled by button */
+@media(max-width:500px){
+  #eqSidebar{display:none}
+  #eqSidebar.mobile-open{display:block}
+}
+.eq-search-bar{display:flex;gap:.6rem;margin-bottom:0;align-items:center}
+@media(max-width:500px){
+  .eq-search-bar{flex-direction:column;align-items:stretch}
+  .eq-search-btn{width:100%;text-align:center;padding:.75rem}
+}
+.eq-search-input{flex:1;background:var(--bg-deep);border:1px solid var(--border);
+  color:var(--text-pri);font-family:var(--mono);font-size:.82rem;padding:.7rem 1rem;
+  border-radius:2px;outline:none;transition:border-color .15s;letter-spacing:.04em;text-transform:uppercase}
+.eq-search-input:focus{border-color:var(--cyan)}
+.eq-search-input::placeholder{text-transform:none;color:var(--text-dim);font-size:.75rem;letter-spacing:0}
+.eq-search-btn{background:var(--cyan);color:#000;border:none;font-family:var(--mono);
+  font-size:.72rem;font-weight:700;letter-spacing:.1em;padding:.72rem 1.25rem;
+  border-radius:2px;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.eq-search-btn:hover{opacity:.85}
+.eq-search-btn:disabled{opacity:.4;cursor:wait}
+@media(max-width:500px){
+  .eq-search-btn .btn-label{display:none}
+  .eq-search-btn .btn-icon{display:inline}
+  .eq-search-btn{font-size:.9rem;letter-spacing:0;padding:.75rem 1.25rem}
+}
+@media(min-width:501px){
+  .eq-search-btn .btn-icon{display:none}
+}
+.eq-ticker-header{display:flex;align-items:baseline;gap:.75rem;margin-bottom:.25rem;flex-wrap:wrap}
+.eq-ticker-name{font-family:var(--display);font-size:1.5rem;letter-spacing:.04em;color:var(--text-pri)}
+.eq-ticker-sym{font-family:var(--mono);font-size:.75rem;color:var(--text-dim);letter-spacing:.1em}
+.eq-price-row{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.eq-price{font-family:var(--display);font-size:2.2rem;color:var(--cyan);letter-spacing:-.01em}
+.eq-change{font-family:var(--mono);font-size:.85rem;font-weight:600}
+.eq-change.up{color:var(--green)} .eq-change.down{color:var(--red)}
+.eq-source-tag{font-family:var(--mono);font-size:.56rem;color:var(--text-dim);
+  background:var(--bg-deep);border:1px solid var(--border-dim);padding:.15rem .5rem;border-radius:2px}
+.eq-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--border-dim);border:1px solid var(--border-dim);margin-bottom:1.25rem}
+@media(max-width:700px){.eq-stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){
+  .eq-stat{padding:.65rem .7rem}
+  .eq-stat-val{font-size:.9rem}
+  .eq-stat-label{font-size:.5rem}
+}
+.eq-stat{background:var(--bg-card);padding:.85rem 1rem}
+.eq-stat-label{font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:.3rem}
+.eq-stat-val{font-family:var(--display);font-size:1.05rem;color:var(--text-pri);letter-spacing:.02em}
+.eq-stat-val.positive{color:var(--green)} .eq-stat-val.negative{color:var(--red)}
+.eq-chart-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  padding:1rem 1.1rem;margin-bottom:1.25rem}
+.eq-chart-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem}
+.eq-chart-title{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-sec)}
+.eq-range-btns{display:flex;gap:3px}
+.eq-range-btn{font-family:var(--mono);font-size:.58rem;padding:.22rem .55rem;
+  background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-dim);
+  border-radius:2px;cursor:pointer;transition:all .15s;letter-spacing:.06em}
+.eq-range-btn:hover,.eq-range-btn.active{background:rgba(0,212,255,.1);
+  border-color:var(--cyan);color:var(--cyan)}
+@media(max-width:500px){
+  .eq-range-btn{padding:.5rem .85rem;font-size:.65rem}
+  #eq-chart-canvas{touch-action:pan-y}
+}
+#eq-chart-canvas{width:100%;height:240px}
+.eq-scenario-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  border-left:3px solid var(--amber);padding:1rem 1.1rem;margin-bottom:1.25rem}
+.eq-scenario-title{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:.65rem;
+  display:flex;align-items:center;justify-content:space-between}
+.eq-scenario-rows{display:flex;flex-direction:column;gap:.4rem}
+.eq-scenario-row{display:flex;align-items:center;justify-content:space-between;
+  padding:.45rem .65rem;background:var(--bg-deep);border-radius:2px}
+.eq-scenario-label{font-family:var(--mono);font-size:.62rem;color:var(--text-sec)}
+.eq-scenario-val{font-family:var(--mono);font-size:.72rem;font-weight:700}
+.eq-scenario-val.base{color:var(--cyan)}
+.eq-scenario-val.bull{color:var(--green)}
+.eq-scenario-val.bear{color:var(--red)}
+.eq-ai-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  border-left:3px solid var(--purple);padding:1rem 1.1rem;margin-bottom:1.25rem}
+.eq-ai-header{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--purple);margin-bottom:.65rem}
+.eq-ai-content{font-family:var(--sans);font-size:.78rem;color:#c8d4e8;line-height:1.75}
+.eq-sidebar-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  padding:.85rem 1rem;margin-bottom:1rem}
+.eq-sidebar-title{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-dim);margin-bottom:.65rem;
+  padding-bottom:.45rem;border-bottom:1px solid var(--border-dim)}
+.eq-watch-row{display:flex;align-items:center;justify-content:space-between;
+  padding:.42rem 0;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;
+  transition:background .12s;border-radius:2px;padding:.4rem .35rem}
+.eq-watch-row:hover{background:rgba(255,255,255,.04)}
+.eq-watch-sym{font-family:var(--mono);font-size:.68rem;color:var(--cyan);letter-spacing:.06em;font-weight:600}
+.eq-watch-name{font-family:var(--sans);font-size:.6rem;color:var(--text-dim)}
+.eq-watch-price{font-family:var(--mono);font-size:.68rem;color:var(--text-pri);text-align:right}
+.eq-watch-chg{font-family:var(--mono);font-size:.58rem;text-align:right}
+.eq-watch-chg.up{color:var(--green)} .eq-watch-chg.down{color:var(--red)}
+.eq-sector-pill{display:inline-block;font-family:var(--mono);font-size:.58rem;
+  padding:.28rem .65rem;border-radius:2px;cursor:pointer;margin:.2rem;
+  border:1px solid var(--border-dim);color:var(--text-sec);background:var(--bg-deep);
+  transition:all .15s;letter-spacing:.04em;white-space:nowrap}
+.eq-sector-pill:hover{border-color:var(--amber);color:var(--amber)}
+/* Mobile quick picks — horizontal scroll strip */
+@media(max-width:500px){
+  .eq-chips-wrap{
+    display:flex;flex-wrap:nowrap;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding-bottom:.35rem;
+    mask-image:linear-gradient(to right,#000 85%,transparent 100%);
+    -webkit-mask-image:linear-gradient(to right,#000 85%,transparent 100%);
+  }
+  .eq-chips-wrap::-webkit-scrollbar{display:none}
+  .eq-sector-pill{flex-shrink:0;margin:.15rem .2rem;
+    padding:.45rem .8rem;font-size:.65rem;min-height:36px;
+    display:inline-flex;align-items:center}
+}
+.eq-empty{text-align:center;padding:3rem 1rem;color:var(--text-dim);
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;line-height:2}
+/* General mobile overrides for equities tab */
+@media(max-width:500px){
+  .eq-chart-box{padding:.75rem .75rem}
+  .eq-scenario-box{padding:.75rem .75rem}
+  .eq-ai-box{padding:.75rem .75rem}
+  .eq-sidebar-box{padding:.75rem .85rem}
+  .eq-ticker-name{font-size:1.15rem}
+  .eq-price{font-size:1.75rem}
+  .eq-empty{padding:2rem .75rem}
+  .eq-scenario-row{flex-direction:column;align-items:flex-start;gap:.2rem;padding:.55rem .65rem}
+  .eq-scenario-val{font-size:.78rem}
+}
+@media(max-width:360px){
+  .eq-stats-grid{grid-template-columns:1fr 1fr}
+  .eq-stat-val{font-size:.82rem}
+}
+
+/* Autocomplete dropdown */
+.eq-drop-item{display:flex;align-items:center;gap:.65rem;padding:.65rem .85rem;
+  cursor:pointer;border-bottom:1px solid var(--border-dim);transition:background .1s;
+  min-height:48px}
+.eq-drop-item:last-child{border-bottom:none}
+.eq-drop-item:hover,.eq-drop-item.focused{background:rgba(0,212,255,.07)}
+.eq-drop-flag{font-size:1rem;flex-shrink:0;width:1.4rem;text-align:center}
+.eq-drop-sym{font-family:var(--mono);font-size:.75rem;color:var(--cyan);
+  font-weight:700;letter-spacing:.06em;min-width:72px}
+.eq-drop-name{font-family:var(--sans);font-size:.72rem;color:var(--text-sec);
+  flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-drop-exch{font-family:var(--mono);font-size:.56rem;color:var(--text-dim);
+  white-space:nowrap;letter-spacing:.06em;text-align:right}
+.eq-drop-type{font-family:var(--mono);font-size:.52rem;padding:.12rem .4rem;
+  border-radius:2px;background:var(--bg-deep);border:1px solid var(--border-dim);
+  color:var(--text-dim);letter-spacing:.08em;white-space:nowrap;flex-shrink:0}
+.eq-drop-searching{padding:.85rem;font-family:var(--mono);font-size:.62rem;
+  color:var(--text-dim);letter-spacing:.08em;text-align:center;
+  animation:pulse 1.5s infinite}
+.eq-drop-empty{padding:.85rem;font-family:var(--mono);font-size:.62rem;
+  color:var(--text-dim);letter-spacing:.06em;text-align:center}
+.eq-drop-footer{padding:.45rem .85rem;font-family:var(--mono);font-size:.54rem;
+  color:var(--text-dim);border-top:1px solid var(--border-dim);
+  letter-spacing:.06em;background:var(--bg-deep)}
+/* Mobile dropdown overrides */
+@media(max-width:500px){
+  #eqDropdown{max-height:55vh !important}
+  .eq-drop-exch,.eq-drop-type{display:none}
+  .eq-drop-item{padding:.75rem .75rem;gap:.5rem}
+  .eq-drop-sym{font-size:.8rem;min-width:64px}
+  .eq-drop-name{font-size:.76rem}
+  .eq-drop-footer{display:none}
+}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════ HEADER ═══════════════ -->
+<!-- ═══════════════ HEADER (Fix 2.7 — decluttered) ═══════════════ -->
 <header class="header" role="banner">
   <div class="header-brand">
     <div class="logo" aria-label="DELAX GEO-RISK">DELAX | GEO-RISK</div>
@@ -465,28 +666,61 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
       <div class="live-dot" aria-hidden="true"></div>LIVE MODEL
     </div>
     <div class="offline-badge" id="offlineBadge">📦 CACHED MODEL</div>
-    <div class="timestamp" id="ts" aria-label="Last updated time">—</div>
-    <!-- Font size slider -->
-    <div class="font-slider-wrap" title="Adjust font size">
-      A<input type="range" id="fontSlider" min="0.85" max="1.35" step="0.05" value="1" aria-label="Font size"/>A
+    <!-- Live WTI pill — populated by fetchEIABrent() (now WTI) -->
+    <div id="brentHeaderPill" style="display:flex;align-items:baseline;gap:6px;
+      background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.28);
+      border-radius:4px;padding:4px 12px;cursor:default" title="Live EIA WTI Crude (West Texas Intermediate)">
+      <span style="font-size:9px;color:#7a91b3;letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono)">WTI</span>
+      <span id="brentHeaderPrice" style="font-size:15px;color:var(--amber);font-weight:700;font-family:var(--display)">—</span>
+      <span id="brentHeaderChg"   style="font-size:10px;color:var(--text-dim);font-family:var(--mono)"></span>
     </div>
-    <!-- Color-blind toggle -->
-    <button class="btn" id="cbToggle" onclick="toggleColorBlind()" title="Color-blind safe palette" aria-pressed="false">👁</button>
-    <!-- Theme toggle -->
-    <button class="btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
-      <span id="themeIcon">☀</span><span id="themeLabel">CLASSIC</span>
-    </button>
-    <!-- Mode toggle -->
-    <button class="btn cyan" id="modeToggle" onclick="toggleMode()" aria-pressed="false">📊 BEGINNER</button>
-    <!-- Refresh -->
+    <div class="timestamp" id="ts" aria-label="Last updated time">—</div>
     <button class="refresh-btn" id="refreshBtn" onclick="doRefresh()" aria-label="Refresh live data">↺ Refresh</button>
+    <button class="btn" id="settingsBtn" onclick="openSettingsDrawer()" aria-label="Settings">⚙ Settings</button>
   </div>
 </header>
 
-<!-- TICKER STRIP -->
-<div class="ticker-strip" role="marquee" aria-label="Live price ticker">
-  <div class="ticker-track" id="tickerTrack"></div>
+<!-- SETTINGS DRAWER — houses controls moved from header (Fix 2.7) -->
+<div class="drawer-overlay" id="settingsOverlay" onclick="closeSettingsDrawer()"></div>
+<div class="drawer" id="settingsDrawer" role="dialog" aria-label="Settings" aria-modal="true">
+  <div class="drawer-header">
+    <div class="drawer-title">SETTINGS</div>
+    <button class="drawer-close" onclick="closeSettingsDrawer()" aria-label="Close">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">
+      <div class="drawer-section-title">Display</div>
+      <div style="display:flex;flex-direction:column;gap:.85rem">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--mono);font-size:.65rem;color:var(--text-sec)">Font Size</span>
+          <div class="font-slider-wrap">
+            A<input type="range" id="fontSlider" min="0.85" max="1.35" step="0.05" value="1" aria-label="Font size"/>A
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--mono);font-size:.65rem;color:var(--text-sec)">Color-Blind Mode</span>
+          <button class="btn" id="cbToggle" onclick="toggleColorBlind()" aria-pressed="false">👁 Toggle</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--mono);font-size:.65rem;color:var(--text-sec)">Theme</span>
+          <button class="btn" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">
+            <span id="themeIcon">☀</span><span id="themeLabel"> CLASSIC</span>
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--mono);font-size:.65rem;color:var(--text-sec)">Beginner Mode</span>
+          <button class="btn cyan" id="modeToggle" onclick="toggleMode()" aria-pressed="false">📊 Toggle</button>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-section" style="margin-top:1.25rem">
+      <div class="drawer-section-title">Scenario</div>
+      <button class="btn" onclick="openScenarioBuilder();closeSettingsDrawer()">⚙ Custom Scenario Builder</button>
+    </div>
+  </div>
 </div>
+<!-- TICKER STRIP -->
+<!-- Ticker strip removed — Fix 2.2 -->
 
 <!-- SCENARIO BUILDER DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeScenarioBuilder()"></div>
@@ -552,20 +786,40 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
 <main role="main">
 
 <!-- NAV TABS — sticky right above Global News banner -->
-<div class="tabs-wrapper" role="tablist" aria-label="Dashboard sections">
-  <button class="tab-btn active" role="tab" aria-selected="true"  onclick="switchTab('tab-charts')"     >📈 Charts</button>
-  <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-exec')"       >📋 Summary</button>
-  <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-portfolio')"  >💼 Portfolio</button>
-  <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-monthly')"    >📅 Monthly</button>
-  <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-continental')">🌍 Continental</button>
-  <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-sectors')"   >🏭 Sectors</button>
-  <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('tab-risks')"     >⚡ Risks</button>
-  <button class="tab-btn" id="btn-geointel" role="tab" aria-selected="false" onclick="switchTab('tab-geointel')" style="color:var(--amber);border-bottom-color:transparent">🛡 GEO Intel</button>
+<!-- AMBIENT NEWS STRIP — 28px, always visible, rotates top headline — Fix 2.3 -->
+<div id="newsStatusBar" style="background:#060b16;border-bottom:1px solid #111d33;
+  height:28px;display:flex;align-items:center;padding:0 1.25rem;gap:10px;overflow:hidden;
+  cursor:pointer" data-tab="tab-news" title="Click to open News tab"
+  role="button" aria-label="Latest news — click to open News tab">
+  <div id="newsStatusBadge" style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+    color:#080c14;background:var(--amber);padding:2px 8px;border-radius:2px;white-space:nowrap;
+    font-weight:700;flex-shrink:0;font-family:var(--mono)">⚡ NEWS</div>
+  <div id="newsStatusText" style="font-size:11px;color:#7a91b3;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;flex:1;font-family:var(--sans)">
+    Loading latest headlines…</div>
+  <div id="newsStatusMeta" style="font-size:9px;color:#2d4060;white-space:nowrap;
+    flex-shrink:0;font-family:var(--mono)"></div>
+  <div style="font-size:9px;color:#1e3a50;border-left:1px solid #111d33;
+    padding-left:10px;white-space:nowrap;flex-shrink:0;font-family:var(--mono)">↻ live</div>
 </div>
 
-<!-- ALERT BANNER — Global News, now with AI auto-summary -->
-<div class="alert-banner" id="alertBanner" role="alert" aria-live="polite">
-  <div class="alert-label" id="alertLabel">⚠ LOADING</div>
+<div class="tabs-wrapper" role="tablist" aria-label="Dashboard sections">
+  <button class="tab-btn active" role="tab" aria-selected="true" data-tab="tab-charts">📈 Charts</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-exec">📋 Summary</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-portfolio">💼 Portfolio</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-monthly">📅 Monthly</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-continental">🌍 Continental</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-sectors">🏭 Sectors</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-risks">⚡ Risks</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-equities">💹 Equities</button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="tab-news">📰 News</button>
+  <button class="tab-btn" id="btn-geointel" role="tab" aria-selected="false" data-tab="tab-geointel" style="color:var(--amber);border-bottom-color:transparent">🛡 GEO Intel</button>
+</div>
+
+<!-- ALERT BANNER — persistent, visible on all tabs — Step 10 restore -->
+<div class="alert-banner" id="alertBanner" role="alert" aria-live="polite"
+  style="cursor:pointer" data-tab="tab-news" title="Click to open News tab">
+  <div class="alert-label" id="alertLabel">⚡ LOADING</div>
   <div class="alert-text" id="alertText"><span style="color:var(--text-dim)">Fetching latest news…</span></div>
   <div style="display:flex;align-items:center;gap:.75rem;flex-shrink:0">
     <div id="alertDots" style="display:flex;gap:5px;align-items:center"></div>
@@ -573,183 +827,175 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
   </div>
 </div>
 
-<!-- LIVE MARKET NEWS — right below alert banner -->
-<div style="background:var(--bg-card);border:1px solid var(--border-dim);
-  border-left:3px solid var(--cyan);margin-bottom:0;overflow:hidden">
-  <div style="padding:.6rem 1.1rem;border-bottom:1px solid var(--border-dim);
-    display:flex;align-items:center;justify-content:space-between;gap:1rem">
-    <div>
-      <span style="font-family:var(--display);font-size:.95rem;letter-spacing:.06em;
-        color:var(--text-pri)">⚡ Live Market News</span>
-      <span style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
-        margin-left:.75rem;letter-spacing:.08em;text-transform:uppercase">
-        Reuters · MarketWatch · BBC Business · Updates every 2 min
-      </span>
-    </div>
-    <div id="feedStatusDot" style="display:flex;align-items:center;gap:.4rem;
-      font-family:var(--mono);font-size:.58rem;color:var(--text-dim)">
-      <div style="width:6px;height:6px;border-radius:50%;background:var(--text-dim);
-        animation:pulse 2s infinite"></div>
-      Connecting…
-    </div>
-  </div>
-  <div id="geopolitical-feed" style="padding:.65rem 1.1rem;min-height:50px">
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--text-dim);
-      padding:.3rem 0">
-      Connecting to live news feed…
-    </div>
-  </div>
-</div>
-
-<!-- MODEL TRANSPARENCY PANEL — persistent above all tabs -->
-<div class="transparency-panel" id="transparencyPanel">
-  <button class="transparency-toggle" onclick="toggleTransparency()" aria-expanded="false" aria-controls="transBody">
-    <span>🔬 MODEL TRANSPARENCY & ASSUMPTIONS</span>
-    <span id="transChevron">▼</span>
-  </button>
-  <div class="transparency-body" id="transBody">
-    <div class="trans-card">
-      <h5>Scenario Probabilities</h5>
-      <ul>
-        <li>Baseline (24M conflict): P = 50%</li>
-        <li>Optimistic (ceasefire M10): P = 22%</li>
-        <li>Pessimistic (Hormuz 6M+): P = 28%</li>
-        <li>Black swan (nuclear): P = 4% (not modeled)</li>
-      </ul>
-    </div>
-    <div class="trans-card">
-      <h5>Monte Carlo (10,000 runs)</h5>
-      <p>68% CI: Oil $128–$168/bbl peak<br>
-      95% CI: Oil $98–$215/bbl peak<br>
-      Median GDP loss Yr1: −1.7%<br>
-      P(recession) = 41%<br>
-      P(Hormuz &gt;30d) = 23%</p>
-    </div>
-    <div class="trans-card">
-      <h5>Model Version History</h5>
-      <ul>
-        <li>v2.2 (Apr 2026): Portfolio sim, scenario builder, PWA</li>
-        <li>v2.1 (Mar 2026): EIA live proxy, theme toggle, ticker</li>
-        <li>v2.0 (Feb 2026): Full ECharts rebuild, 6-tab layout</li>
-        <li>v1.0 (Jan 2026): Initial static proof of concept</li>
-      </ul>
-    </div>
-    <div class="trans-card">
-      <h5>Key Assumptions</h5>
-      <ul>
-        <li>+$10/bbl oil → +0.3% CPI (import economies)</li>
-        <li>Shipping +100% → −0.4% trade volume</li>
-        <li>SPR offsets 8–12 weeks of supply gap</li>
-        <li>Saudi spare: 2.5M bbl/day relief</li>
-        <li>Shale ramp: 6–9 month lag to market</li>
-      </ul>
-    </div>
-  </div>
-</div>
 
 <!-- MODE STRIP and KPI GRID moved to bottom of page — see below footer -->
 
-<!-- 3D GLOBE — persistent on every page, directly below tabs -->
-<div style="margin-bottom:1.25rem">
-  <div class="chart-box">
-    <div class="chart-header">
-      <div>
-        <div class="chart-title">Global Economic Stress Globe</div>
-        <div class="chart-desc">Drag to rotate · Scroll to zoom · Click country for detail · Color = stress index (0–10)</div>
-      </div>
-      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <button class="globe-btn active" id="globeSpinBtn" onclick="toggleGlobeSpin()">⟳ AUTO-SPIN</button>
-        <button class="globe-btn" id="globeLabelsBtn" onclick="toggleGlobeLabels()">🏷 LABELS</button>
-        <button class="globe-btn" onclick="resetGlobe()">⌂ RESET</button>
-      </div>
-    </div>
-    <!-- Globe + Legend side-by-side -->
-    <div style="display:flex;gap:0;min-height:500px">
-      <!-- Legend panel on the left -->
-      <div id="globeLegend" style="width:200px;flex-shrink:0;background:rgba(1,10,24,.85);
-        border-right:1px solid var(--border-dim);padding:1rem .85rem;display:flex;
-        flex-direction:column;gap:.5rem;overflow-y:auto">
-        <div style="font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;
-          text-transform:uppercase;color:var(--text-dim);margin-bottom:.4rem;
-          padding-bottom:.4rem;border-bottom:1px solid var(--border-dim)">
-          STRESS INDEX LEGEND
-        </div>
-        <!-- Legend entries — color + score range + description -->
-        <div class="legend-entry" style="--lc:rgba(0,212,255,0.30)">
-          <div class="legend-dot"></div>
-          <div class="legend-text">
-            <div class="legend-score">0.0 – 1.5</div>
-            <div class="legend-label">Minimal Stress</div>
-            <div class="legend-desc">Energy exporters, remote economies. Marginal disruption. Possible trade upside.</div>
-          </div>
-        </div>
-        <div class="legend-entry" style="--lc:rgba(255,224,64,0.50)">
-          <div class="legend-dot"></div>
-          <div class="legend-text">
-            <div class="legend-score">1.5 – 3.0</div>
-            <div class="legend-label">Low Stress</div>
-            <div class="legend-desc">Moderate energy import reliance. Consumer inflation elevated. Markets volatile.</div>
-          </div>
-        </div>
-        <div class="legend-entry" style="--lc:rgba(245,166,35,0.65)">
-          <div class="legend-dot"></div>
-          <div class="legend-text">
-            <div class="legend-score">3.0 – 5.0</div>
-            <div class="legend-label">Moderate Stress</div>
-            <div class="legend-desc">Significant energy exposure. GDP contraction likely. FX pressure intensifying.</div>
-          </div>
-        </div>
-        <div class="legend-entry" style="--lc:rgba(255,107,53,0.75)">
-          <div class="legend-dot"></div>
-          <div class="legend-text">
-            <div class="legend-score">5.0 – 7.0</div>
-            <div class="legend-label">High Stress</div>
-            <div class="legend-desc">Severe energy import dependency. Food insecurity rising. IMF risk elevated.</div>
-          </div>
-        </div>
-        <div class="legend-entry" style="--lc:rgba(255,61,74,0.80)">
-          <div class="legend-dot"></div>
-          <div class="legend-text">
-            <div class="legend-score">7.0 – 8.5</div>
-            <div class="legend-label">Very High Stress</div>
-            <div class="legend-desc">Critical supply disruption. Recession underway. Humanitarian deterioration.</div>
-          </div>
-        </div>
-        <div class="legend-entry" style="--lc:rgba(255,0,30,0.90)">
-          <div class="legend-dot"></div>
-          <div class="legend-text">
-            <div class="legend-score">8.5 – 10.0</div>
-            <div class="legend-label">Extreme Stress</div>
-            <div class="legend-desc">Active conflict zone or direct supply chokepoint. Economic collapse risk.</div>
-          </div>
-        </div>
-        <!-- Divider + note -->
-        <div style="border-top:1px solid var(--border-dim);margin-top:.4rem;padding-top:.6rem;
-          font-family:var(--mono);font-size:.54rem;color:var(--text-dim);line-height:1.6">
-          Countries elevated above globe surface proportional to stress score.
-          Click any country for GDP, signal, and detail.
-        </div>
-      </div>
-      <!-- Globe canvas fills remaining space -->
-      <div style="flex:1;position:relative;min-width:0">
-        <div id="worldMap" role="img" aria-label="3D globe showing economic stress by country"
-          style="width:100%;height:500px;background:#010a18;cursor:grab"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- Globe removed — Fix 2.1 -->
 <!-- ═══ TAB: CHARTS ═══ -->
 <div id="tab-charts" class="tab-content active" role="tabpanel">
 
-  <!-- WHAT-IF BOX — powered by Claude AI via /api/whatif -->
-  <div class="whatif-box">
-    <span style="font-family:var(--mono);font-size:.6rem;color:var(--purple);white-space:nowrap">🤖 AI WHAT IF:</span>
-    <input class="whatif-input" id="whatifInput" type="text"
-      placeholder="e.g. 'What if the conflict lasts 5 years?' or 'What if oil hits $200?'"
-      aria-label="What-if scenario question"
-      onkeydown="if(event.key==='Enter')runWhatIf()"/>
-    <button class="btn cyan" id="whatifBtn" onclick="runWhatIf()" aria-label="Run AI analysis">▶ ANALYZE</button>
+
+  <!-- KPI HERO ROW — top of Charts tab, Fix 2.6 -->
+  <div style="margin-bottom:1.5rem">
+    <div class="mode-strip" style="padding:.4rem 0 .6rem;border-bottom:none">
+      <div class="section-label" style="margin-bottom:0">
+        Indicators — Scenario: <span id="scenarioLabel" style="color:var(--cyan);margin-left:.25rem">Baseline</span>
+      </div>
+      <span class="mode-badge" id="modeBadge" style="display:none"></span>
+    </div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)"
+      role="region" aria-label="Key Performance Indicators — click any card for AI analysis">
+    <div class="kpi-card up clickable" onclick="showKPINarrative('oil','WTI Crude (Projected Peak)',document.getElementById('kpiOil').textContent)" role="button" tabindex="0">
+      <div class="kpi-label"><span data-jargon="WTI Crude">WTI Crude</span> (Peak)
+        <i class="info-icon" data-prov="Source: EIA RBRTE · Proxy: /api/eia-oil · Model v2.2 · Confidence: 88%">i</i></div>
+      <div class="kpi-value" id="kpiOil">$148</div>
+      <div class="kpi-plain">WTI crude near $148/bbl — nearly double the pre-conflict price of $78.</div>
+      <div class="kpi-delta">Pre-conflict WTI: $78 · <span>+89.7%</span></div>
+      <div class="kpi-ts" id="kpiTsOil">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    <div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
+        <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
+      <div class="kpi-value" id="kpiCPI">+3.8%</div>
+      <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
+      <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
+      <div class="kpi-ts" id="kpiTsCPI">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    <div class="kpi-card warn clickable" onclick="showKPINarrative('gdp','Global GDP Loss (Yr 1)',document.getElementById('kpiGDP').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Global <span data-jargon="GDP">GDP</span> Loss (Yr 1)
+        <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
+      <div class="kpi-value" id="kpiGDP">−1.9%</div>
+      <div class="kpi-plain">~$1.7T in lost global output.</div>
+      <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
+      <div class="kpi-ts" id="kpiTsGDP">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    <div class="kpi-card up clickable" onclick="showKPINarrative('ship','Shipping Cost Index',document.getElementById('kpiShip').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Shipping Index
+        <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
+      <div class="kpi-value" id="kpiShip">+310%</div>
+      <div class="kpi-plain">3× more to ship globally via Cape of Good Hope.</div>
+      <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
+      <div class="kpi-ts" id="kpiTsShip">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    <div class="kpi-card up clickable" onclick="showKPINarrative('def','Global Defense Spend ΔYr1',document.getElementById('kpiDef').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Defense Spend ΔYr1
+        <i class="info-icon" data-prov="Source: SIPRI 2026 · NATO + Gulf states · Confidence: 87%">i</i></div>
+      <div class="kpi-value" id="kpiDef">+$680B</div>
+      <div class="kpi-plain">$680B extra in global defense budgets.</div>
+      <div class="kpi-delta">NATO · Gulf · Israel · India</div>
+      <div class="kpi-ts" id="kpiTsDef">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    <div class="kpi-card down clickable" onclick="showKPINarrative('fao','Food Price Index (FAO)',document.getElementById('kpiFAO').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Food Price (<span data-jargon="FAO">FAO</span>)
+        <i class="info-icon" data-prov="Source: FAO FFPI · Fertilizer + fuel inputs · Confidence: 83%">i</i></div>
+      <div class="kpi-value" id="kpiFAO">+27%</div>
+      <div class="kpi-plain">Food 27% more expensive. Africa & S. Asia hardest hit.</div>
+      <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
+      <div class="kpi-ts" id="kpiTsFAO">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    <div class="kpi-card info clickable" onclick="showKPINarrative('fx','USD / EM FX Pressure',document.getElementById('kpiFX').textContent)" role="button" tabindex="0">
+      <div class="kpi-label"><span data-jargon="USD">USD</span>/<span data-jargon="EM FX">EM FX</span>
+        <i class="info-icon" data-prov="Source: BIS FX · EM basket: TRY, BRL, INR, EGP, PKR · Confidence: 80%">i</i></div>
+      <div class="kpi-value" id="kpiFX">−14%</div>
+      <div class="kpi-plain">EM currencies lose 14% vs USD. Imports cost more.</div>
+      <div class="kpi-delta">Flight-to-safety inflows</div>
+      <div class="kpi-ts" id="kpiTsFX">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    <div class="kpi-card warn clickable" onclick="showKPINarrative('dur','Conflict Duration Estimate',document.getElementById('kpiDur').textContent)" role="button" tabindex="0">
+      <div class="kpi-label">Conflict Duration
+        <i class="info-icon" data-prov="Source: DELAX duration model · Gulf War 7M, Ukraine 30M+ · Confidence: 65%">i</i></div>
+      <div class="kpi-value" id="kpiDur">18–36M</div>
+      <div class="kpi-plain">18–36 months active conflict expected.</div>
+      <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
+      <div class="kpi-ts" id="kpiTsDur">—</div>
+      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+    </div>
+
+    </div><!-- end kpi-grid -->
+  </div><!-- end KPI hero row -->
+  <!-- INVESTOR INTELLIGENCE BOX — Option B redesign, plain language -->
+  <div style="background:var(--bg-panel);border:1px solid var(--border-dim);
+    border-left:3px solid var(--purple);padding:1.1rem 1.25rem;margin-bottom:1.1rem">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem">
+      <span style="font-size:1rem">🧠</span>
+      <div>
+        <div style="font-family:var(--display);font-size:1rem;letter-spacing:.06em;
+          color:var(--text-pri)">Investor Intelligence</div>
+        <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+          letter-spacing:.08em;margin-top:.1rem">
+          Ask anything about how this conflict affects your investments · Powered by Gemini 2.5
+        </div>
+      </div>
+    </div>
+    <!-- Prompt chips — investor-friendly examples -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem" aria-label="Example questions">
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        What happens to my energy stocks if Hormuz closes?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        How does this affect inflation over the next 2 years?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        Should I be buying defense stocks right now?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        What if a ceasefire is announced next month?
+      </button>
+      <button onclick="setWhatIfChip(this)" class="whatif-chip"
+        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
+        How exposed is my portfolio if oil hits $200?
+      </button>
+    </div>
+    <!-- Input row -->
+    <div style="display:flex;gap:.6rem;align-items:center">
+      <input class="whatif-input" id="whatifInput" type="text"
+        placeholder="Ask your own question about how this war affects your investments…"
+        aria-label="Investor intelligence question"
+        onkeydown="if(event.key==='Enter')runWhatIf()"
+        style="flex:1"/>
+      <button class="btn cyan" id="whatifBtn" onclick="runWhatIf()" aria-label="Get AI analysis">
+        Ask →
+      </button>
+    </div>
     <!-- AI result panel — hidden until first query -->
     <div id="whatifResult" style="display:none;width:100%;margin-top:.85rem;
       background:var(--bg-deep);border:1px solid var(--border);border-left:3px solid var(--purple);
@@ -760,7 +1006,7 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
         background:rgba(179,136,255,.06)">
         <div style="display:flex;align-items:center;gap:.5rem">
           <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
-            text-transform:uppercase;color:var(--purple)">AI Analysis Output:</span>
+            text-transform:uppercase;color:var(--purple)">Investor Intelligence · Gemini 2.5</span>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
           <span id="whatifTimestamp" style="font-family:var(--mono);font-size:.55rem;color:var(--text-dim)"></span>
@@ -769,19 +1015,19 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
             font-size:.8rem;padding:.1rem .3rem" aria-label="Close analysis">✕</button>
         </div>
       </div>
-      <!-- Loading spinner -->
+      <!-- Loading -->
       <div id="whatifLoading" style="display:none;padding:1.25rem;text-align:center">
         <div style="font-family:var(--mono);font-size:.65rem;color:var(--purple);
           letter-spacing:.1em;animation:pulse 1.5s infinite">
-          ◉ CLAUDE IS REASONING…
+          ◉ ANALYZING…
         </div>
         <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);margin-top:.4rem">
-          Analyzing current oil price, scenario data, and live headlines…
+          Reading live oil price, scenario data, and current headlines…
         </div>
       </div>
       <!-- Analysis content -->
       <div id="whatifContent" style="padding:1rem .85rem;font-family:var(--sans);
-        font-size:.78rem;color:var(--text-sec);line-height:1.7;white-space:pre-wrap;
+        font-size:.78rem;color:#c8d4e8;line-height:1.7;white-space:pre-wrap;
         display:none"></div>
       <!-- Error state -->
       <div id="whatifError" style="display:none;padding:.85rem;font-family:var(--mono);
@@ -1150,6 +1396,279 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
   </div>
 </div>
 
+<!-- ═══ TAB: NEWS ═══ — Step 10 Fix 2.3 -->
+<div id="tab-news" class="tab-content" role="tabpanel">
+
+  <!-- Alert banner moved to persistent area — Step 10 -->
+
+  <!-- LIVE MARKET NEWS FEED -->
+  <div style="background:var(--bg-card);border:1px solid var(--border-dim);
+    border-left:3px solid var(--cyan);margin-top:1rem;overflow:hidden">
+    <div style="padding:.6rem 1.1rem;border-bottom:1px solid var(--border-dim);
+      display:flex;align-items:center;justify-content:space-between;gap:1rem">
+      <div>
+        <span style="font-family:var(--display);font-size:.95rem;letter-spacing:.06em;
+          color:var(--text-pri)">⚡ Live Market News</span>
+        <span style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+          margin-left:.75rem;letter-spacing:.08em;text-transform:uppercase">
+          Reuters · MarketWatch · BBC Business · Updates every 8 min
+        </span>
+      </div>
+      <div id="feedStatusDot" style="display:flex;align-items:center;gap:.4rem;
+        font-family:var(--mono);font-size:.58rem;color:var(--text-dim)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--text-dim);
+          animation:pulse 2s infinite"></div>
+        Connecting…
+      </div>
+    </div>
+    <div id="geopolitical-feed" style="padding:.65rem 1.1rem;min-height:50px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--text-dim);
+        padding:.3rem 0">
+        Connecting to live news feed…
+      </div>
+    </div>
+  </div>
+
+  <!-- GDELT CONFLICT ALERTS — injected here when isAlarm:true events detected -->
+  <div id="gdeltAlertPanel" style="display:none;margin-top:1rem;background:var(--bg-card);
+    border:1px solid var(--border-dim);border-left:3px solid var(--red);overflow:hidden">
+    <div style="padding:.5rem 1.1rem;border-bottom:1px solid var(--border-dim);
+      display:flex;align-items:center;gap:.6rem;background:rgba(255,61,74,.06)">
+      <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
+        text-transform:uppercase;color:var(--red)">⚡ GDELT Conflict Alerts</span>
+      <span style="font-family:var(--mono);font-size:.55rem;color:var(--text-dim)">
+        · No API key · Updates every 15 min
+      </span>
+    </div>
+    <div id="gdeltAlertFeed" style="padding:.65rem 1.1rem"></div>
+  </div>
+
+</div><!-- end tab-news -->
+
+<!-- ═══ TAB: EQUITIES ═══ — Step 15 / Batch 3 -->
+<div id="tab-equities" class="tab-content" role="tabpanel">
+
+  <!-- Global search bar with autocomplete -->
+  <div style="margin-bottom:1.25rem">
+    <div class="eq-search-bar" style="position:relative;margin-bottom:.5rem">
+      <div style="flex:1;position:relative">
+        <input class="eq-search-input" id="eqSearchInput" type="text"
+          placeholder="Search any stock globally — name or ticker…"
+          aria-label="Search global stocks, ETFs and indices"
+          aria-autocomplete="list" aria-controls="eqDropdown" aria-expanded="false"
+          autocomplete="off" spellcheck="false"
+          oninput="eqOnInput(this.value)"
+          onkeydown="eqOnKeydown(event)"/>
+        <!-- Autocomplete dropdown -->
+        <div id="eqDropdown" role="listbox" aria-label="Search results"
+          style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--bg-panel);border:1px solid var(--border);
+            border-top:none;z-index:500;max-height:340px;overflow-y:auto;
+            box-shadow:0 12px 40px rgba(0,0,0,.6)">
+        </div>
+      </div>
+      <button class="eq-search-btn" id="eqSearchBtn" onclick="eqSearch()" aria-label="Search">
+        <span class="btn-label">LOOK UP →</span>
+        <span class="btn-icon">→</span>
+      </button>
+    </div>
+    <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+      margin-top:.45rem;letter-spacing:.04em">
+      50,000+ securities · NYSE · NASDAQ · LSE · Tokyo · Hong Kong · Frankfurt ·
+      Tadawul · ASX · TSX · Euronext and more
+    </div>
+  </div>
+
+  <!-- Main layout: left panel + right sidebar -->
+  <div class="eq-layout">
+
+    <!-- ── LEFT: main content ── -->
+    <div id="eqMain">
+
+      <!-- Empty state — shown before first search -->
+      <div id="eqEmpty" class="eq-empty">
+        <div style="font-size:2rem;margin-bottom:.75rem;opacity:.4">💹</div>
+        <div style="color:var(--text-sec);margin-bottom:.5rem">Equity Investor Intelligence</div>
+        <div style="font-size:.62rem;color:var(--text-dim)">
+          Type any company name or ticker to search 50,000+ global securities
+        </div>
+        <div style="margin-top:.75rem;font-family:var(--mono);font-size:.55rem;
+          color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase">
+          Conflict-relevant quick picks
+        </div>
+        <div class="eq-chips-wrap" style="margin-top:.65rem;display:flex;gap:.35rem;flex-wrap:wrap;justify-content:center">
+          <span class="eq-sector-pill" onclick="eqLoadTicker('XOM')"   title="ExxonMobil · NYSE">XOM</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('LMT')"   title="Lockheed Martin · NYSE">LMT</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('RTX')"   title="RTX Corp · NYSE">RTX</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('GLD')"   title="SPDR Gold ETF · NYSE">GLD</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('DAL')"   title="Delta Air Lines · NYSE">DAL</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('XLE')"   title="Energy Select ETF · NYSE">XLE</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('ITA')"   title="Defense ETF · NYSE">ITA</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('TLT')"   title="20Y Bond ETF · NYSE">TLT</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('BP.L')"  title="BP · London Stock Exchange">BP.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('SHEL.L')" title="Shell · London Stock Exchange">SHEL.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('2222.SR')" title="Saudi Aramco · Tadawul">2222.SR</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('TSM')"   title="TSMC · NYSE ADR">TSM</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('HSBA.L')" title="HSBC · London Stock Exchange">HSBA.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('RR.L')"  title="Rolls-Royce · London Stock Exchange">RR.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('CCJ')"   title="Cameco (Uranium) · NYSE">CCJ</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('FXI')"   title="China Large-Cap ETF · NYSE">FXI</span>
+        </div>
+      </div>
+
+      <!-- Results panel — hidden until first search -->
+      <div id="eqResults" style="display:none">
+
+        <!-- Ticker header -->
+        <div style="margin-bottom:1rem">
+          <div class="eq-ticker-header">
+            <span class="eq-ticker-name" id="eqTickerName">—</span>
+            <span class="eq-ticker-sym" id="eqTickerSym"></span>
+            <span class="eq-source-tag" id="eqSourceTag">Finnhub</span>
+          </div>
+          <div class="eq-price-row">
+            <span class="eq-price" id="eqPrice">—</span>
+            <span class="eq-change" id="eqChange"></span>
+            <span style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim)" id="eqMktStatus"></span>
+          </div>
+        </div>
+
+        <!-- 8-cell fundamentals grid -->
+        <div class="eq-stats-grid" id="eqStatsGrid">
+          <div class="eq-stat"><div class="eq-stat-label">Market Cap</div><div class="eq-stat-val" id="eqStatMktCap">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">P/E Ratio</div><div class="eq-stat-val" id="eqStatPE">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">52W High</div><div class="eq-stat-val positive" id="eqStat52H">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">52W Low</div><div class="eq-stat-val negative" id="eqStat52L">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Beta</div><div class="eq-stat-val" id="eqStatBeta">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Div Yield</div><div class="eq-stat-val positive" id="eqStatDiv">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Analyst Target</div><div class="eq-stat-val" id="eqStatTarget">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Profit Margin</div><div class="eq-stat-val" id="eqStatMargin">—</div></div>
+        </div>
+
+        <!-- Candlestick chart -->
+        <div class="eq-chart-box">
+          <div class="eq-chart-header">
+            <div class="eq-chart-title" id="eqChartLabel">30-Day Price History</div>
+            <div class="eq-range-btns">
+              <button class="eq-range-btn active" onclick="eqSetRange(30,this)">1M</button>
+              <button class="eq-range-btn" onclick="eqSetRange(60,this)">2M</button>
+              <button class="eq-range-btn" onclick="eqSetRange(90,this)">3M</button>
+            </div>
+          </div>
+          <canvas id="eq-chart-canvas" width="600" height="240"
+            style="width:100%;height:240px;display:block;touch-action:pan-y"></canvas>
+        </div>
+
+        <!-- Conflict-adjusted scenario simulator -->
+        <div class="eq-scenario-box">
+          <div class="eq-scenario-title">
+            <span>⚡ Conflict Scenario Projections</span>
+            <span style="color:var(--text-dim);font-size:.54rem" id="eqScenarioActiveLabel">Active: Baseline</span>
+          </div>
+          <div class="eq-scenario-rows" id="eqScenarioRows">
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">3-Month (conflict premium)</span>
+              <span class="eq-scenario-val base" id="eqProj3M">—</span>
+            </div>
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">6-Month projection</span>
+              <span class="eq-scenario-val base" id="eqProj6M">—</span>
+            </div>
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">12-Month (optimistic)</span>
+              <span class="eq-scenario-val bull" id="eqProj12MBull">—</span>
+            </div>
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">12-Month (pessimistic)</span>
+              <span class="eq-scenario-val bear" id="eqProj12MBear">—</span>
+            </div>
+          </div>
+          <div style="margin-top:.65rem;font-family:var(--mono);font-size:.55rem;color:var(--text-dim);line-height:1.6">
+            Projections apply DELAX conflict multipliers to base historical returns.
+            Not financial advice — for scenario planning only.
+          </div>
+        </div>
+
+        <!-- AI Investor Insight — Pro gated -->
+        <div class="eq-ai-box">
+          <div class="eq-ai-header">🧠 AI Investor Analysis · <span id="eqAiScenarioTag">Baseline</span></div>
+          <div class="eq-ai-content" id="eqAiContent">
+            <div style="color:var(--text-dim);font-size:.72rem">
+              Click <strong style="color:var(--purple)">Get AI Analysis</strong> for a plain-English breakdown of this stock's conflict exposure, sector dynamics, and what the current scenario means for your position.
+            </div>
+          </div>
+          <button class="btn cyan" id="eqAiBtn" onclick="eqGetAI()"
+            style="margin-top:.85rem;font-size:.7rem;padding:.55rem 1.1rem">
+            🔒 Get AI Analysis (Pro)
+          </button>
+        </div>
+
+      </div><!-- end eqResults -->
+    </div><!-- end eqMain left -->
+
+    <!-- Mobile sidebar toggle — hidden on desktop -->
+    <button id="eqSidebarToggle" onclick="eqToggleSidebar()"
+      style="display:none;width:100%;margin-bottom:.75rem;
+        background:var(--bg-card);border:1px solid var(--border-dim);
+        color:var(--text-sec);font-family:var(--mono);font-size:.65rem;
+        letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1rem;
+        cursor:pointer;text-align:left;border-radius:2px;
+        transition:border-color .15s"
+      aria-expanded="false">
+      ▶ Watchlist &amp; Sector Signals
+    </button>
+
+    <!-- ── RIGHT: sidebar ── -->
+    <div id="eqSidebar">
+
+      <!-- Watchlist -->
+      <div class="eq-sidebar-box">
+        <div class="eq-sidebar-title">Watchlist · Live Prices</div>
+        <div id="eqWatchlist">
+          <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);padding:.5rem 0">
+            Loading…
+          </div>
+        </div>
+      </div>
+
+      <!-- Sector signals -->
+      <div class="eq-sidebar-box">
+        <div class="eq-sidebar-title">Sector Signals</div>
+        <div style="font-family:var(--sans);font-size:.68rem;color:var(--text-dim);
+          margin-bottom:.65rem;line-height:1.5">
+          Click a sector to load its lead equity
+        </div>
+        <div id="eqSectorPills" class="eq-chips-wrap" style="flex-wrap:wrap">
+          <span class="eq-sector-pill" onclick="eqLoadTicker('XOM')"  title="Energy — XOM">⛽ Energy</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('LMT')"  title="Defense — LMT">🛡 Defense</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('GLD')"  title="Gold — GLD">🥇 Gold</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('DAL')"  title="Airlines — DAL">✈ Airlines</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('TLT')"  title="Bonds — TLT">📊 Bonds</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('SPY')"  title="S&P 500 — SPY">🏦 S&amp;P 500</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('EEM')"  title="EM — EEM">🌍 EM</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('DXY')"  title="USD — DXY">💵 USD</span>
+        </div>
+      </div>
+
+      <!-- Scenario context card -->
+      <div class="eq-sidebar-box" style="border-left:2px solid var(--amber)">
+        <div class="eq-sidebar-title">Active Scenario</div>
+        <div style="font-family:var(--display);font-size:1.1rem;color:var(--amber);
+          margin-bottom:.4rem;text-transform:capitalize" id="eqSideScenario">Baseline</div>
+        <div style="font-family:var(--sans);font-size:.68rem;color:var(--text-sec);line-height:1.5"
+          id="eqSideScenarioDesc">
+          24-month conflict · Partial Hormuz disruption · WTI at model peak
+        </div>
+        <div style="margin-top:.65rem;font-family:var(--mono);font-size:.58rem;
+          color:var(--text-dim)">
+          Change scenario on the Charts tab to update projections
+        </div>
+      </div>
+
+    </div><!-- end sidebar -->
+  </div><!-- end eq-layout -->
+</div><!-- end tab-equities -->
+
 <!-- ═══ TAB: GEO INTELLIGENCE ═══ -->
 <div id="tab-geointel" class="tab-content" role="tabpanel" style="padding:0;margin:0">
 
@@ -1214,99 +1733,62 @@ body.beginner-mode .kpi-bottom-bar .kpi-value{font-size:1.8rem}
 <!-- FOOTER -->
 <!-- ═══ KPI GRID — sticky bottom, always visible regardless of scroll ═══ -->
 <!-- position:sticky bottom:0 keeps this locked above the footer as user scrolls -->
-<div class="kpi-bottom-bar" role="region" aria-label="Key Performance Indicators">
 
-  <!-- Mode strip inside the bottom bar -->
-  <div class="mode-strip" style="margin-bottom:.5rem;padding:.4rem 1rem 0;border-top:2px solid var(--border)">
-    <div class="section-label" style="margin-bottom:0">
-      Indicators — Scenario: <span id="scenarioLabel" style="color:var(--cyan);margin-left:.25rem">Baseline</span>
+
+<!-- MODEL TRANSPARENCY — moved below content Fix 2.5 -->
+<!-- MODEL TRANSPARENCY PANEL — methodology reference below content —  Fix 2.5 -->
+<div class="transparency-panel" id="transparencyPanel">
+  <button class="transparency-toggle" onclick="toggleTransparency()" aria-expanded="false" aria-controls="transBody">
+    <span>🔬 MODEL TRANSPARENCY & ASSUMPTIONS</span>
+    <span id="transChevron">▼</span>
+  </button>
+  <div class="transparency-body" id="transBody">
+    <div class="trans-card">
+      <h5>Scenario Probabilities</h5>
+      <ul>
+        <li>Baseline (24M conflict): P = 50%</li>
+        <li>Optimistic (ceasefire M10): P = 22%</li>
+        <li>Pessimistic (Hormuz 6M+): P = 28%</li>
+        <li>Black swan (nuclear): P = 4% (not modeled)</li>
+      </ul>
     </div>
-    <span class="mode-badge" id="modeBadge" style="display:none"></span>
+    <div class="trans-card">
+      <h5>Monte Carlo (10,000 runs)</h5>
+      <p>68% CI: Oil $128–$168/bbl peak<br>
+      95% CI: Oil $98–$215/bbl peak<br>
+      Median GDP loss Yr1: −1.7%<br>
+      P(recession) = 41%<br>
+      P(Hormuz &gt;30d) = 23%</p>
+    </div>
+    <div class="trans-card">
+      <h5>Model Version History</h5>
+      <ul>
+        <li>v2.2 (Apr 2026): Portfolio sim, scenario builder, PWA</li>
+        <li>v2.1 (Mar 2026): EIA live proxy, theme toggle, ticker</li>
+        <li>v2.0 (Feb 2026): Full ECharts rebuild, 6-tab layout</li>
+        <li>v1.0 (Jan 2026): Initial static proof of concept</li>
+      </ul>
+    </div>
+    <div class="trans-card">
+      <h5>Key Assumptions</h5>
+      <ul>
+        <li>+$10/bbl oil → +0.3% CPI (import economies)</li>
+        <li>Shipping +100% → −0.4% trade volume</li>
+        <li>SPR offsets 8–12 weeks of supply gap</li>
+        <li>Saudi spare: 2.5M bbl/day relief</li>
+        <li>Shale ramp: 6–9 month lag to market</li>
+      </ul>
+    </div>
   </div>
-
-  <div class="kpi-grid" style="margin-bottom:0;border-top:none"
-    role="region" aria-label="Key Performance Indicators — click any card for AI analysis">
-
-    <div class="kpi-card up clickable" onclick="showKPINarrative('oil','Brent Crude (Projected Peak)',document.getElementById('kpiOil').textContent)" role="button" tabindex="0">
-      <div class="kpi-label"><span data-jargon="Brent Crude">Brent Crude</span> (Peak)
-        <i class="info-icon" data-prov="Source: EIA RBRTE · Proxy: /api/eia-oil · Model v2.2 · Confidence: 88%">i</i></div>
-      <div class="kpi-value" id="kpiOil">$148</div>
-      <div class="kpi-plain">Oil near $148/bbl — nearly double pre-conflict price of $78.</div>
-      <div class="kpi-delta">Pre-conflict: $78 · <span>+89.7%</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-    <div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
-        <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
-      <div class="kpi-value" id="kpiCPI">+3.8%</div>
-      <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
-      <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-    <div class="kpi-card warn clickable" onclick="showKPINarrative('gdp','Global GDP Loss (Yr 1)',document.getElementById('kpiGDP').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Global <span data-jargon="GDP">GDP</span> Loss (Yr 1)
-        <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
-      <div class="kpi-value" id="kpiGDP">−1.9%</div>
-      <div class="kpi-plain">~$1.7T in lost global output.</div>
-      <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-    <div class="kpi-card up clickable" onclick="showKPINarrative('ship','Shipping Cost Index',document.getElementById('kpiShip').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Shipping Index
-        <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
-      <div class="kpi-value" id="kpiShip">+310%</div>
-      <div class="kpi-plain">3× more to ship globally via Cape of Good Hope.</div>
-      <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-    <div class="kpi-card up clickable" onclick="showKPINarrative('def','Global Defense Spend ΔYr1',document.getElementById('kpiDef').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Defense Spend ΔYr1
-        <i class="info-icon" data-prov="Source: SIPRI 2026 · NATO + Gulf states · Confidence: 87%">i</i></div>
-      <div class="kpi-value" id="kpiDef">+$680B</div>
-      <div class="kpi-plain">$680B extra in global defense budgets.</div>
-      <div class="kpi-delta">NATO · Gulf · Israel · India</div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-    <div class="kpi-card down clickable" onclick="showKPINarrative('fao','Food Price Index (FAO)',document.getElementById('kpiFAO').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Food Price (<span data-jargon="FAO">FAO</span>)
-        <i class="info-icon" data-prov="Source: FAO FFPI · Fertilizer + fuel inputs · Confidence: 83%">i</i></div>
-      <div class="kpi-value" id="kpiFAO">+27%</div>
-      <div class="kpi-plain">Food 27% more expensive. Africa & S. Asia hardest hit.</div>
-      <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-    <div class="kpi-card info clickable" onclick="showKPINarrative('fx','USD / EM FX Pressure',document.getElementById('kpiFX').textContent)" role="button" tabindex="0">
-      <div class="kpi-label"><span data-jargon="USD">USD</span>/<span data-jargon="EM FX">EM FX</span>
-        <i class="info-icon" data-prov="Source: BIS FX · EM basket: TRY, BRL, INR, EGP, PKR · Confidence: 80%">i</i></div>
-      <div class="kpi-value" id="kpiFX">−14%</div>
-      <div class="kpi-plain">EM currencies lose 14% vs USD. Imports cost more.</div>
-      <div class="kpi-delta">Flight-to-safety inflows</div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-    <div class="kpi-card warn clickable" onclick="showKPINarrative('dur','Conflict Duration Estimate',document.getElementById('kpiDur').textContent)" role="button" tabindex="0">
-      <div class="kpi-label">Conflict Duration
-        <i class="info-icon" data-prov="Source: DELAX duration model · Gulf War 7M, Ukraine 30M+ · Confidence: 65%">i</i></div>
-      <div class="kpi-value" id="kpiDur">18–36M</div>
-      <div class="kpi-plain">18–36 months active conflict expected.</div>
-      <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
-      <div class="kpi-click-hint">🤖 Click for AI</div>
-    </div>
-
-  </div><!-- end kpi-grid -->
-</div><!-- end kpi-bottom-bar -->
+</div>
 
 <footer class="footer" role="contentinfo">
   DELAX GEO-RISK ANALYTICS ·
   Iran War Global Economic Impact Dashboard <strong>v2.2 — Production Investor Edition</strong><br>
-  Model calibrated: <span id="footerDate">—</span> · Live data: EIA.gov Brent RBRTE ·
-  Sources: EIA · IMF WEO · SIPRI · FAO · Baltic Exchange · BIS · GDELT<br>
+  Model calibrated: <span id="footerDate">—</span> · Live data: EIA.gov WTI RWTC ·
+  Sources: EIA · IMF WEO · SIPRI · FAO · Baltic Exchange · BIS · GDELT ·
+  <a onclick="document.getElementById('transparencyPanel').scrollIntoView({behavior:'smooth'})"
+     style="color:var(--text-dim);text-decoration:underline;cursor:pointer;font-size:.56rem">ⓘ Model assumptions &amp; methodology</a><br>
   <span style="color:var(--red)">⚠ IMPORTANT DISCLAIMER:</span>
   This dashboard is for <strong>informational and research purposes only</strong> and does not constitute financial, investment, or legal advice.
   All projections are probabilistic model outputs — not guarantees or predictions.
@@ -1474,16 +1956,18 @@ const SECTOR_IMPACT = {
 };
 
 /* Ticker seed prices */
+// TICKER_SEEDS — stripped to price-tracking data only (ticker strip removed Fix 2.2)
+// tickerData still used by: fetchEIABrent (BRENT), dashboard-live.js (all watchlist symbols)
 const TICKER_SEEDS = [
-  {id:'BRENT', label:'BRENT',   price:82.40, unit:'$/bbl', prevPrice:82.40},
-  {id:'GOLD',  label:'GOLD',    price:2318,  unit:'$/oz',  prevPrice:2318},
-  {id:'XOM',   label:'XOM',     price:114.82,unit:'$',     prevPrice:114.82},
-  {id:'LMT',   label:'LMT',     price:462.10,unit:'$',     prevPrice:462.10},
-  {id:'RTX',   label:'RTX',     price:101.55,unit:'$',     prevPrice:101.55},
-  {id:'DAL',   label:'DAL',     price:44.21, unit:'$',     prevPrice:44.21},
-  {id:'GLD',   label:'GLD ETF', price:213.40,unit:'$',     prevPrice:213.40},
-  {id:'DXY',   label:'USD IDX', price:104.82,unit:'',      prevPrice:104.82},
-  {id:'NATGAS',label:'NAT GAS', price:2.81,  unit:'$/MMBtu',prevPrice:2.81},
+  {id:'BRENT',  label:'BRENT',  price:82.40, unit:'$/bbl', prevPrice:82.40},
+  {id:'GOLD',   label:'GOLD',   price:2318,  unit:'$/oz',  prevPrice:2318},
+  {id:'XOM',    label:'XOM',    price:108.2, unit:'$',     prevPrice:108.2},
+  {id:'LMT',    label:'LMT',    price:452.1, unit:'$',     prevPrice:452.1},
+  {id:'RTX',    label:'RTX',    price:118.4, unit:'$',     prevPrice:118.4},
+  {id:'DAL',    label:'DAL',    price:41.80, unit:'$',     prevPrice:41.80},
+  {id:'GLD',    label:'GLD',    price:218.6, unit:'$',     prevPrice:218.6},
+  {id:'DXY',    label:'DXY',    price:104.2, unit:'',      prevPrice:104.2},
+  {id:'NATGAS', label:'NATGAS', price:2.85,  unit:'$/MMBtu',prevPrice:2.85},
 ];
 let tickerData = TICKER_SEEDS.map(t=>({...t}));
 
@@ -1579,7 +2063,7 @@ const CATCH_ALL_LABEL = {id:'global',label:'GLOBAL NEWS',icon:'🌐',color:'#7a9
 
 /* ═══ EXPANDED JARGON DICTIONARY ═══ */
 const JARGON_DICT = {
-  'Brent Crude':      'The international oil benchmark set in the North Sea. When it rises, fuel, food, and shipping costs rise globally.',
+  'WTI Crude':        'West Texas Intermediate — the US oil benchmark. When it rises, fuel, food, and shipping costs rise globally.',
   'CPI':              'Consumer Price Index — measures everyday goods cost. Rising CPI means your money buys less (inflation).',
   'GDP':              'Gross Domestic Product — total value a country produces. Negative GDP = economic contraction (recession).',
   'Suez':             'The Suez Canal connects the Mediterranean and Red Sea. About 12% of global trade passes through it daily.',
@@ -1626,19 +2110,33 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTimestamp();
   setInterval(updateTimestamp, 60000);
   initAlertBanner();
-  initTickerStrip();
+  // initTickerStrip removed — Fix 2.2
   initJargonTooltips();
   initProvenanceTooltips();
   initFontSlider();
   initPWA();
+  // Fix 2.4: amber glow on tabs when page is scrolled
+  const tabsEl = document.querySelector('.tabs-wrapper');
+  if (tabsEl) {
+    window.addEventListener('scroll', () => {
+      tabsEl.classList.toggle('is-sticky', window.scrollY > 80);
+    }, { passive: true });
+  }
+  // Fix 8 (mobile): close autocomplete dropdown on scroll so it doesn't float
+  window.addEventListener('scroll', () => {
+    if (typeof eqCloseDropdown === 'function') eqCloseDropdown();
+  }, { passive: true });
   setTimeout(() => {
     buildMonthlyGrid();
     buildContinentalTable();
     buildSectorTable();
     initAllCharts();
     loadPortfolioFromStorage();
-    initGlobeMap(); // globe is now persistent above all tabs
+    // initGlobeMap removed — Fix 2.1
     doRefresh(); // fetch EIA on load
+    // Step 14: start GDELT conflict event polling (15 min, no API key)
+    pollGdelt();
+    setInterval(pollGdelt, 15 * 60 * 1000);
   }, 300);
   scheduleAutoRefresh();
   // FIX 7.1: DashboardLive auto-inits itself in dashboard-live.js (600ms delay).
@@ -1779,12 +2277,34 @@ async function fetchEIABrent() {
     OIL_DATA.optimistic  = OIL_DATA.optimistic.map((v,i)  => i===0 ? Math.round(liveBrentPrice*0.76) : v);
     OIL_DATA.pessimistic = OIL_DATA.pessimistic.map((v,i) => i===0 ? Math.round(liveBrentPrice*1.04) : v);
 
+    // Hotfix A: kpiOil shows MODEL PROJECTED PEAK (not live spot — that belongs in header pill)
+    // Header pill = live EIA spot. KPI card = what the model projects Brent will peak at.
     const oilKPI = document.getElementById('kpiOil');
-    if (oilKPI) oilKPI.textContent = `$${Math.round(liveBrentPrice)}`;
+    if (oilKPI) oilKPI.textContent = KPI_MAP[scenario].oil;
+    const oilCard  = oilKPI && oilKPI.closest('.kpi-card');
+    const oilDelta = oilCard && oilCard.querySelector('.kpi-delta');
+    if (oilDelta) {
+      const premium = ((liveBrentPrice / 78 - 1) * 100).toFixed(1);
+      const sign    = premium >= 0 ? '+' : '';
+      oilDelta.innerHTML = `WTI Spot: $${liveBrentPrice.toFixed(2)} · <span>${sign}${premium}% vs pre-conflict</span>`;
+    }
+    // Flip badge to LIVE MODEL when EIA succeeds
+    const liveBadge    = document.querySelector('.live-badge');
+    const offlineBadge = document.getElementById('offlineBadge');
+    if (liveBadge)    liveBadge.innerHTML = '<div class="live-dot"></div>LIVE MODEL';
+    if (offlineBadge) offlineBadge.classList.remove('show');
+    // Update Brent header pill with live EIA spot price
+    const brentPillPrice = document.getElementById('brentHeaderPrice');
+    const brentPillChg   = document.getElementById('brentHeaderChg');
+    if (brentPillPrice) brentPillPrice.textContent = `$${liveBrentPrice.toFixed(2)}`;
+    if (brentPillChg) {
+      brentPillChg.textContent = data.trend7d >= 0 ? `▲ ${data.trend7d}%` : `▼ ${Math.abs(data.trend7d)}%`;
+      brentPillChg.style.color = data.trend7d >= 0 ? 'var(--green)' : 'var(--red)';
+    }
     tickerData.forEach(t=>{ if(t.id==='BRENT'){t.prevPrice=t.price;t.price=liveBrentPrice;} });
-
+    updateKpiTimestamps(liveDataDate); // Step 13: oil card shows EIA date, others show model time
     const trend = data.trend7d >= 0 ? `▲ ${data.trend7d}%` : `▼ ${Math.abs(data.trend7d)}%`;
-    showToast(`✓ EIA Live: Brent = $${liveBrentPrice.toFixed(2)}/bbl · ${trend} (7d) · ${liveDataDate}`);
+    showToast(`✓ EIA Live: WTI = $${liveBrentPrice.toFixed(2)}/bbl · ${trend} (7d) · ${liveDataDate}`);
   } catch(err) {
     applyModelJitter();
     showToast(`⚠ EIA error: ${err.message} — model estimate active`, true);
@@ -1835,6 +2355,7 @@ function setScenario(s) {
     if(el) el.textContent = Object.values(kpi)[i];
   });
   if(liveBrentPrice) document.getElementById('kpiOil').textContent = `$${Math.round(liveBrentPrice)}`;
+  updateKpiTimestamps(); // Step 13: stamp all cards with scenario-change time
   updateCharts();
   calcPortfolioImpact();
   // Refresh heatmap narrative for new scenario (clears KPI cache for old scenario)
@@ -1843,19 +2364,61 @@ function setScenario(s) {
   syncGeoIntelScenario();
 }
 
-function switchTab(id) {
+/* Step 13 — KPI timestamp badges
+   Updates all 8 cards with current HH:MM on scenario change.
+   fetchEIABrent() overrides only the Oil card with the EIA data date. */
+function updateKpiTimestamps(oilOverride) {
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  ['Oil','CPI','GDP','Ship','Def','FAO','FX','Dur'].forEach(k => {
+    const el = document.getElementById(`kpiTs${k}`);
+    if (!el) return;
+    if (k === 'Oil' && oilOverride) {
+      el.textContent = `EIA ${oilOverride}`;
+    } else {
+      el.textContent = `Model · ${now}`;
+    }
+  });
+}
+
+function switchTabBase(id, event) {
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el=>{
     el.classList.remove('active');
     el.setAttribute('aria-selected','false');
   });
   document.getElementById(id).classList.add('active');
-  event.target.classList.add('active');
-  event.target.setAttribute('aria-selected','true');
+  const btn = event?.target?.closest?.('.tab-btn') || document.querySelector(`.tab-btn[data-tab="${id}"]`);
+  if (btn) {
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected','true');
+  }
   setTimeout(()=>Object.values(allCharts).forEach(c=>{try{c.resize()}catch(e){}}),120);
   if (id==='tab-continental') setTimeout(initContCharts, 180);
   if (id==='tab-risks')       setTimeout(initRiskCharts, 180);
 }
+
+function initTabDelegation() {
+  const tabsWrapper = document.querySelector('.tabs-wrapper');
+  if (tabsWrapper) {
+    tabsWrapper.addEventListener('click', event => {
+      const btn = event.target.closest('.tab-btn');
+      if (!btn) return;
+      const tabId = btn.dataset.tab;
+      if (!tabId) return;
+      switchTab(tabId, event);
+    });
+  }
+  const newsBar = document.getElementById('newsStatusBar');
+  if (newsBar) {
+    newsBar.addEventListener('click', event => switchTab('tab-news', event));
+  }
+  const alertBanner = document.getElementById('alertBanner');
+  if (alertBanner) {
+    alertBanner.addEventListener('click', event => switchTab('tab-news', event));
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initTabDelegation);
 
 function updateCharts() {
   initOilChartNear(); initOilChartLong(); initGDPChart(); initInflationChart();
@@ -1877,6 +2440,17 @@ function openScenarioBuilder() {
 function closeScenarioBuilder() {
   document.getElementById('scenarioDrawer').classList.remove('open');
   document.getElementById('drawerOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+/* Settings drawer — Fix 2.7 */
+function openSettingsDrawer() {
+  document.getElementById('settingsDrawer').classList.add('open');
+  document.getElementById('settingsOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSettingsDrawer() {
+  document.getElementById('settingsDrawer').classList.remove('open');
+  document.getElementById('settingsOverlay').classList.remove('open');
   document.body.style.overflow = '';
 }
 
@@ -1969,7 +2543,144 @@ function toggleTransparency() {
    - Live EIA Brent price + date
    - Latest news headlines from the alert banner
    ═════════════════════════════════════════ */
+/* ═════════════════════════════════════════
+   PRO PAYWALL — gates all AI features for Free tier
+   Until Supabase auth ships (Step 16), every user is
+   Free by default. Users who successfully submit the
+   waitlist form get a local "pro_waitlist" flag so they
+   don't re-see the modal during the session.
+   ═════════════════════════════════════════ */
+const PRO_MODAL = {
+  // Per-feature title and pitch — shown in the modal header
+  whatif:    { title: 'AI Investor Intelligence',      pitch: 'Ask our AI any question about how this conflict affects your investments.' },
+  kpi:       { title: 'AI KPI Deep-Dive',              pitch: 'Click any metric for a plain-English explanation of what\'s driving it.' },
+  heatmap:   { title: 'AI Heatmap Narrative',          pitch: 'Scenario-aware AI commentary on the regional risk map.' },
+  news:      { title: 'AI News Summary',               pitch: 'Real-time AI one-line summaries of breaking geopolitical headlines.' },
+  geointel:  { title: 'AI GEO Intelligence Briefing',  pitch: 'On-demand AI briefings synthesizing live conflict signals.' },
+};
+
+function isProUser() {
+  // TODO (Step 16): replace with Supabase session check
+  // For now: anyone who joined the waitlist gets a soft "preview" until auth lands
+  return false;
+}
+
+function showProModal(feature = 'whatif') {
+  window._proModalFeature = feature;  // captured for the waitlist API submission
+  const overlay = document.getElementById('proModalOverlay');
+  const title   = document.getElementById('proModalTitle');
+  const desc    = overlay && overlay.querySelector('.pro-modal-desc');
+  const body    = document.getElementById('proModalBody');
+  const success = document.getElementById('proModalSuccess');
+  const meta    = PRO_MODAL[feature] || PRO_MODAL.whatif;
+  if (title) title.textContent = meta.title;
+  if (desc)  desc.innerHTML    = `${meta.pitch} Plus full access to every AI feature on DELAX GEO-RISK.`;
+  if (body)    body.style.display    = '';
+  if (success) success.classList.remove('show');
+  if (overlay) overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Focus email input for immediate typing
+  setTimeout(() => {
+    const inp = document.getElementById('proModalEmail');
+    if (inp) inp.focus();
+  }, 250);
+}
+
+function closeProModal() {
+  const overlay = document.getElementById('proModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitProWaitlist(e) {
+  e.preventDefault();
+  const email  = document.getElementById('proModalEmail').value.trim();
+  const btn    = document.getElementById('proModalSubmit');
+  const body   = document.getElementById('proModalBody');
+  const success= document.getElementById('proModalSuccess');
+  const echo   = document.getElementById('proModalEmailEcho');
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Adding you…';
+
+  // Capture context of which feature triggered this signup
+  const feature = (window._proModalFeature || 'unknown');
+
+  // Store locally as a backup in case the network fails
+  try {
+    const list = JSON.parse(localStorage.getItem('delax_pro_waitlist') || '[]');
+    if (!list.includes(email)) list.push(email);
+    localStorage.setItem('delax_pro_waitlist',          JSON.stringify(list));
+    localStorage.setItem('delax_pro_waitlist_latest',   email);
+    localStorage.setItem('delax_pro_waitlist_joined_at', new Date().toISOString());
+  } catch(_) {}
+
+  // POST to /api/waitlist → Resend → contact@delaxcom.com
+  let sentOk = false;
+  let errorMsg = '';
+  try {
+    const res = await fetch('/api/waitlist', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        scenario:  (typeof scenario !== 'undefined' ? scenario : 'unknown'),
+        feature,
+        userAgent: navigator.userAgent || '',
+        referrer:  document.referrer   || '',
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      sentOk = true;
+    } else {
+      errorMsg = data.error || `HTTP ${res.status}`;
+      console.warn('[waitlist] API error:', errorMsg);
+    }
+  } catch (err) {
+    errorMsg = err.message;
+    console.warn('[waitlist] Network error:', errorMsg);
+  }
+
+  if (echo)    echo.textContent = email;
+  if (body)    body.style.display = 'none';
+  if (success) success.classList.add('show');
+
+  // If the API failed, show a small warning (but still show success state —
+  // the email is in localStorage, we'll recover it on next deploy)
+  if (!sentOk && success) {
+    const warn = document.createElement('div');
+    warn.style.cssText = 'margin-top:.85rem;padding:.55rem .75rem;background:rgba(255,224,64,.08);border:1px solid rgba(255,224,64,.3);border-radius:2px;font-family:var(--mono);font-size:.58rem;color:var(--yellow);line-height:1.5';
+    warn.textContent = '⚠ Saved locally — if you don\'t hear from us in 48h, email contact@delaxcom.com directly.';
+    success.appendChild(warn);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Join Pro Waitlist →';
+}
+
+// ESC closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('proModalOverlay');
+    if (overlay && overlay.classList.contains('open')) closeProModal();
+  }
+});
+
+/* Investor Intelligence chip click handler — Option B */
+function setWhatIfChip(btn) {
+  const input = document.getElementById('whatifInput');
+  if (input) {
+    input.value = btn.textContent.trim();
+    input.focus();
+    runWhatIf();
+  }
+}
+
 async function runWhatIf() {
+  // Pro gate — Investor Intelligence is Pro only
+  if (!isProUser()) { showProModal('whatif'); return; }
   const input  = document.getElementById('whatifInput').value.trim();
   if (!input) return;
 
@@ -2252,31 +2963,8 @@ function exportCSV(type) {
 /* ═════════════════════════════════════════
    TICKER STRIP
    ═════════════════════════════════════════ */
-function initTickerStrip() {
-  renderTicker();
-  setInterval(jitterTicker, 8000);
-}
-function jitterTicker() {
-  tickerData = tickerData.map(t=>{
-    const pct = (Math.random()-0.499)*0.008;
-    return {...t, prevPrice:t.price, price:parseFloat((t.price*(1+pct)).toFixed(t.price<10?3:2))};
-  });
-  renderTicker();
-}
-function renderTicker() {
-  const track = document.getElementById('tickerTrack');
-  if (!track) return;
-  const items = tickerData.map(t=>{
-    const delta = t.price-t.prevPrice;
-    const pct   = ((delta/t.prevPrice)*100).toFixed(2);
-    const dir   = delta>0.001?'pos':delta<-0.001?'neg':'flat';
-    const arrow = dir==='pos'?'▲':dir==='neg'?'▼':'—';
-    const pfx   = t.unit.startsWith('$')?t.unit:'';
-    const sfx   = !t.unit.startsWith('$')&&t.unit?' '+t.unit:'';
-    return `<div class="ticker-item"><span class="ticker-symbol">${t.label}</span><span class="ticker-price">${pfx}${t.price<10?t.price.toFixed(3):t.price.toFixed(2)}${sfx}</span><span class="ticker-change ${dir}">${arrow} ${Math.abs(parseFloat(pct))}%</span></div>`;
-  }).join('');
-  track.innerHTML = items+items;
-}
+
+function renderTicker() { /* Ticker removed — Fix 2.2 */ }
 
 /* ═════════════════════════════════════════
    NEWS ALERT BANNER
@@ -2350,6 +3038,8 @@ async function fetchNewsArticles() {
     alertArticles = combined; alertIndex = 0;
     buildAlertDots(); renderAlert(0); startAlertRotation();
     autoGenerateNewsSummary(combined);
+    // Fix 2.3: update ambient news strip with top story
+    updateNewsStrip(combined[0]);
 
   } catch (err) {
     console.warn('[news] fetchNewsArticles error:', err.message);
@@ -2396,10 +3086,86 @@ function updateAlertDots(idx) {
   alertArticles.forEach((_,i)=>{ const d=document.getElementById(`adot-${i}`); if(d) d.style.background=i===idx?'var(--amber)':'var(--border)'; });
 }
 function jumpAlert(idx) { alertIndex=idx; renderAlert(idx); startAlertRotation(); }
+
+/* Fix 2.3: ambient 28px strip — always shows top headline, clickable to News tab */
+/* ═════════════════════════════════════════
+   STEP 14 — GDELT CONFLICT EVENT POLLING
+   Free · No API key · Updates every 15 min
+   Supplements NewsAPI with real-time conflict
+   events. High-alarm events surface immediately
+   in the ambient strip and News tab panel.
+   ═════════════════════════════════════════ */
+async function pollGdelt() {
+  try {
+    const res = await fetch('/api/gdelt');
+    if (!res.ok) return; // silent fail — GDELT is supplementary
+    const data = await res.json();
+    const results = data.results || [];
+    if (!results.length) return;
+
+    // Find alarm-level events (avgTone < -3, count > 3)
+    const alarms = results.filter(r => r.isAlarm);
+
+    // Update GDELT alert panel in News tab
+    const panel   = document.getElementById('gdeltAlertPanel');
+    const feedEl  = document.getElementById('gdeltAlertFeed');
+    if (panel && feedEl && results.length) {
+      feedEl.innerHTML = results.slice(0, 8).map(r => {
+        const barW  = Math.round(r.intensity * 100);
+        const color = r.isAlarm ? 'var(--red)' : r.intensity > 0.5 ? 'var(--amber)' : 'var(--text-dim)';
+        return `<div style="padding:.55rem 0;border-bottom:1px solid var(--border-dim)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+            <span style="font-family:var(--mono);font-size:.68rem;color:${color};font-weight:600">
+              ${r.isAlarm ? '🚨 ' : ''}${escHtml(r.country)}
+            </span>
+            <span style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim)">
+              ${r.count} events · tone ${r.avgTone.toFixed(1)}
+            </span>
+          </div>
+          <div style="background:var(--bg-deep);border-radius:2px;height:3px;overflow:hidden">
+            <div style="width:${barW}%;height:100%;background:${color};transition:width .4s"></div>
+          </div>
+        </div>`;
+      }).join('');
+      panel.style.display = 'block';
+    }
+
+    // If any alarm-level events: update the ambient strip immediately
+    if (alarms.length > 0) {
+      const top = alarms[0];
+      updateNewsStripGdelt(top.country, top.count);
+    }
+
+  } catch (err) {
+    // GDELT is supplementary — never show errors to the user
+    console.warn('[GDELT] poll failed:', err.message);
+  }
+}
+
+function updateNewsStrip(article) {
+  if (!article) return;
+  const badge = document.getElementById('newsStatusBadge');
+  const text  = document.getElementById('newsStatusText');
+  const meta  = document.getElementById('newsStatusMeta');
+  if (badge) {
+    badge.textContent = (article.catIcon || '⚡') + ' ' + (article.catLabel || 'NEWS');
+    badge.style.background = article.color || 'var(--amber)';
+    badge.style.color = '#080c14';
+  }
+  if (text) text.innerHTML = `<strong style="color:#c8d4e8">${escHtml(article.title)}</strong>`;
+  if (meta && article.published) meta.textContent = newsTimeAgo(article.published) + ' · ' + (article.source || '');
+}
+/* Called by GDELT when isAlarm events arrive — updates strip immediately without NewsAPI call */
+function updateNewsStripGdelt(country, count) {
+  const badge = document.getElementById('newsStatusBadge');
+  const text  = document.getElementById('newsStatusText');
+  if (badge) { badge.textContent = '🚨 ALERT'; badge.style.background = 'var(--red)'; }
+  if (text)  text.innerHTML = `<strong style="color:#c8d4e8">GDELT CONFLICT ALERT: ${escHtml(country)} — ${count} events in 48h</strong>`;
+}
 function setAlertFallback() {
   const label=document.getElementById('alertLabel'); const text=document.getElementById('alertText');
   if(label){label.innerHTML='🌐 GLOBAL NEWS';label.style.color='var(--amber)';}
-  if(text) text.innerHTML='<strong>COST OF LIVING MONITOR:</strong> Brent crude +56% YTD · Global food prices +27% · Shipping +310% · EM FX basket −14%';
+  if(text) text.innerHTML='<strong>COST OF LIVING MONITOR:</strong> WTI crude +56% YTD · Global food prices +27% · Shipping +310% · EM FX basket −14%';
 }
 
 /* ═════════════════════════════════════════
@@ -2413,6 +3179,8 @@ function setAlertFallback() {
    Runs every time news refreshes (20 min).
    ═════════════════════════════════════════ */
 async function autoGenerateNewsSummary(articles) {
+  // Pro gate — silently skip for Free users. News still shows, just no AI one-liner.
+  if (!isProUser()) return;
   if (!articles || !articles.length) return;
 
   // Show generating state in alert banner
@@ -2513,7 +3281,7 @@ function buildMonthlyGrid() {
     return `<article class="month-card" aria-label="${m.m}: ${m.phase}">
       <div class="month-label">${m.m}</div><div class="month-phase">${m.phase}</div>
       <div class="month-metrics">
-        <div class="month-metric"><div class="val" style="color:${oc}">${m.oil}</div><div class="lbl">Brent</div></div>
+        <div class="month-metric"><div class="val" style="color:${oc}">${m.oil}</div><div class="lbl">WTI</div></div>
         <div class="month-metric"><div class="val" style="color:#ff3d4a">${m.cpi}</div><div class="lbl">CPI Add</div></div>
         <div class="month-metric"><div class="val" style="color:#ff3d4a">${m.gdp}</div><div class="lbl">GDP Chg</div></div>
       </div><div class="month-desc">${m.desc}</div>
@@ -2547,6 +3315,8 @@ function buildSectorTable() {
     const b3=r.sig3==='buy'?`<span class="badge badge-buy">▲ Buy</span>`:r.sig3==='avoid'?`<span class="badge badge-avoid">▼ Avoid</span>`:`<span class="badge badge-monitor">● Monitor</span>`;
     const rc12=r.ret12.startsWith('+')?'#00e676':'#ff3d4a';
     const rc3 =r.ret3.startsWith('+')?'#00e676':'#ff3d4a';
+    // Step 12: extract first ticker from names for live price hydration
+    const firstTicker = r.names.split(',')[0].trim().replace('Short ','');
     return `<tr>
       <td data-label="Sector" style="font-weight:600;white-space:nowrap">${r.sector}</td>
       <td data-label="12M">${b12}</td><td data-label="3Yr">${b3}</td>
@@ -2554,9 +3324,43 @@ function buildSectorTable() {
       <td data-label="3Yr Return" style="color:${rc3};font-family:var(--mono);font-size:.63rem">${r.ret3}</td>
       <td data-label="Driver" style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec)">${r.driver}</td>
       <td data-label="Risk" style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim)">${r.risk}</td>
-      <td data-label="Names" style="font-family:var(--mono);font-size:.6rem;color:var(--cyan)">${r.names}</td>
+      <td data-label="Names" style="font-family:var(--mono);font-size:.6rem;color:var(--cyan)"
+          data-ticker="${firstTicker}">${r.names}
+        <span class="sector-live-price" id="slp-${firstTicker}"
+          style="display:inline-block;margin-left:.4rem;font-size:.55rem;
+          color:var(--text-dim);letter-spacing:.04em"></span>
+      </td>
     </tr>`;
   }).join('');
+  // Step 12: hydrate live prices 500ms after table builds (non-blocking)
+  setTimeout(hydrateSectorPrices, 500);
+}
+
+/* Step 12 — Sector table live price hydration via /api/market */
+const _sectorPriceCache = {};
+async function hydrateSectorPrices() {
+  const tickers = [...new Set(SECTOR_ROWS.map(r => r.names.split(',')[0].trim().replace('Short ','')))];
+  const results = await Promise.allSettled(
+    tickers.map(sym => {
+      if (_sectorPriceCache[sym] && Date.now() - _sectorPriceCache[sym].ts < 30000)
+        return Promise.resolve({ sym, data: _sectorPriceCache[sym].data });
+      return fetch(`/api/market?symbol=${encodeURIComponent(sym)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if(data && data.price) _sectorPriceCache[sym] = {data, ts:Date.now()}; return {sym, data}; });
+    })
+  );
+  results.forEach(r => {
+    if (r.status !== 'fulfilled' || !r.value?.data?.price) return;
+    const { sym, data } = r.value;
+    const el = document.getElementById(`slp-${sym}`);
+    if (!el) return;
+    const chg  = data.percentChange || 0;
+    const sign = chg >= 0 ? '+' : '';
+    const col  = chg >= 0 ? 'var(--green)' : 'var(--red)';
+    el.innerHTML = `<span style="color:var(--text-sec)">$${data.price.toFixed(2)}</span>` +
+      `<span style="color:${col};margin-left:.2rem">${sign}${chg.toFixed(1)}%</span>` +
+      (data.isEstimated ? `<span style="color:var(--text-dim)"> est</span>` : '');
+  });
 }
 
 /* ═════════════════════════════════════════
@@ -2699,211 +3503,7 @@ function initOilChartLong() {
     series});
 }
 
-/* ═════════════════════════════════════════
-   3D GLOBE — globe.gl
-   Spinnable · Zoomable · Country labels
-   Country colors driven by stress index
-   ═════════════════════════════════════════ */
-let globeInstance = null;
-let globeSpinning = true;
-let globeLabelsOn = false;
-
-/* Country → stress score mapping */
-const COUNTRY_STRESS = {
-  'Iran':4.5,'Iraq':8.5,'Saudi Arabia':8.8,'United Arab Emirates':7.5,
-  'Kuwait':7.8,'Bahrain':7.2,'Qatar':7.0,'Oman':7.0,'Yemen':9.2,
-  'Israel':7.5,'Lebanon':8.0,'Syria':8.5,'Jordan':6.5,'Egypt':6.8,
-  'Libya':7.0,'Algeria':6.5,'Morocco':6.2,'Tunisia':5.8,'Sudan':6.0,
-  'Germany':3.8,'France':3.6,'United Kingdom':3.5,'Italy':3.9,'Spain':3.4,
-  'Netherlands':3.7,'Poland':3.2,'Greece':4.0,'Turkey':4.2,'Ukraine':4.5,
-  'Russia':3.5,'Norway':1.8,'United States of America':2.1,'Canada':1.8,
-  'Mexico':2.3,'Brazil':2.9,'Argentina':3.1,'Colombia':2.8,'Venezuela':4.5,
-  'Chile':2.5,'Peru':2.8,'China':2.8,'Japan':2.9,'South Korea':2.7,
-  'Taiwan':2.5,'India':5.4,'Pakistan':5.8,'Bangladesh':5.2,'Sri Lanka':5.0,
-  'Nigeria':6.2,'South Africa':5.5,'Ethiopia':6.5,'Kenya':5.8,'Ghana':5.5,
-  'Mozambique':5.0,'Tanzania':5.2,'Zambia':5.0,'Angola':4.8,'Somalia':7.0,
-  'Australia':1.4,'New Zealand':1.2,'Indonesia':3.2,'Malaysia':3.0,
-  'Thailand':3.4,'Philippines':3.5,'Vietnam':3.0,'Kazakhstan':1.6,
-  'Uzbekistan':1.8,'Afghanistan':7.5,'Myanmar':5.0,
-};
-
-function stressToGlobeColor(stress) {
-  if (!stress || stress < 1.5) return 'rgba(0,212,255,0.30)';
-  if (stress < 3)  return 'rgba(255,224,64,0.50)';
-  if (stress < 5)  return 'rgba(245,166,35,0.65)';
-  if (stress < 7)  return 'rgba(255,107,53,0.75)';
-  if (stress < 8.5)return 'rgba(255,61,74,0.80)';
-  return               'rgba(255,0,30,0.90)';
-}
-
-function getPolygonCentroid(geometry) {
-  let coords;
-  if (geometry.type === 'Polygon') {
-    coords = geometry.coordinates[0];
-  } else if (geometry.type === 'MultiPolygon') {
-    coords = geometry.coordinates.reduce((a,b)=>
-      a[0].length > b[0].length ? a : b)[0];
-  }
-  if (!coords || !coords.length) return [0,0];
-  const sum = coords.reduce((acc,c)=>[acc[0]+c[0],acc[1]+c[1]],[0,0]);
-  return [sum[0]/coords.length, sum[1]/coords.length];
-}
-
-function initGlobeMap() {
-  const el = document.getElementById('worldMap');
-  if (!el) return;
-
-  // Already initialized — just ensure correct dimensions
-  if (globeInstance) {
-    globeInstance.width(el.offsetWidth || 800).height(500);
-    return;
-  }
-
-  // Show loading state
-  el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:500px;font-family:\'IBM Plex Mono\',monospace;font-size:.65rem;color:#3d5270;letter-spacing:.1em">⟳ LOADING GLOBE…</div>';
-
-  // Fetch GeoJSON country polygons
-  fetch('https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson')
-    .then(r => r.json())
-    .then(world => {
-      el.innerHTML = ''; // clear loading
-
-      const width  = el.offsetWidth  || 800;
-      const height = 500;
-
-      globeInstance = Globe()
-        (el)
-        .width(width)
-        .height(height)
-        // Earth texture — dark night-side globe
-        .globeImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg')
-        .bumpImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png')
-        .backgroundImageUrl('https://cdn.jsdelivr.net/npm/three-globe/example/img/night-sky.png')
-        // Country polygons colored by stress
-        .polygonsData(world.features)
-        .polygonAltitude(d => {
-          const s = COUNTRY_STRESS[d.properties.name] || 0;
-          return 0.005 + (s/10)*0.025; // stressed countries pop out more
-        })
-        .polygonCapColor(d => stressToGlobeColor(COUNTRY_STRESS[d.properties.name]))
-        .polygonSideColor(() => 'rgba(0,0,0,0.2)')
-        .polygonStrokeColor(() => 'rgba(30,48,85,0.8)')
-        .polygonLabel(d => {
-          const name   = d.properties.name || 'Unknown';
-          const stress = COUNTRY_STRESS[name];
-          const row    = CONTINENTAL_ROWS.find(r =>
-            r.region.toLowerCase().includes(name.split(' ')[0].toLowerCase())
-          );
-          const stressStr = stress ? stress.toFixed(1)+'/10' : 'N/A';
-          const color     = stressToGlobeColor(stress || 0).replace(/[\d.]+\)$/, '1)');
-          return `<div style="font-family:'IBM Plex Mono',monospace;background:#0d1525;
-            border:1px solid #1e3055;border-left:3px solid ${color};
-            color:#e8edf5;padding:10px 12px;border-radius:2px;min-width:190px;
-            box-shadow:0 4px 20px rgba(0,0,0,.7)">
-            <strong style="color:${color};font-size:13px">${name}</strong><br>
-            <span style="color:#5a7299;font-size:11px">Stress Index: </span>
-            <strong style="color:${color}">${stressStr}</strong><br>
-            ${row ? `<span style="color:#5a7299;font-size:11px">GDP Yr1: </span><strong style="color:#ff3d4a">${row.gdp}</strong><br>
-            <span style="color:#5a7299;font-size:11px">Signal: </span>
-            <strong style="color:#00d4ff">${row.signal.toUpperCase()}</strong>` : ''}
-          </div>`;
-        })
-        .onPolygonClick(d => {
-          const name   = d.properties.name || 'Unknown';
-          const stress = COUNTRY_STRESS[name] || 0;
-          showToast(`🌍 ${name} — Stress: ${stress ? stress.toFixed(1) : 'N/A'}/10`);
-          // Fly camera to clicked country
-          const [lng, lat] = getPolygonCentroid(d.geometry);
-          globeInstance.pointOfView({lat, lng, altitude: 1.2}, 1000);
-          // BUG 1 FIX: open stock insights popup on every country click
-          if (typeof openStockPopup === 'function') openStockPopup(name);
-        });
-
-      // Country name labels (shown when globeLabelsOn = true)
-      const labelData = world.features
-        .filter(f => COUNTRY_STRESS[f.properties.name])  // only mapped countries
-        .map(f => {
-          const [lng, lat] = getPolygonCentroid(f.geometry);
-          const stress = COUNTRY_STRESS[f.properties.name] || 0;
-          return {name: f.properties.name, lat, lng, stress};
-        });
-
-      globeInstance
-        .labelsData(globeLabelsOn ? labelData : [])
-        .labelLat(d => d.lat)
-        .labelLng(d => d.lng)
-        .labelText(d => d.name)
-        .labelSize(d => Math.max(0.3, d.stress/18))
-        .labelDotRadius(0.3)
-        .labelColor(d => stressToGlobeColor(d.stress).replace(/[\d.]+\)$/, '0.9)'))
-        .labelResolution(2)
-        .labelAltitude(0.02);
-
-      // Store label data for toggle
-      globeInstance._labelData = labelData;
-
-      // Auto-rotation
-      globeInstance.controls().autoRotate      = true;
-      globeInstance.controls().autoRotateSpeed = 0.4;
-      globeInstance.controls().enableZoom      = true;
-      globeInstance.controls().enablePan       = false;
-
-      // Stop spin on user interaction
-      el.addEventListener('mousedown', () => {
-        if (globeSpinning) {
-          globeInstance.controls().autoRotate = false;
-          // Re-enable after 4s idle
-          clearTimeout(window._globeSpinTimeout);
-          window._globeSpinTimeout = setTimeout(() => {
-            if (globeSpinning) globeInstance.controls().autoRotate = true;
-          }, 4000);
-        }
-      });
-
-      // Handle window resize
-      window.addEventListener('resize', () => {
-        if (globeInstance && el.offsetWidth > 0) {
-          globeInstance.width(el.offsetWidth).height(500);
-        }
-      });
-
-    })
-    .catch(() => {
-      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;font-family:\'IBM Plex Mono\',monospace;font-size:.65rem;color:#ff3d4a">⚠ Globe failed to load — check network connection</div>';
-    });
-}
-
-/* ── Globe controls ── */
-function toggleGlobeSpin() {
-  if (!globeInstance) return;
-  globeSpinning = !globeSpinning;
-  globeInstance.controls().autoRotate = globeSpinning;
-  const btn = document.getElementById('globeSpinBtn');
-  if (btn) {
-    btn.classList.toggle('active', globeSpinning);
-    btn.textContent = globeSpinning ? '⟳ AUTO-SPIN' : '⏸ PAUSED';
-  }
-}
-
-function toggleGlobeLabels() {
-  if (!globeInstance || !globeInstance._labelData) return;
-  globeLabelsOn = !globeLabelsOn;
-  globeInstance.labelsData(globeLabelsOn ? globeInstance._labelData : []);
-  const btn = document.getElementById('globeLabelsBtn');
-  if (btn) btn.classList.toggle('active', globeLabelsOn);
-  showToast(globeLabelsOn ? '🏷 Country labels ON' : '🏷 Country labels OFF');
-}
-
-function resetGlobe() {
-  if (!globeInstance) return;
-  globeInstance.pointOfView({lat: 20, lng: 20, altitude: 2.5}, 1000);
-  globeSpinning = true;
-  globeInstance.controls().autoRotate = true;
-  const btn = document.getElementById('globeSpinBtn');
-  if (btn) { btn.classList.add('active'); btn.textContent = '⟳ AUTO-SPIN'; }
-  showToast('🌍 Globe reset to default view');
-}
-
+/* Globe JS removed — Fix 2.1 */
 /* ═════════════════════════════════════════
    ECHART CONFIGS
    ═════════════════════════════════════════ */
@@ -3079,7 +3679,8 @@ function initAllCharts() {
    Cache prevents redundant API calls.
    ═════════════════════════════════════════ */
 
-const narrativeCache = {};   // key: `heatmap_${scenario}` or `kpi_${kpiId}_${scenario}`
+const narrativeCache  = {};   // key: `heatmap_${scenario}` or `kpi_${kpiId}_${scenario}`
+const geointelCache   = {};   // key: `geointel_${scenario}` — Fix 1.1
 let kpiPanelOpen = false;
 
 /* ── 1. HEATMAP NARRATIVE ─────────────────
@@ -3089,6 +3690,25 @@ let kpiPanelOpen = false;
    Caches result per scenario to avoid repeat calls.
    ─────────────────────────────────────────── */
 async function fetchHeatmapNarrative() {
+  // Pro gate — show inline upsell in the narrative body, don't pop a modal for auto-runs
+  if (!isProUser()) {
+    const tagEl = document.getElementById('narrativeScenarioTag');
+    if (tagEl) tagEl.textContent = scenario.charAt(0).toUpperCase() + scenario.slice(1);
+    const body    = document.getElementById('heatmapNarrativeBody');
+    const loading = document.getElementById('heatmapNarrativeLoading');
+    const errDiv  = document.getElementById('heatmapNarrativeError');
+    if (loading) loading.style.display = 'none';
+    if (errDiv)  errDiv.style.display  = 'none';
+    if (body) {
+      body.style.display = 'block';
+      body.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.5rem 0">' +
+        '<div><strong style="color:var(--text-pri)">🔒 AI Heatmap Narrative is a Pro feature.</strong><br>' +
+        '<span style="font-size:.72rem;color:var(--text-sec)">Get scenario-aware commentary on regional risk.</span></div>' +
+        '<button class="btn" style="background:rgba(179,136,255,.12);border-color:rgba(179,136,255,.4);color:var(--purple);font-weight:600" onclick="showProModal(\'heatmap\')">Unlock with Pro →</button>' +
+        '</div>';
+    }
+    return;
+  }
   const cacheKey = `heatmap_${scenario}`;
 
   // Update scenario tag label
@@ -3162,6 +3782,8 @@ async function fetchHeatmapNarrative() {
    Args: kpiId (string), kpiLabel, kpiValue
    ─────────────────────────────────────────── */
 async function showKPINarrative(kpiId, kpiLabel, kpiValue) {
+  // Pro gate — user clicked a KPI card expecting AI analysis
+  if (!isProUser()) { showProModal('kpi'); return; }
   const cacheKey = `kpi_${kpiId}_${scenario}`;
 
   const panel    = document.getElementById('kpiNarrativePanel');
@@ -3317,6 +3939,8 @@ function mirrorFeedToGeoIntel() {
 }
 
 async function requestGeoIntelBriefing() {
+  // Pro gate — user clicked "Generate briefing" expecting AI output
+  if (!isProUser()) { showProModal('geointel'); return; }
   const panel   = document.getElementById('geointelBriefPanel');
   const loading = document.getElementById('geointelLoading');
   const body    = document.getElementById('geointelBriefBody');
@@ -3398,17 +4022,21 @@ function mirrorFeedToGeoIntel(newsItems) {
     container.innerHTML = '<div style="font-family:var(--mono);font-size:.65rem;color:var(--text-dim)">No live headlines yet…</div>';
     return;
   }
+  // Fix 1.3: handle both Finnhub (datetime:unix, headline) and NewsAPI (pubDate:ISO, title) shapes
   container.innerHTML = newsItems.slice(0,10).map(item => {
-    const time    = new Date(item.datetime*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    const summary = (item.summary||'').substring(0,140);
+    const ts       = item.datetime ? new Date(item.datetime * 1000) : new Date(item.pubDate || Date.now());
+    const time     = ts.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    const headline = item.headline || item.title || '';
+    const summary  = (item.summary || item.description || '').substring(0, 140);
+    const url      = item.url || item.link || '';
     return `<div style="border-bottom:1px solid var(--border-dim);padding:.65rem 0">
       <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;gap:.5rem">
         <small style="color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:.6rem">${time}</small>
         <small style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:.58rem">${item.source||''}</small>
       </div>
-      <div style="font-size:.8rem;font-weight:600;color:var(--text-pri);margin-bottom:.25rem;line-height:1.4">${item.headline||''}</div>
+      <div style="font-size:.8rem;font-weight:600;color:var(--text-pri);margin-bottom:.25rem;line-height:1.4">${headline}</div>
       <div style="font-size:.7rem;color:var(--text-dim);line-height:1.5">${summary}${summary.length>=140?'…':''}</div>
-      ${item.url?`<a href="${item.url}" target="_blank" rel="noopener"
+      ${url?`<a href="${url}" target="_blank" rel="noopener"
         style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--cyan);text-decoration:none">Read →</a>`:''}
     </div>`;
   }).join('');
@@ -3735,6 +4363,623 @@ function _spGetCountryData(countryName) {
   }
   return {};
 }
+
+/* ═════════════════════════════════════════════════════════════
+   BATCH 3 / STEP 15 — EQUITIES TAB
+   Bloomberg-style equity research terminal. Connects to
+   /api/market-equity (fundamentals + candles) and /api/market
+   (live quote). Scenario projections use DELAX conflict mults.
+   AI insight calls /api/analyze type:'stockinsights' — Pro gated.
+   ═════════════════════════════════════════════════════════════ */
+
+/* State */
+let eqCurrentSymbol  = null;
+let eqCurrentData    = null;   // last /api/market-equity response
+let eqAllCandles     = [];     // full 90-day candle set
+let eqRangeDays      = 30;
+let eqWatchPrices    = {};     // { sym: { price, percentChange } }
+const EQ_WATCH_META  = [
+  { id:'XOM',    name:'ExxonMobil'       },
+  { id:'LMT',    name:'Lockheed Martin'  },
+  { id:'RTX',    name:'RTX Corp'         },
+  { id:'GLD',    name:'SPDR Gold ETF'    },
+  { id:'DAL',    name:'Delta Air Lines'  },
+  { id:'GDX',    name:'VanEck Gold Miners'},
+  { id:'XLE',    name:'Energy Select ETF'},
+  { id:'TLT',    name:'iShares 20Y Bond' },
+];
+
+/* Conflict premium multipliers by sector/scenario (DELAX model) */
+const EQ_SCENARIO_MULT = {
+  baseline:    { energy:1.42, defense:1.28, gold:1.18, airlines:0.82, bonds:0.95, sp500:0.91, em:0.86, dxy:1.06 },
+  optimistic:  { energy:0.96, defense:1.08, gold:1.04, airlines:1.06, bonds:1.03, sp500:1.05, em:1.04, dxy:0.97 },
+  pessimistic: { energy:1.85, defense:1.52, gold:1.38, airlines:0.58, bonds:0.88, sp500:0.74, em:0.71, dxy:1.14 },
+};
+
+/* Map tickers to sectors for projection calc */
+function eqGetSector(sym) {
+  const map = {
+    XOM:'energy', CVX:'energy', COP:'energy', XLE:'energy', VDE:'energy',
+    LMT:'defense', RTX:'defense', NOC:'defense', BA:'defense', ITA:'defense',
+    GLD:'gold',  GDX:'gold',   IAU:'gold',   GOLD:'gold',
+    DAL:'airlines', UAL:'airlines', LUV:'airlines', AAL:'airlines',
+    TLT:'bonds',  BND:'bonds',  AGG:'bonds',  IEF:'bonds',
+    SPY:'sp500',  VOO:'sp500',  IVV:'sp500',  QQQ:'sp500',
+    EEM:'em',     VWO:'em',     IEMG:'em',
+    DXY:'dxy',    UUP:'dxy',
+  };
+  return map[sym] || 'sp500'; // default to S&P 500 multiplier
+}
+
+/* ── Autocomplete engine ── */
+let _eqDebounce   = null;
+let _eqDropFocus  = -1;
+let _eqDropItems  = [];
+
+function eqOnInput(val) {
+  clearTimeout(_eqDebounce);
+  _eqDropFocus = -1;
+  if (!val || val.trim().length < 2) {
+    eqCloseDropdown();
+    return;
+  }
+  // Show searching state immediately
+  const dd = document.getElementById('eqDropdown');
+  if (dd) {
+    dd.style.display = 'block';
+    dd.innerHTML = '<div class="eq-drop-searching">◉ Searching global markets…</div>';
+    document.getElementById('eqSearchInput')?.setAttribute('aria-expanded','true');
+  }
+  _eqDebounce = setTimeout(() => eqFetchSuggestions(val.trim()), 300);
+}
+
+async function eqFetchSuggestions(q) {
+  const dd = document.getElementById('eqDropdown');
+  if (!dd) return;
+  try {
+    const res  = await fetch(`/api/market-search?q=${encodeURIComponent(q)}`);
+    const data = res.ok ? await res.json() : null;
+    const items = data?.results || [];
+    _eqDropItems = items;
+    _eqDropFocus = -1;
+    eqRenderDropdown(items, q);
+  } catch (_) {
+    if (dd) dd.innerHTML = '<div class="eq-drop-empty">Search unavailable — enter symbol directly</div>';
+  }
+}
+
+function eqRenderDropdown(items, q) {
+  const dd = document.getElementById('eqDropdown');
+  if (!dd) return;
+  if (!items.length) {
+    dd.innerHTML = `<div class="eq-drop-empty">No results for "${escHtml(q)}" — try a different spelling or ticker</div>`;
+    dd.style.display = 'block';
+    return;
+  }
+  const rows = items.map((r, i) => {
+    const typeTag = r.type && r.type !== 'Common Stock'
+      ? `<span class="eq-drop-type">${escHtml(r.type)}</span>` : '';
+    return `<div class="eq-drop-item" role="option" data-idx="${i}"
+      onclick="eqSelectDropItem(${i})"
+      onmouseover="eqFocusItem(${i})">
+      <span class="eq-drop-flag">${r.flag || '🌐'}</span>
+      <span class="eq-drop-sym">${escHtml(r.displaySymbol || r.symbol)}</span>
+      <span class="eq-drop-name" title="${escHtml(r.name)}">${escHtml(r.name)}</span>
+      ${typeTag}
+      <span class="eq-drop-exch">${escHtml(r.exchange)}</span>
+    </div>`;
+  }).join('');
+
+  dd.innerHTML = rows +
+    `<div class="eq-drop-footer">
+      ${items.length} result${items.length!==1?'s':''} · NYSE · NASDAQ · LSE · Tokyo · HK · Frankfurt · Tadawul and more
+    </div>`;
+  dd.style.display = 'block';
+}
+
+function eqFocusItem(idx) {
+  _eqDropFocus = idx;
+  document.querySelectorAll('#eqDropdown .eq-drop-item').forEach((el, i) => {
+    el.classList.toggle('focused', i === idx);
+  });
+}
+
+function eqSelectDropItem(idx) {
+  const item = _eqDropItems[idx];
+  if (!item) return;
+  const inp = document.getElementById('eqSearchInput');
+  if (inp) inp.value = item.symbol;
+  eqCloseDropdown();
+  eqLoadTicker(item.symbol);
+}
+
+function eqCloseDropdown() {
+  const dd  = document.getElementById('eqDropdown');
+  const inp = document.getElementById('eqSearchInput');
+  if (dd)  { dd.style.display = 'none'; dd.innerHTML = ''; }
+  if (inp) inp.setAttribute('aria-expanded','false');
+  _eqDropFocus = -1;
+  _eqDropItems = [];
+}
+
+function eqOnKeydown(e) {
+  const dd    = document.getElementById('eqDropdown');
+  const items = dd ? dd.querySelectorAll('.eq-drop-item') : [];
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault();
+      _eqDropFocus = Math.min(_eqDropFocus + 1, items.length - 1);
+      eqFocusItem(_eqDropFocus);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      _eqDropFocus = Math.max(_eqDropFocus - 1, 0);
+      eqFocusItem(_eqDropFocus);
+      break;
+    case 'Enter':
+      e.preventDefault();
+      if (_eqDropFocus >= 0 && _eqDropItems[_eqDropFocus]) {
+        eqSelectDropItem(_eqDropFocus);
+      } else {
+        eqSearch();
+      }
+      break;
+    case 'Escape':
+      eqCloseDropdown();
+      break;
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('#eqDropdown') && !e.target.closest('#eqSearchInput')) {
+    eqCloseDropdown();
+  }
+});
+
+/* ── Search handler ── */
+async function eqSearch() {
+  eqCloseDropdown();
+  const raw = document.getElementById('eqSearchInput').value.trim().toUpperCase();
+  if (!raw) return;
+  await eqLoadTicker(raw);
+}
+
+async function eqLoadTicker(sym) {
+  sym = sym.toUpperCase().trim();
+  if (!sym) return;
+  eqCloseDropdown();
+
+  // Update search input
+  const inp = document.getElementById('eqSearchInput');
+  if (inp) inp.value = sym;
+
+  const btn = document.getElementById('eqSearchBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+
+  // Show results, hide empty state
+  document.getElementById('eqEmpty').style.display    = 'none';
+  document.getElementById('eqResults').style.display  = 'block';
+
+  // Reset UI to loading state
+  ['eqTickerName','eqTickerSym','eqPrice','eqChange','eqMktStatus',
+   'eqStatMktCap','eqStatPE','eqStat52H','eqStat52L',
+   'eqStatBeta','eqStatDiv','eqStatTarget','eqStatMargin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = '—'; el.className = el.className; }
+  });
+  document.getElementById('eqAiContent').innerHTML =
+    '<div style="color:var(--text-dim);font-size:.72rem">Click <strong style="color:var(--purple)">Get AI Analysis</strong> to analyse this stock.</div>';
+
+  try {
+    const res  = await fetch(`/api/market-equity?symbol=${encodeURIComponent(sym)}`);
+    const data = res.ok ? await res.json() : null;
+
+    if (!data || (!data.quote && !data.fundamentals)) {
+      throw new Error(data?.error || 'No data returned');
+    }
+
+    eqCurrentSymbol = sym;
+    eqCurrentData   = data;
+    eqAllCandles    = data.candles || [];
+
+    eqRenderHeader(data);
+    eqRenderStats(data);
+    eqRenderChart(eqRangeDays);
+    eqRenderProjections(data);
+    eqUpdateSidebar();
+
+    // Track in watchlist local cache
+    if (data.quote) eqWatchPrices[sym] = data.quote;
+
+  } catch (err) {
+    document.getElementById('eqTickerName').textContent = `⚠ ${err.message}`;
+    document.getElementById('eqTickerSym').textContent  = sym;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'LOOK UP →'; }
+  }
+}
+
+function eqRenderHeader(data) {
+  const q    = data.quote || {};
+  const fund = data.fundamentals || {};
+  const name = fund.name || data.symbol;
+
+  const nameEl = document.getElementById('eqTickerName');
+  const symEl  = document.getElementById('eqTickerSym');
+  const srcEl  = document.getElementById('eqSourceTag');
+  const priceEl= document.getElementById('eqPrice');
+  const chgEl  = document.getElementById('eqChange');
+  const statEl = document.getElementById('eqMktStatus');
+
+  if (nameEl) nameEl.textContent = name;
+  if (symEl)  symEl.textContent  = data.symbol;
+  if (srcEl)  srcEl.textContent  = q.source || fund.source || 'Finnhub';
+  if (priceEl && q.price) priceEl.textContent = `$${q.price.toFixed(2)}`;
+
+  if (chgEl && q.percentChange != null) {
+    const sign = q.percentChange >= 0 ? '+' : '';
+    chgEl.textContent = `${sign}${q.change?.toFixed(2) || '0.00'} (${sign}${q.percentChange.toFixed(2)}%)`;
+    chgEl.className   = `eq-change ${q.percentChange >= 0 ? 'up' : 'down'}`;
+  }
+  if (statEl) statEl.textContent = q.isEstimated ? '(prev close)' : '';
+}
+
+function eqFmt(val, type) {
+  if (val == null || isNaN(val)) return '—';
+  switch(type) {
+    case 'cap': {
+      if (val >= 1e12) return `$${(val/1e12).toFixed(2)}T`;
+      if (val >= 1e9)  return `$${(val/1e9).toFixed(1)}B`;
+      if (val >= 1e6)  return `$${(val/1e6).toFixed(0)}M`;
+      return `$${val.toFixed(0)}`;
+    }
+    case 'pct': return `${(val*100).toFixed(1)}%`;
+    case 'x':   return `${parseFloat(val).toFixed(1)}x`;
+    case '$':   return `$${parseFloat(val).toFixed(2)}`;
+    case 'raw': return parseFloat(val).toFixed(2);
+    default:    return String(val);
+  }
+}
+
+function eqRenderStats(data) {
+  const f = data.fundamentals || {};
+  const q = data.quote        || {};
+  const stats = [
+    ['eqStatMktCap', eqFmt(f.marketCap,     'cap')],
+    ['eqStatPE',     eqFmt(f.pe,            'raw')],
+    ['eqStat52H',    eqFmt(f.high52 || q.high, '$')],
+    ['eqStat52L',    eqFmt(f.low52  || q.low,  '$')],
+    ['eqStatBeta',   eqFmt(f.beta,           'raw')],
+    ['eqStatDiv',    f.dividendYield ? eqFmt(f.dividendYield,'pct') : '—'],
+    ['eqStatTarget', eqFmt(f.analystTarget,  '$')],
+    ['eqStatMargin', f.profitMargin ? eqFmt(f.profitMargin,'pct') : '—'],
+  ];
+  stats.forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  });
+}
+
+function eqRenderChart(days) {
+  const canvas = document.getElementById('eq-chart-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W   = canvas.width  = canvas.offsetWidth  || 600;
+  const H   = canvas.height = 240;
+
+  // Slice to requested range
+  const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
+  if (!candles.length) {
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#5a7299';
+    ctx.font = '12px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('No chart data available', W/2, H/2);
+    return;
+  }
+
+  const pad   = { t:20, r:16, b:32, l:58 };
+  const cW    = W - pad.l - pad.r;
+  const cH    = H - pad.t - pad.b;
+  const prices= candles.flatMap(c => [c.high, c.low]);
+  const minP  = Math.min(...prices);
+  const maxP  = Math.max(...prices);
+  const range = maxP - minP || 1;
+  const xStep = cW / candles.length;
+
+  const toX   = i  => pad.l + i * xStep + xStep / 2;
+  const toY   = p  => pad.t + cH - ((p - minP) / range) * cH;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines + price labels
+  ctx.strokeStyle = 'rgba(30,46,74,.6)';
+  ctx.lineWidth   = 1;
+  ctx.fillStyle   = '#5a7299';
+  ctx.font        = '10px IBM Plex Mono, monospace';
+  ctx.textAlign   = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const p = minP + (range / 4) * i;
+    const y = toY(p);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y);
+    ctx.stroke();
+    ctx.fillText(`$${p.toFixed(0)}`, pad.l - 4, y + 3);
+  }
+
+  // Date labels (every ~5 candles)
+  ctx.textAlign  = 'center';
+  ctx.fillStyle  = '#3d5270';
+  ctx.font       = '9px IBM Plex Mono, monospace';
+  candles.forEach((c, i) => {
+    if (i % Math.max(1, Math.floor(candles.length / 5)) === 0) {
+      const d = new Date(c.time * 1000);
+      ctx.fillText(`${d.getMonth()+1}/${d.getDate()}`, toX(i), H - pad.b + 14);
+    }
+  });
+
+  // Volume bars (faint, in lower 20% of chart)
+  const maxVol = Math.max(...candles.map(c => c.volume || 0));
+  if (maxVol > 0) {
+    candles.forEach((c, i) => {
+      const barH  = ((c.volume || 0) / maxVol) * (cH * 0.18);
+      const isUp  = c.close >= c.open;
+      ctx.fillStyle = isUp ? 'rgba(0,230,118,.15)' : 'rgba(255,61,74,.15)';
+      ctx.fillRect(toX(i) - xStep * 0.35, H - pad.b - barH, xStep * 0.7, barH);
+    });
+  }
+
+  // Candles
+  candles.forEach((c, i) => {
+    const isUp  = c.close >= c.open;
+    const col   = isUp ? '#00e676' : '#ff3d4a';
+    const x     = toX(i);
+    const oY    = toY(c.open);
+    const cY    = toY(c.close);
+    const hY    = toY(c.high);
+    const lY    = toY(c.low);
+
+    // Wick
+    ctx.strokeStyle = col;
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(x, hY); ctx.lineTo(x, lY); ctx.stroke();
+
+    // Body
+    ctx.fillStyle = col;
+    const bodyTop = Math.min(oY, cY);
+    const bodyH   = Math.max(Math.abs(oY - cY), 1);
+    ctx.fillRect(x - xStep * 0.35, bodyTop, xStep * 0.7, bodyH);
+  });
+
+  // Close-price trend line (subtle overlay)
+  ctx.strokeStyle = 'rgba(0,212,255,.35)';
+  ctx.lineWidth   = 1.5;
+  ctx.lineJoin    = 'round';
+  ctx.beginPath();
+  candles.forEach((c, i) => {
+    if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+    else         ctx.lineTo(toX(i), toY(c.close));
+  });
+  ctx.stroke();
+}
+
+function eqSetRange(days, btn) {
+  eqRangeDays = days;
+  document.querySelectorAll('.eq-range-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const label = document.getElementById('eqChartLabel');
+  if (label) label.textContent = `${days === 30 ? '30' : days === 60 ? '60' : '90'}-Day Price History`;
+  eqRenderChart(days);
+}
+
+function eqRenderProjections(data) {
+  const q = data.quote || {};
+  if (!q.price) return;
+
+  const price   = q.price;
+  const sym     = data.symbol;
+  const sector  = eqGetSector(sym);
+  const sc      = scenario || 'baseline';
+  const mults   = EQ_SCENARIO_MULT[sc] || EQ_SCENARIO_MULT.baseline;
+  const secMult = mults[sector] || mults.sp500;
+
+  // Base annualised return assumptions (rough historical sector averages)
+  const baseAnnual = {
+    energy:0.07, defense:0.09, gold:0.05, airlines:0.04,
+    bonds:-0.01, sp500:0.09, em:0.06, dxy:0.01,
+  };
+  const baseAnn  = baseAnnual[sector] || 0.07;
+
+  // Conflict-adjusted 3M, 6M, 12M projections
+  const adj3M    = price * (1 + (baseAnn * secMult * (3/12)));
+  const adj6M    = price * (1 + (baseAnn * secMult * (6/12)));
+  const adj12Opt = price * (1 + (baseAnn * EQ_SCENARIO_MULT.optimistic[sector]  || 1.05));
+  const adj12Pes = price * (1 + (baseAnn * EQ_SCENARIO_MULT.pessimistic[sector] || 0.85));
+
+  const sign = v => v >= price ? '+' : '';
+  const fmt  = v => `$${v.toFixed(2)} (${sign(v)}${(((v-price)/price)*100).toFixed(1)}%)`;
+
+  document.getElementById('eqProj3M').textContent     = fmt(adj3M);
+  document.getElementById('eqProj6M').textContent     = fmt(adj6M);
+  document.getElementById('eqProj12MBull').textContent= fmt(adj12Opt);
+  document.getElementById('eqProj12MBear').textContent= fmt(adj12Pes);
+
+  // Scenario label
+  const scLabel = document.getElementById('eqScenarioActiveLabel');
+  const siLabel = document.getElementById('eqAiScenarioTag');
+  const sideSc  = document.getElementById('eqSideScenario');
+  const sideDesc= document.getElementById('eqSideScenarioDesc');
+  const scName  = sc.charAt(0).toUpperCase() + sc.slice(1);
+  if (scLabel) scLabel.textContent = `Active: ${scName}`;
+  if (siLabel) siLabel.textContent = scName;
+  if (sideSc)  sideSc.textContent  = scName;
+  const desc = {
+    baseline:   '24-month conflict · Partial Hormuz disruption · WTI at model peak',
+    optimistic: 'Ceasefire by Month 10 · Hormuz reopens · Recovery trajectory',
+    pessimistic:'Full Hormuz closure 6+ months · Regional expansion · Demand shock',
+  };
+  if (sideDesc) sideDesc.textContent = desc[sc] || '';
+}
+
+/* ── Watchlist sidebar ── */
+async function eqUpdateSidebar() {
+  const container = document.getElementById('eqWatchlist');
+  if (!container) return;
+
+  // Render immediately with cached prices, then refresh
+  eqRenderWatchlist(container);
+
+  // Fetch fresh prices in parallel
+  const fetches = EQ_WATCH_META.map(w =>
+    fetch(`/api/market?symbol=${encodeURIComponent(w.id)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.price) eqWatchPrices[w.id] = d; })
+      .catch(() => null)
+  );
+  await Promise.allSettled(fetches);
+  eqRenderWatchlist(container);
+}
+
+function eqRenderWatchlist(container) {
+  container.innerHTML = EQ_WATCH_META.map(w => {
+    const d    = eqWatchPrices[w.id];
+    const price= d?.price != null ? `$${d.price.toFixed(2)}` : '—';
+    const pct  = d?.percentChange != null ? d.percentChange : null;
+    const pctStr = pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '—';
+    const cls  = pct == null ? '' : pct >= 0 ? 'up' : 'down';
+    const isActive = w.id === eqCurrentSymbol ? 'background:rgba(0,212,255,.06);border-radius:2px' : '';
+    return `<div class="eq-watch-row" onclick="eqLoadTicker('${w.id}')" style="${isActive}">
+      <div>
+        <div class="eq-watch-sym">${w.id}</div>
+        <div class="eq-watch-name">${w.name}</div>
+      </div>
+      <div>
+        <div class="eq-watch-price">${price}</div>
+        <div class="eq-watch-chg ${cls}">${pctStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── AI Analysis (Pro gated) ── */
+async function eqGetAI() {
+  if (!isProUser()) { showProModal('kpi'); return; }
+  if (!eqCurrentSymbol || !eqCurrentData) return;
+
+  const btn     = document.getElementById('eqAiBtn');
+  const content = document.getElementById('eqAiContent');
+  if (btn)  { btn.disabled = true; btn.textContent = '◉ Analysing…'; }
+  if (content) content.innerHTML = '<div style="color:var(--text-dim);font-size:.72rem;animation:pulse 1.5s infinite">Gemini 2.5 is analysing this stock against the active scenario…</div>';
+
+  const q    = eqCurrentData.quote        || {};
+  const fund = eqCurrentData.fundamentals || {};
+  const sc   = scenario || 'baseline';
+
+  try {
+    const res  = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type:     'stockinsights',
+        symbol:   eqCurrentSymbol,
+        price:    q.price,
+        change:   q.percentChange,
+        pe:       fund.pe,
+        beta:     fund.beta,
+        sector:   eqGetSector(eqCurrentSymbol),
+        scenario: sc,
+        oilPrice: liveBrentPrice || 78,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const text = (data.analysis || data.narrative || '').replace(/\n/g, '<br>');
+    if (content) content.innerHTML = `<div style="line-height:1.75">${text}</div>`;
+  } catch (err) {
+    if (content) content.innerHTML = `<div style="color:var(--red);font-size:.72rem">⚠ ${err.message}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔒 Get AI Analysis (Pro)'; }
+  }
+}
+
+/* Fix 3 (mobile) — sidebar toggle */
+function eqToggleSidebar() {
+  const sidebar = document.getElementById('eqSidebar');
+  const btn     = document.getElementById('eqSidebarToggle');
+  if (!sidebar || !btn) return;
+  const open = sidebar.classList.toggle('mobile-open');
+  btn.textContent = open
+    ? '▼ Watchlist & Sector Signals'
+    : '▶ Watchlist & Sector Signals';
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+/* Show sidebar toggle button only on small screens */
+function eqInitMobileUI() {
+  const btn = document.getElementById('eqSidebarToggle');
+  if (!btn) return;
+  btn.style.display = window.innerWidth <= 500 ? 'block' : 'none';
+}
+window.addEventListener('resize', eqInitMobileUI);
+// Run on first equities tab open (handled inside eqInitialised block below)
+
+/* Fix 3 (mobile) — hook into tab switch to init mobile UI */
+let eqInitialised = false;
+function switchTab(id, event) {
+  switchTabBase(id, event);
+  if (id === 'tab-equities' && !eqInitialised) {
+    eqInitialised = true;
+    eqUpdateSidebar();
+    eqInitMobileUI();
+  }
+  if (id === 'tab-equities' && eqCurrentData) {
+    eqRenderProjections(eqCurrentData);
+  }
+}
 </script>
+<!-- ═══════════════ PRO PAYWALL MODAL ═══════════════ -->
+<div class="pro-modal-overlay" id="proModalOverlay" onclick="if(event.target===this)closeProModal()" role="dialog" aria-modal="true" aria-labelledby="proModalTitle">
+  <div class="pro-modal">
+    <div class="pro-modal-header">
+      <div class="pro-modal-lock">🔒</div>
+      <div class="pro-modal-title" id="proModalTitle">AI Investor Intelligence</div>
+      <div class="pro-modal-tier">Pro Feature</div>
+    </div>
+    <!-- Primary state: pitch + waitlist form -->
+    <div class="pro-modal-body" id="proModalBody">
+      <p class="pro-modal-desc">
+        Get plain-English AI analysis of how the Iran conflict affects <strong style="color:var(--text-pri)">your specific investments</strong> — from energy stocks to inflation exposure to portfolio hedges.
+      </p>
+      <ul class="pro-modal-benefits">
+        <li>Ask unlimited natural-language questions about the conflict's market impact</li>
+        <li>Click any KPI for a deep-dive AI explanation of what's really happening</li>
+        <li>Real-time AI news summaries of breaking headlines</li>
+        <li>Scenario-aware heatmap narratives tailored to your active outlook</li>
+        <li>Priority access to new investor features as they launch</li>
+      </ul>
+      <form class="pro-modal-form" onsubmit="submitProWaitlist(event)">
+        <input type="email" class="pro-modal-input" id="proModalEmail" required
+          placeholder="your@email.com — join the Pro waitlist" aria-label="Email address" />
+        <button type="submit" class="pro-modal-btn" id="proModalSubmit">
+          Join Pro Waitlist →
+        </button>
+      </form>
+    </div>
+    <!-- Success state: confirmation after email submit -->
+    <div class="pro-modal-body pro-modal-success" id="proModalSuccess">
+      <div class="pro-modal-success-icon">✉</div>
+      <div class="pro-modal-success-text">
+        <strong style="color:var(--text-pri)">You're on the list.</strong><br>
+        We'll reach out to <span id="proModalEmailEcho" style="color:var(--cyan)"></span> the moment Pro launches.
+      </div>
+    </div>
+    <div class="pro-modal-footer">
+      <div class="pro-modal-contact">
+        Questions? <a href="mailto:contact@delaxcom.com">contact@delaxcom.com</a>
+      </div>
+      <button class="pro-modal-later" onclick="closeProModal()">Maybe later</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
