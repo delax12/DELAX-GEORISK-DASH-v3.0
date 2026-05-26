@@ -1514,6 +1514,11 @@ let tickerData = TICK_SYMBOLS.map(t=>({...t}));
 function jitterMarkets() {
   const smult = SCENARIO_MULT[scenario];
   tickerData = tickerData.map(t => {
+    // BATCH A FIX (May 2026): don't jitter live-fetched symbols.
+    // WTI/BRENT come from EIA via fetchLiveAPIs(); equities come from
+    // Finnhub via fetchFinnhubTicker(). Both mark their rows live:true.
+    // Random-walking those values overwrites true prices between refreshes.
+    if (t.live) return t;
     const vol = t.id==='VIX'?0.018:t.id==='BRENT'||t.id==='WTI'?0.006:
                 t.id==='GOLD'?0.003:t.id==='EMCS'?0.008:0.004;
     const drift = t.id==='BRENT'||t.id==='WTI'||t.id==='NG'?0.0002*(smult.oil-1):
@@ -2965,6 +2970,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Live market data from Vercel APIs (non-blocking)
   setTimeout(fetchLiveAPIs, 2000);
+  // BATCH A FIX (May 2026): refresh every 5 minutes so WTI/Brent stay current.
+  // EIA endpoint is CDN-cached for 6h server-side, so this costs almost nothing
+  // upstream — most calls hit the edge cache.
+  setInterval(fetchLiveAPIs, 5 * 60 * 1000);
 
   // Finnhub live equity prices — fetch on load + every 30s
   setTimeout(fetchFinnhubTicker, 3000);
@@ -2978,11 +2987,25 @@ async function fetchLiveAPIs() {
       fetch('/api/eia-oil').then(r => r.ok ? r.json() : null),
       fetch('/api/market-data?type=all').then(r => r.ok ? r.json() : null),
     ]);
-    if (eiaRes.status === 'fulfilled' && eiaRes.value?.price) {
-      const p = eiaRes.value.price;
-      tickerData = tickerData.map(t => t.id==='BRENT' ? {...t,prev:t.price,price:p,live:true} : t);
-      if (eiaRes.value.wti?.price) tickerData = tickerData.map(t => t.id==='WTI' ? {...t,prev:t.price,price:eiaRes.value.wti.price,live:true} : t);
-      if (eiaRes.value.natgas?.price) tickerData = tickerData.map(t => t.id==='NG' ? {...t,prev:t.price,price:eiaRes.value.natgas.price,live:true} : t);
+    // BATCH A FIX (May 2026): route WTI -> WTI ticker, Brent -> BRENT ticker.
+    // Previous version assigned the top-level eia-oil response.price
+    // (which is WTI/RWTC) to the BRENT row, causing the visible mismatch
+    // between the main header WTI pill and this iframe's WTI sidebar metric.
+    // The /api/eia-oil endpoint now returns nested {wti, brent} objects.
+    if (eiaRes.status === 'fulfilled' && eiaRes.value) {
+      const v = eiaRes.value;
+      if (v.wti && v.wti.price) {
+        tickerData = tickerData.map(t => t.id==='WTI'
+          ? { ...t, prev: t.price, price: v.wti.price, live: true }
+          : t);
+      }
+      if (v.brent && v.brent.price) {
+        tickerData = tickerData.map(t => t.id==='BRENT'
+          ? { ...t, prev: t.price, price: v.brent.price, live: true }
+          : t);
+      }
+      // Note: natgas removed — EIA spot endpoint doesn't return it on this path.
+      // NG ticker continues to be driven by jitter simulation.
     }
     if (mktRes.status === 'fulfilled' && mktRes.value?.results) {
       const m = mktRes.value.results;
