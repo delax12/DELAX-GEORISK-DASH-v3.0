@@ -6,7 +6,7 @@
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v2.4'; // bumped — globe.gl removed Fix 2.1
+const CACHE_NAME  = 'delax-georisk-v2.6'; // bumped — Vercel Analytics + Speed Insights added
 const CACHE_URLS  = [
   '/',
   '/index.html',
@@ -33,12 +33,12 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-/* Fetch — network first for /api/, cache first for everything else */
+/* Fetch — network first for /api/ and /_vercel/, cache first for everything else */
 self.addEventListener('fetch', event => {
   const url = event.request.url;
 
-  // Always go to network for API calls — don't cache live data
-  if (url.includes('/api/')) {
+  // Always go to network for API calls and Vercel insights beacons — don't cache
+  if (url.includes('/api/') || url.includes('/_vercel/')) {
     event.respondWith(
       fetch(event.request).catch(() =>
         new Response(JSON.stringify({ error: 'Offline — using model estimate' }), {
