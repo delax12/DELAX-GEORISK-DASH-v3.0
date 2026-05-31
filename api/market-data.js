@@ -109,6 +109,7 @@ module.exports = async function handler(req, res) {
       { id: 'DGS10',      label: 'US 10Y Yield',   unit: '%'       },
       { id: 'DCOILWTICO', label: 'WTI Crude',      unit: '$/bbl'   },
       { id: 'DHHNGSP',    label: 'Natural Gas',    unit: '$/MMBtu' },
+      { id: 'PFOODINDEXM',label: 'Global Food Index', unit: 'Index 2016=100' },
     ];
 
     const fredTasks = fredSeries.map(s =>

@@ -2106,7 +2106,7 @@ let liveBrentPrice = null;
 let liveDataDate   = null;
 let isBeginnerMode = false;
 let isColorBlind   = false;
-let alertArticles  = [], alertIndex = 0, alertRotTimer = null, alertFetchTimer = null;
+let alertArticles  = [], alertIndex = 0, alertRotTimer = null, alertFetchTimer = null, pulseTimer = null;
 let portfolioRows  = [];
 let customScenarioActive = false;
 
@@ -2567,9 +2567,16 @@ const PRO_MODAL = {
   geointel:  { title: 'AI GEO Intelligence Briefing',  pitch: 'On-demand AI briefings synthesizing live conflict signals.' },
 };
 
+/* ── PAYWALL MASTER SWITCH ──────────────────────────────────────────
+   Showcase phase: paywall OFF → every AI / Pro feature is open to all.
+   Step 16: set PAYWALL_ENABLED = true and wire isProUser() to Supabase. */
+const PAYWALL_ENABLED = false;
+
 function isProUser() {
-  // TODO (Step 16): replace with Supabase session check
-  // For now: anyone who joined the waitlist gets a soft "preview" until auth lands
+  // While the paywall is disabled, all Pro/AI features are unlocked for the
+  // public showcase. Flip PAYWALL_ENABLED to true to restore Pro gating.
+  if (!PAYWALL_ENABLED) return true;
+  // TODO (Step 16): replace with real Supabase session check.
   return false;
 }
 
@@ -2986,8 +2993,49 @@ function categorizeArticle(title, description) {
 }
 
 async function initAlertBanner() {
-  await fetchNewsArticles();
+  setAlertFallback();                                       // neutral placeholder until first pulse lands
+  fetchGlobalPulse();                                       // live verified-data banner line
+  pulseTimer = setInterval(fetchGlobalPulse, 30*60*1000);   // 30-min cadence (matches CDN cache)
+  await fetchNewsArticles();                                // populates sidebar feed + What-If headline context
   alertFetchTimer = setInterval(fetchNewsArticles, 20*60*1000);
+}
+
+/* ═════════════════════════════════════════
+   LIVE GLOBAL PULSE — verified-data ticker
+   GET /api/global-pulse returns a real-number-safe one-line alert,
+   CDN-cached 30 min (cache duration = refresh cadence). Numbers are
+   computed server-side from EIA / FRED / GDELT; the AI may only phrase
+   them and is barred from inventing figures. Pinned — no rotation.
+   ═════════════════════════════════════════ */
+async function fetchGlobalPulse() {
+  try {
+    const res = await fetch('/api/global-pulse');
+    if (!res.ok) throw new Error(`/api/global-pulse HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data || !data.line) return; // keep current banner (placeholder / last good line)
+
+    const label  = document.getElementById('alertLabel');
+    const text   = document.getElementById('alertText');
+    const source = document.getElementById('alertSource');
+    if (label) { label.innerHTML = data.label || '🛰 LIVE INTEL'; label.style.color = 'var(--amber)'; }
+    if (text) {
+      const stamp = data.generatedAt
+        ? new Date(data.generatedAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+        : '';
+      const tag = data.source === 'ai' ? `AI · ${data.provider || 'live'}` : 'live data';
+      text.innerHTML =
+        `<strong style="color:var(--text-pri)">${escHtml(data.line)}</strong>` +
+        ` &nbsp;<span style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:.6rem">` +
+        `· ${tag}${stamp ? ' · ' + stamp : ''}</span>`;
+    }
+    if (source) {
+      source.textContent = data.source === 'ai' ? (data.provider || 'AI') : 'EIA·FRED·GDELT';
+      source.style.color = 'var(--amber)';
+    }
+  } catch (err) {
+    console.warn('[global-pulse] fetch failed:', err.message);
+    // leave whatever is currently shown (placeholder or last good line)
+  }
 }
 
 async function fetchNewsArticles() {
@@ -3043,10 +3091,9 @@ async function fetchNewsArticles() {
     const fill     = deduped.filter(a => a.catId === 'global');
     const combined = [...priority, ...fill].slice(0, 25);
     if (!combined.length) { setAlertFallback(); return; }
-    alertArticles = combined; alertIndex = 0;
-    buildAlertDots(); renderAlert(0); startAlertRotation();
-    autoGenerateNewsSummary(combined);
-    // Fix 2.3: update ambient news strip with top story
+    alertArticles = combined; alertIndex = 0; // retained for What-If headline context (line ~2713)
+    // Banner is now owned by the live Global Pulse engine (fetchGlobalPulse).
+    // News headlines populate the sidebar feed + ambient strip, not the banner.
     updateNewsStrip(combined[0]);
 
   } catch (err) {
@@ -3172,8 +3219,8 @@ function updateNewsStripGdelt(country, count) {
 }
 function setAlertFallback() {
   const label=document.getElementById('alertLabel'); const text=document.getElementById('alertText');
-  if(label){label.innerHTML='🌐 GLOBAL NEWS';label.style.color='var(--amber)';}
-  if(text) text.innerHTML='<strong>COST OF LIVING MONITOR:</strong> WTI crude +56% YTD · Global food prices +27% · Shipping +310% · EM FX basket −14%';
+  if(label){label.innerHTML='🌐 GLOBAL PULSE';label.style.color='var(--amber)';}
+  if(text) text.innerHTML='<strong style="color:var(--text-pri)">Reading live market &amp; conflict conditions…</strong> <span style="color:var(--text-dim);font-family:\'IBM Plex Mono\',monospace;font-size:.6rem">· refreshing</span>';
 }
 
 /* ═════════════════════════════════════════

@@ -114,7 +114,7 @@ Keep it under 300 words. Be direct. Investors are busy and need clarity, not com
 
 async function callGemini(apiKey, prompt, maxTokens) {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const r = await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -127,7 +127,7 @@ async function callGemini(apiKey, prompt, maxTokens) {
     if (!r.ok) return { error: body?.error?.message || `Gemini HTTP ${r.status}`, status: r.status };
     const text = body?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     if (!text) return { error: 'Gemini returned empty content', status: 502 };
-    return { text, model: 'gemini-2.5-flash-preview-04-17' };
+    return { text, model: 'gemini-2.5-flash' };
   } catch (err) {
     return { error: `Gemini network error: ${err.message}`, status: 500 };
   }
