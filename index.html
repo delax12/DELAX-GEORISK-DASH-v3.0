@@ -946,7 +946,7 @@ body.beginner-mode body.beginner-mode
           color:var(--text-pri)">Investor Intelligence</div>
         <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
           letter-spacing:.08em;margin-top:.1rem">
-          Ask anything about how this conflict affects your investments · Powered by Gemini 2.5
+          Ask anything about how this conflict affects your investments
         </div>
       </div>
     </div>
@@ -1014,7 +1014,7 @@ body.beginner-mode body.beginner-mode
         background:rgba(179,136,255,.06)">
         <div style="display:flex;align-items:center;gap:.5rem">
           <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;
-            text-transform:uppercase;color:var(--purple)">Investor Intelligence · Gemini 2.5</span>
+            text-transform:uppercase;color:var(--purple)">Investor Intelligence</span>
         </div>
         <div style="display:flex;align-items:center;gap:.75rem">
           <span id="whatifTimestamp" style="font-family:var(--mono);font-size:.55rem;color:var(--text-dim)"></span>
@@ -1155,7 +1155,7 @@ body.beginner-mode body.beginner-mode
       </div>
       <div class="narrative-loading" id="heatmapLoading">
         <div class="narrative-pulse"></div>
-        <span>Generating scenario narrative with Claude AI…</span>
+        <span>Generating scenario narrative…</span>
       </div>
       <div class="narrative-body" id="heatmapNarrativeBody" style="display:none"></div>
       <div class="narrative-error" id="heatmapNarrativeError" style="display:none"></div>
@@ -2746,10 +2746,10 @@ async function runWhatIf() {
     // ── Render formatted analysis ──
     loading.style.display  = 'none';
     content.style.display  = 'block';
-    content.textContent    = data.analysis;
+    content.innerHTML      = formatNarrative(data.analysis);
 
     // ── Show model + timestamp metadata ──
-    if (modelSpan) modelSpan.textContent = data.model ? `· ${data.model}` : '';
+    if (modelSpan) modelSpan.textContent = '';
     if (tsSpan)    tsSpan.textContent    = data.analyzedAt
       ? new Date(data.analyzedAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
       : '';
@@ -2758,10 +2758,10 @@ async function runWhatIf() {
     if (data.scenarioTrigger && data.scenarioTrigger !== scenario) {
       setTimeout(() => {
         setScenario(data.scenarioTrigger);
-        showToast(`🤖 Claude switched to ${data.scenarioTrigger} scenario based on your query`);
+        showToast(`🤖 Switched to ${data.scenarioTrigger} scenario based on your query`);
       }, 800);
     } else {
-      showToast('🤖 Claude AI analysis complete');
+      showToast('🤖 AI analysis complete');
     }
 
   } catch (err) {
@@ -2769,12 +2769,12 @@ async function runWhatIf() {
     errorDiv.style.display = 'block';
 
     // ── Friendly error messages ──
-    if (err.message.includes('ANTHROPIC_API_KEY')) {
-      errorDiv.textContent = '⚠ ANTHROPIC_API_KEY not set in Vercel — add it to Environment Variables and redeploy.';
+    if (err.message.includes('ANTHROPIC_API_KEY') || err.message.includes('API key') || err.message.includes('No AI API key')) {
+      errorDiv.textContent = '⚠ AI service not configured — please try again later.';
     } else if (err.message.includes('404')) {
-      errorDiv.textContent = '⚠ /api/whatif.js not found — make sure api/whatif.js is deployed to Vercel.';
-    } else if (err.message.includes('529') || err.message.includes('overloaded')) {
-      errorDiv.textContent = '⚠ Claude API is overloaded — please try again in a moment.';
+      errorDiv.textContent = '⚠ Analysis service unavailable — please try again later.';
+    } else if (err.message.includes('529') || err.message.includes('overloaded') || err.message.includes('429') || err.message.includes('rate')) {
+      errorDiv.textContent = '⚠ AI service is busy — please try again in a moment.';
     } else {
       errorDiv.textContent = `⚠ Analysis failed: ${err.message}`;
     }
@@ -3022,14 +3022,14 @@ async function fetchGlobalPulse() {
       const stamp = data.generatedAt
         ? new Date(data.generatedAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
         : '';
-      const tag = data.source === 'ai' ? `AI · ${data.provider || 'live'}` : 'live data';
+      const tag = data.source === 'ai' ? 'AI' : 'live data';
       text.innerHTML =
         `<strong style="color:var(--text-pri)">${escHtml(data.line)}</strong>` +
         ` &nbsp;<span style="color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:.6rem">` +
         `· ${tag}${stamp ? ' · ' + stamp : ''}</span>`;
     }
     if (source) {
-      source.textContent = data.source === 'ai' ? (data.provider || 'AI') : 'EIA·FRED·GDELT';
+      source.textContent = data.source === 'ai' ? 'AI' : 'EIA·FRED·GDELT';
       source.style.color = 'var(--amber)';
     }
   } catch (err) {
@@ -3274,7 +3274,7 @@ async function autoGenerateNewsSummary(articles) {
         `· AI-generated · ${new Date(data.generatedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>`;
     }
     if (sourceEl) {
-      sourceEl.textContent = data.provider || 'AI';
+      sourceEl.textContent = 'AI';
       sourceEl.style.color = 'var(--amber)';
     }
 
@@ -3782,7 +3782,7 @@ async function fetchHeatmapNarrative() {
     const cached = narrativeCache[cacheKey];
     if (loadEl) loadEl.style.display = 'none';
     if (bodyEl) { bodyEl.style.display = 'block'; bodyEl.innerHTML = formatNarrative(cached.narrative); }
-    if (metaEl) metaEl.textContent = `${cached.model} · cached`;
+    if (metaEl) metaEl.textContent = 'cached';
     if (pulseEl) pulseEl.style.background = 'var(--green)';
     return;
   }
@@ -3815,7 +3815,7 @@ async function fetchHeatmapNarrative() {
     narrativeCache[cacheKey] = data;
     if (loadEl) loadEl.style.display = 'none';
     if (bodyEl) { bodyEl.style.display = 'block'; bodyEl.innerHTML = formatNarrative(data.narrative); }
-    if (metaEl) metaEl.textContent = `${data.model || 'claude'} · ${new Date(data.generatedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
+    if (metaEl) metaEl.textContent = `${new Date(data.generatedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
     if (pulseEl) pulseEl.style.background = 'var(--green)';
 
   } catch (err) {
@@ -3877,7 +3877,7 @@ async function showKPINarrative(kpiId, kpiLabel, kpiValue) {
     if (loadEl) loadEl.style.display = 'none';
     if (bodyEl) { bodyEl.style.display = 'block'; bodyEl.innerHTML = formatNarrative(cached.narrative); }
     if (metaEl) metaEl.style.display = 'flex';
-    if (metaMod)  metaMod.textContent  = cached.model || 'claude';
+    if (metaMod)  metaMod.textContent  = '';
     if (metaTime) metaTime.textContent = 'cached';
     return;
   }
@@ -3908,7 +3908,7 @@ async function showKPINarrative(kpiId, kpiLabel, kpiValue) {
     if (loadEl) loadEl.style.display = 'none';
     if (bodyEl) { bodyEl.style.display = 'block'; bodyEl.innerHTML = formatNarrative(data.narrative); }
     if (metaEl) metaEl.style.display = 'flex';
-    if (metaMod)  metaMod.textContent  = data.model || 'claude-sonnet';
+    if (metaMod)  metaMod.textContent  = '';
     if (metaTime) metaTime.textContent = data.generatedAt
       ? new Date(data.generatedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})
       : '';
@@ -3943,16 +3943,27 @@ function _kpiEscHandler(e) {
    Converts **Bold:** sections and newlines into rich markup. */
 function formatNarrative(text) {
   if (!text) return '';
-  return text
-    // Bold **label:** sections
+  return String(text)
+    // Strip leading conversational preamble lines we never want (defensive)
+    .replace(/^\s*(good (morning|afternoon|evening)[^.\n]*[.\n])/i, '')
+    // Markdown headers ### / ## / #  → treat as bold section labels
+    .replace(/^\s*#{1,6}\s*(.+)$/gm, '**$1**')
+    // Strip stray code backticks
+    .replace(/`/g, '')
+    // Bullet markers "* " or "- " at line start → bullet glyph
+    .replace(/^\s*[\*\-]\s+/gm, '• ')
+    // Bold **label** sections
     .replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--text-pri)">$1</strong>')
+    // Any leftover stray asterisks
+    .replace(/\*/g, '')
     // Paragraph breaks
     .replace(/\n\n/g, '</p><p style="margin-top:.75rem">')
     // Single newlines
     .replace(/\n/g, '<br>')
     // Wrap in paragraph
     .replace(/^/, '<p>')
-    .replace(/$/, '</p>');
+    .replace(/$/, '</p>')
+    .trim();
 }
 
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -4132,7 +4143,7 @@ function exportCSV(type) {
   <div class="sp-header">
     <div>
       <div class="sp-country-name" id="sp-country-name">—</div>
-      <div class="sp-subtitle" id="sp-subtitle">AI Investor Insights · Gemini × Finnhub</div>
+      <div class="sp-subtitle" id="sp-subtitle">AI Investor Insights</div>
     </div>
     <button class="sp-close" onclick="closeStockPopup()" aria-label="Close popup">✕</button>
   </div>
@@ -4228,7 +4239,7 @@ async function openStockPopup(countryName) {
   if (!popup || !body) return;
 
   if (nameEl) nameEl.textContent = countryName;
-  if (subEl)  subEl.textContent  = 'AI Investor Insights · Gemini × Finnhub';
+  if (subEl)  subEl.textContent  = 'AI Investor Insights';
   body.innerHTML = '<div class="sp-loading"><div class="sp-load-dot"></div>LOADING INVESTOR SIGNALS…</div>';
   popup.classList.add('visible');
   if (backdrop) backdrop.classList.add('visible');
@@ -4308,7 +4319,7 @@ async function openStockPopup(countryName) {
   if (aiData && aiData.theme) {
     out += '<div class="sp-section">' +
       '<div class="sp-sect-hdr">MACRO THEME</div>' +
-      '<div class="sp-ai-insight"><strong>Gemini · ' + _esc(sc.toUpperCase()) + '</strong> ' +
+      '<div class="sp-ai-insight"><strong>' + _esc(sc.toUpperCase()) + '</strong> ' +
       _esc(aiData.theme) + '</div></div>';
   }
 
@@ -4373,7 +4384,7 @@ async function openStockPopup(countryName) {
 
   const liveSrc = pricesLoaded ? (Object.values(livePrices)[0]?.source || 'Finnhub') : 'Unavailable';
   out += '<div style="font-size:7px;color:var(--text-dim);text-align:right;padding-top:4px;font-family:var(--mono)">' +
-    '🤖 Gemini AI · ' + _esc(liveSrc) + ' · ' +
+    '🤖 AI · ' + _esc(liveSrc) + ' · ' +
     new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</div>';
 
   body.innerHTML = out;
@@ -4924,7 +4935,7 @@ async function eqGetAI() {
   const btn     = document.getElementById('eqAiBtn');
   const content = document.getElementById('eqAiContent');
   if (btn)  { btn.disabled = true; btn.textContent = '◉ Analysing…'; }
-  if (content) content.innerHTML = '<div style="color:var(--text-dim);font-size:.72rem;animation:pulse 1.5s infinite">Gemini 2.5 is analysing this stock against the active scenario…</div>';
+  if (content) content.innerHTML = '<div style="color:var(--text-dim);font-size:.72rem;animation:pulse 1.5s infinite">Analysing this stock against the active scenario…</div>';
 
   const q    = eqCurrentData.quote        || {};
   const fund = eqCurrentData.fundamentals || {};

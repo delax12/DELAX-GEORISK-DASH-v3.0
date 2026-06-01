@@ -6,7 +6,7 @@
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v2.6'; // bumped — Vercel Analytics + Speed Insights added
+const CACHE_NAME  = 'delax-georisk-v2.7'; // bumped — Global Pulse + network-first HTML navigations
 const CACHE_URLS  = [
   '/',
   '/index.html',
@@ -33,14 +33,17 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-/* Fetch — network first for /api/ and /_vercel/, cache first for everything else */
+/* Fetch — network-first for /api/, /_vercel/ and HTML navigations;
+   cache-first for static assets only. HTML is network-first so a new
+   deploy is always picked up instead of serving a stale cached page. */
 self.addEventListener('fetch', event => {
-  const url = event.request.url;
+  const req = event.request;
+  const url = req.url;
 
   // Always go to network for API calls and Vercel insights beacons — don't cache
   if (url.includes('/api/') || url.includes('/_vercel/')) {
     event.respondWith(
-      fetch(event.request).catch(() =>
+      fetch(req).catch(() =>
         new Response(JSON.stringify({ error: 'Offline — using model estimate' }), {
           headers: { 'Content-Type': 'application/json' }
         })
@@ -49,14 +52,29 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first for everything else
+  // HTML navigations + the app shell: network-first, fall back to cache when offline.
+  const isHTML = req.mode === 'navigate' || url.endsWith('/') || url.endsWith('/index.html');
+  if (isHTML) {
+    event.respondWith(
+      fetch(req).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+        }
+        return response;
+      }).catch(() => caches.match(req).then(c => c || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  // Cache-first for static assets (scripts, libs, etc.)
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(req).then(cached => {
       if (cached) return cached;
-      return fetch(event.request).then(response => {
+      return fetch(req).then(response => {
         if (!response || response.status !== 200 || response.type === 'opaque') return response;
         const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
         return response;
       });
     }).catch(() => caches.match('/index.html'))

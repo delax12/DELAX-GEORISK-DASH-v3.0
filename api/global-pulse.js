@@ -37,14 +37,17 @@
  */
 'use strict';
 
-const AI_TIMEOUT_MS   = 8000;
-const DATA_TIMEOUT_MS = 6000;
+const HARD_BUDGET_MS  = 9000;  // total function budget — must return before the platform 10s limit
+const DATA_TIMEOUT_MS = 3500;  // per upstream data fetch
+const AI_MAX_MS       = 4500;  // max per AI attempt (further capped by remaining budget)
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET')     return res.status(405).json({ error: 'Method not allowed' });
+
+  const startedAt = Date.now();
 
   /* ── 1. Assemble the verified-data bundle (all best-effort, parallel) ── */
   const [oil, macro, gdelt, headlines] = await Promise.all([
@@ -75,8 +78,8 @@ module.exports = async function handler(req, res) {
   /* ── 2. Deterministic line (the always-safe baseline + AI fallback) ── */
   const deterministicLine = buildDeterministicLine(verified, gdelt);
 
-  /* ── 3. Editorial lane — AI phrases using ONLY verified numbers ── */
-  const aiResult = await generatePulseLine(verified, headlines);
+  /* ── 3. Editorial lane — AI phrases using ONLY verified numbers (within remaining budget) ── */
+  const aiResult = await generatePulseLine(verified, headlines, startedAt + HARD_BUDGET_MS);
 
   let line   = deterministicLine;
   let source = 'deterministic';
@@ -290,10 +293,11 @@ function buildDeterministicLine(verified, gdelt) {
    AI EDITORIAL LANE  (Gemini → Groq, with hard no-invented-numbers rule)
    ════════════════════════════════════════════════════════════════ */
 
-async function generatePulseLine(verified, headlines) {
+async function generatePulseLine(verified, headlines, deadline) {
   const geminiKey = process.env.GEMINI_API_KEY;
   const groqKey   = process.env.GROQ_API_KEY;
   if (!geminiKey && !groqKey) return null;
+  const budgetLeft = () => deadline - Date.now() - 400; // 400ms safety margin to serialise response
 
   const verifiedBlock = verified.map(v => `- ${v.text}`).join('\n');
   const headlineBlock = (headlines && headlines.length)
@@ -321,14 +325,15 @@ FORMAT:
 - Sound like a live Bloomberg terminal alert.
 - Output the sentence only. No quotes, no preamble, no explanation.`;
 
-  // Primary: Gemini. Fallback: Groq. (Real runtime fallback, not key-presence.)
-  if (geminiKey) {
-    const g = await callGemini(geminiKey, prompt, 90);
+  // Primary: Gemini. Fallback: Groq. Each runs only if budget remains, with a
+  // timeout capped by the time left — guarantees we return before HARD_BUDGET_MS.
+  if (geminiKey && budgetLeft() > 1500) {
+    const g = await callGemini(geminiKey, prompt, 90, Math.min(AI_MAX_MS, budgetLeft()));
     if (g && g.text) return g;
     console.warn('[global-pulse] Gemini failed, trying Groq:', g && g.error);
   }
-  if (groqKey) {
-    const q = await callGroq(groqKey, prompt, 90);
+  if (groqKey && budgetLeft() > 1500) {
+    const q = await callGroq(groqKey, prompt, 90, Math.min(AI_MAX_MS, budgetLeft()));
     if (q && q.text) return q;
     console.warn('[global-pulse] Groq failed:', q && q.error);
   }
@@ -353,14 +358,15 @@ function numbersAreVerified(line, verified) {
     if (typeof v.num  === 'number' && !isNaN(v.num))  allowed.push(Math.abs(v.num));
     if (typeof v.num2 === 'number' && !isNaN(v.num2)) allowed.push(Math.abs(v.num2));
   });
-  // Always allow recent years (e.g. "2026") — they are dates, not data claims.
-  const ALLOWED_YEARS = [2024, 2025, 2026, 2027];
+  // Always allow recent years and common timeframe windows (e.g. "48h", "24h", "7d")
+  // — these are dates/windows, not data claims.
+  const ALLOWED_FIXED = [7, 24, 48, 2024, 2025, 2026, 2027];
 
   const tokens = line.match(/\d+(?:\.\d+)?/g) || [];
   for (const tok of tokens) {
     const n = Math.abs(parseFloat(tok));
     if (isNaN(n)) continue;
-    if (ALLOWED_YEARS.includes(n)) continue;
+    if (ALLOWED_FIXED.includes(n)) continue;
     const ok = allowed.some(a => {
       if (Math.round(a) === Math.round(n)) return true;          // same integer
       if (a !== 0 && Math.abs(a - n) / Math.abs(a) <= 0.01) return true; // within 1%
@@ -372,13 +378,13 @@ function numbersAreVerified(line, verified) {
 }
 
 /* ── AI provider calls ── */
-async function callGemini(apiKey, prompt, maxTokens) {
+async function callGemini(apiKey, prompt, maxTokens, timeoutMs) {
   try {
     const model = 'gemini-2.5-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const r = await fetch(url, {
       method:  'POST',
-      signal:  abortAfter(AI_TIMEOUT_MS),
+      signal:  abortAfter(timeoutMs),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
@@ -397,12 +403,12 @@ async function callGemini(apiKey, prompt, maxTokens) {
   }
 }
 
-async function callGroq(apiKey, prompt, maxTokens) {
+async function callGroq(apiKey, prompt, maxTokens, timeoutMs) {
   try {
     const model = 'llama-3.3-70b-versatile';
     const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method:  'POST',
-      signal:  abortAfter(AI_TIMEOUT_MS),
+      signal:  abortAfter(timeoutMs),
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model, max_tokens: maxTokens, temperature: 0.6,

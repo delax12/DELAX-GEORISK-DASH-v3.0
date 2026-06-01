@@ -73,6 +73,11 @@ CLIENT QUESTION: "${query}"
 
 Answer in exactly 4 sections. Write in plain English — no jargon, no acronym soup. Every number must be concrete and meaningful to a real investor.
 
+OUTPUT RULES (strict):
+- Begin IMMEDIATELY with the first section label. NO greeting, NO preamble, NO "good morning", NO "let's cut to it", NO sign-off.
+- Use ONLY the four bold section labels exactly as written below (e.g. **What This Means:**). Do NOT use markdown headers (#, ##, ###), code blocks, or backticks.
+- Do NOT wrap the response in quotation marks.
+
 **What This Means:** In 2-3 plain sentences, explain what the client is really asking and which direction this pushes the outlook — better, worse, or unchanged from the current scenario.
 
 **Impact on Markets:** 3-4 bullet points. For each, state the asset, the likely price move with a range, and one sentence on why. Example: "Oil could rise to $165–$195/bbl because a Hormuz closure removes 20% of global supply overnight."
