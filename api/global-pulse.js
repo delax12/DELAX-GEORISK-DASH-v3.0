@@ -19,7 +19,7 @@
  *
  * ── ENDPOINT ──────────────────────────────────────────────────────
  *   GET /api/global-pulse
- *   Returns: { line, label, source, provider, model, verified, asOf,
+ *   Returns: { line, label, source, verified, asOf,
  *              generatedAt }
  *     line     → the banner sentence (always real-number-safe)
  *     label    → suggested banner label (e.g. "🛰 LIVE INTEL")
@@ -83,7 +83,6 @@ module.exports = async function handler(req, res) {
 
   let line   = deterministicLine;
   let source = 'deterministic';
-  let provider = null, model = null;
 
   if (aiResult && aiResult.text) {
     const candidate = sanitiseLine(aiResult.text);
@@ -91,8 +90,6 @@ module.exports = async function handler(req, res) {
     if (candidate && numbersAreVerified(candidate, verified)) {
       line     = candidate;
       source   = 'ai';
-      provider = aiResult.provider;
-      model    = aiResult.model;
     } else {
       console.warn('[global-pulse] AI line rejected (unverified number or empty); using deterministic.');
     }
@@ -109,8 +106,6 @@ module.exports = async function handler(req, res) {
     line,
     label:       source === 'ai' ? '🛰 LIVE INTEL' : '🌐 GLOBAL PULSE',
     source,
-    provider,
-    model,
     verified,
     asOf,
     generatedAt: new Date().toISOString(),
@@ -325,17 +320,18 @@ FORMAT:
 - Sound like a live Bloomberg terminal alert.
 - Output the sentence only. No quotes, no preamble, no explanation.`;
 
-  // Primary: Gemini. Fallback: Groq. Each runs only if budget remains, with a
-  // timeout capped by the time left — guarantees we return before HARD_BUDGET_MS.
-  if (geminiKey && budgetLeft() > 1500) {
-    const g = await callGemini(geminiKey, prompt, 90, Math.min(AI_MAX_MS, budgetLeft()));
-    if (g && g.text) return g;
-    console.warn('[global-pulse] Gemini failed, trying Groq:', g && g.error);
-  }
+  // Primary: Groq (generous free tier). Fallback: Gemini. Each runs only if
+  // budget remains, with a timeout capped by time left — guarantees we return
+  // before HARD_BUDGET_MS.
   if (groqKey && budgetLeft() > 1500) {
     const q = await callGroq(groqKey, prompt, 90, Math.min(AI_MAX_MS, budgetLeft()));
     if (q && q.text) return q;
-    console.warn('[global-pulse] Groq failed:', q && q.error);
+    console.warn('[global-pulse] Groq failed, trying Gemini:', q && q.error);
+  }
+  if (geminiKey && budgetLeft() > 1500) {
+    const g = await callGemini(geminiKey, prompt, 90, Math.min(AI_MAX_MS, budgetLeft()));
+    if (g && g.text) return g;
+    console.warn('[global-pulse] Gemini failed:', g && g.error);
   }
   return null;
 }
@@ -397,7 +393,7 @@ async function callGemini(apiKey, prompt, maxTokens, timeoutMs) {
       b.candidates[0].content && b.candidates[0].content.parts &&
       b.candidates[0].content.parts[0] && b.candidates[0].content.parts[0].text;
     if (!text) return { error: 'Gemini empty' };
-    return { text, provider: 'gemini', model };
+    return { text };
   } catch (e) {
     return { error: e.name === 'AbortError' ? 'Gemini timeout' : `Gemini: ${e.message}` };
   }
@@ -419,7 +415,7 @@ async function callGroq(apiKey, prompt, maxTokens, timeoutMs) {
     if (!r.ok) return { error: (b && b.error && b.error.message) || `Groq HTTP ${r.status}` };
     const text = b && b.choices && b.choices[0] && b.choices[0].message && b.choices[0].message.content;
     if (!text) return { error: 'Groq empty' };
-    return { text, provider: 'groq', model };
+    return { text };
   } catch (e) {
     return { error: e.name === 'AbortError' ? 'Groq timeout' : `Groq: ${e.message}` };
   }

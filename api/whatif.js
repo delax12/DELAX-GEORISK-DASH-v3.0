@@ -13,22 +13,15 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST')   return res.status(405).json({ error: 'Method not allowed — use POST' });
 
-  /* ── Provider auto-detection ── */
-  const geminiKey    = process.env.GEMINI_API_KEY;
-  const groqKey      = process.env.GROQ_API_KEY;
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const provider     = geminiKey ? 'gemini' : groqKey ? 'groq' : anthropicKey ? 'anthropic' : null;
-  const apiKey       = geminiKey || groqKey || anthropicKey;
+  /* ── Provider chain — Groq leads (generous free tier), runtime fallback ── */
+  const PROVIDERS = [
+    { name: 'groq',      key: process.env.GROQ_API_KEY },
+    { name: 'gemini',    key: process.env.GEMINI_API_KEY },
+    { name: 'anthropic', key: process.env.ANTHROPIC_API_KEY },
+  ].filter(p => p.key);
 
-  if (!provider) {
-    return res.status(500).json({
-      error:   'No AI API key configured in Vercel environment variables.',
-      options: [
-        'GEMINI_API_KEY (FREE) — aistudio.google.com',
-        'GROQ_API_KEY (FREE)   — console.groq.com',
-        'ANTHROPIC_API_KEY ($) — console.anthropic.com',
-      ],
-    });
+  if (!PROVIDERS.length) {
+    return res.status(500).json({ error: 'AI service not configured.' });
   }
 
   /* ── Parse request ── */
@@ -88,14 +81,21 @@ OUTPUT RULES (strict):
 
 Keep it under 300 words. Be direct. Investors are busy and need clarity, not complexity.`;
 
-  /* ── Route to correct provider ── */
-  let result;
-  if (provider === 'gemini')    result = await callGemini(apiKey, prompt, 650);
-  else if (provider === 'groq') result = await callGroq(apiKey, prompt, 650);
-  else                          result = await callAnthropic(apiKey, prompt, 650);
+  /* ── Route through provider chain with runtime fallback ── */
+  let result = { error: 'AI unavailable' };
+  for (const p of PROVIDERS) {
+    let r;
+    if (p.name === 'groq')           r = await callGroq(p.key, prompt, 650);
+    else if (p.name === 'gemini')    r = await callGemini(p.key, prompt, 650);
+    else if (p.name === 'anthropic') r = await callAnthropic(p.key, prompt, 650);
+    else continue;
+    if (r && r.text) { result = { text: r.text }; break; }
+    result = { error: (r && r.error) || result.error };
+    console.warn(`[whatif] ${p.name} failed: ${result.error}`);
+  }
 
   if (result.error) {
-    return res.status(result.status || 500).json({ error: result.error, provider, detail: result.detail });
+    return res.status(500).json({ error: 'Analysis temporarily unavailable — please try again.' });
   }
 
   /* ── Detect scenario trigger ── */
@@ -107,8 +107,6 @@ Keep it under 300 words. Be direct. Investors are busy and need clarity, not com
   return res.status(200).json({
     analysis:        result.text,
     scenarioTrigger,
-    provider,
-    model:           result.model,
     analyzedAt:      new Date().toISOString(),
   });
 };

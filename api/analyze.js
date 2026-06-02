@@ -14,21 +14,16 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed — use POST' });
 
-  const geminiKey = process.env.GEMINI_API_KEY;
-  const groqKey = process.env.GROQ_API_KEY;
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const provider = geminiKey ? 'gemini' : groqKey ? 'groq' : anthropicKey ? 'anthropic' : null;
-  const apiKey = geminiKey || groqKey || anthropicKey;
+  // Provider chain — tried in order with runtime fallback (not key-presence).
+  // Groq leads: its free tier is far more generous than Gemini's daily cap.
+  const PROVIDERS = [
+    { name: 'groq',      key: process.env.GROQ_API_KEY },
+    { name: 'gemini',    key: process.env.GEMINI_API_KEY },
+    { name: 'anthropic', key: process.env.ANTHROPIC_API_KEY },
+  ].filter(p => p.key);
 
-  if (!provider) {
-    return res.status(500).json({
-      error: 'No AI API key configured in Vercel environment variables.',
-      options: [
-        'GEMINI_API_KEY (FREE) — aistudio.google.com',
-        'GROQ_API_KEY (FREE)   — console.groq.com',
-        'ANTHROPIC_API_KEY ($) — console.anthropic.com',
-      ],
-    });
+  if (!PROVIDERS.length) {
+    return res.status(500).json({ error: 'AI service not configured.' });
   }
 
   const {
@@ -77,9 +72,9 @@ Paragraph 3 — OUTLOOK AND INVESTOR SIGNAL: How stress evolves from Year 1 to Y
 
 55-70 words per paragraph. Data-driven. Use specific numbers. Begin immediately with Paragraph 1 — no intro line.`;
 
-    const result = await route(provider, apiKey, prompt, 520);
-    if (result.error) return res.status(result.status || 500).json({ error: result.error, provider });
-    return res.status(200).json({ narrative: result.text, provider, model: result.model, generatedAt: new Date().toISOString() });
+    const result = await route(PROVIDERS, prompt, 520);
+    if (result.error) return res.status(500).json({ error: result.error });
+    return res.status(200).json({ narrative: result.text, generatedAt: new Date().toISOString() });
   }
 
   if (type === 'kpi') {
@@ -113,18 +108,18 @@ Write exactly 4 sections. Begin each with the label in bold followed by a colon.
 
 Total 120 to 140 words. Be precise and actionable.`;
 
-    const result = await route(provider, apiKey, prompt, 400);
-    if (result.error) return res.status(result.status || 500).json({ error: result.error, provider });
-    return res.status(200).json({ narrative: result.text, provider, model: result.model, generatedAt: new Date().toISOString() });
+    const result = await route(PROVIDERS, prompt, 400);
+    if (result.error) return res.status(500).json({ error: result.error });
+    return res.status(200).json({ narrative: result.text, generatedAt: new Date().toISOString() });
   }
 
   if (type === 'newssummary') {
     if (!headlines.length) return res.status(400).json({ error: 'headlines array required' });
 
     if (headlines.length === 1 && headlines[0].length > 200) {
-      const result = await route(provider, apiKey, headlines[0], 400);
-      if (result.error) return res.status(result.status || 500).json({ error: result.error, provider });
-      return res.status(200).json({ summary: result.text, provider, model: result.model, generatedAt: new Date().toISOString() });
+      const result = await route(PROVIDERS, headlines[0], 400);
+      if (result.error) return res.status(500).json({ error: result.error });
+      return res.status(200).json({ summary: result.text, generatedAt: new Date().toISOString() });
     }
 
     const HOT = ['iran', 'hormuz', 'oil', 'brent', 'opec', 'war', 'strike', 'missile', 'sanctions', 'ceasefire', 'nuclear', 'attack', 'crisis', 'emergency', 'surge', 'fed', 'rate', 'inflation', 'recession', 'crash', 'spike', 'collapse', 'record', 'explosion', 'conflict'];
@@ -154,15 +149,13 @@ Write EXACTLY ONE sentence (max 28 words):
 
 Output the sentence only. No quotes. No explanation.`;
 
-    const result = await route(provider, apiKey, prompt, 80);
-    if (result.error) return res.status(result.status || 500).json({ error: result.error, provider });
+    const result = await route(PROVIDERS, prompt, 80);
+    if (result.error) return res.status(500).json({ error: result.error });
 
     return res.status(200).json({
       summary: result.text.trim(),
       hottest,
       top5,
-      provider,
-      model: result.model,
       generatedAt: new Date().toISOString(),
     });
   }
@@ -195,8 +188,8 @@ Return ONLY valid JSON (no markdown, no backticks, no explanation):
 
 Include 3-4 stocks. Keep total under 140 words. JSON only.`;
 
-    const result = await route(provider, apiKey, prompt, 450);
-    if (result.error) return res.status(result.status || 500).json({ error: result.error, provider });
+    const result = await route(PROVIDERS, prompt, 450);
+    if (result.error) return res.status(500).json({ error: result.error });
 
     let parsed = null;
     let raw = String(result.text || '').trim().replace(/```json\n?|```/g, '').trim();
@@ -211,8 +204,6 @@ Include 3-4 stocks. Keep total under 140 words. JSON only.`;
 
     return res.status(200).json({
       ...parsed,
-      provider,
-      model: result.model,
       generatedAt: new Date().toISOString(),
     });
   }
@@ -220,11 +211,19 @@ Include 3-4 stocks. Keep total under 140 words. JSON only.`;
   return res.status(400).json({ error: 'Unknown type. Use heatmap, kpi, newssummary, or stockinsights.' });
 };
 
-async function route(provider, apiKey, prompt, maxTokens) {
-  if (provider === 'gemini') return callGemini(apiKey, prompt, maxTokens);
-  if (provider === 'groq') return callGroq(apiKey, prompt, maxTokens);
-  if (provider === 'anthropic') return callAnthropic(apiKey, prompt, maxTokens);
-  return { error: 'Unknown provider', status: 500 };
+async function route(providers, prompt, maxTokens) {
+  let lastErr = 'AI unavailable';
+  for (const p of providers) {
+    let r;
+    if (p.name === 'groq')           r = await callGroq(p.key, prompt, maxTokens);
+    else if (p.name === 'gemini')    r = await callGemini(p.key, prompt, maxTokens);
+    else if (p.name === 'anthropic') r = await callAnthropic(p.key, prompt, maxTokens);
+    else continue;
+    if (r && r.text) return { text: r.text };       // success — no model/provider exposed
+    lastErr = (r && r.error) || lastErr;
+    console.warn(`[analyze] ${p.name} failed: ${lastErr}`);
+  }
+  return { error: lastErr };
 }
 
 function makeAbortSignal() {

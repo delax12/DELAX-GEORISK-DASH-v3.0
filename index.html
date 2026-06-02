@@ -2366,8 +2366,12 @@ function setScenario(s) {
   updateKpiTimestamps(); // Step 13: stamp all cards with scenario-change time
   updateCharts();
   calcPortfolioImpact();
-  // Refresh heatmap narrative for new scenario (clears KPI cache for old scenario)
-  fetchHeatmapNarrative();
+  // Heatmap narrative is on-demand: show cached if available, else tap-to-generate.
+  // (No auto AI call on scenario change — conserves quota.)
+  if (typeof showHeatmapNarrativePrompt === 'function') {
+    const ck = `heatmap_${scenario}`;
+    if (narrativeCache[ck]) fetchHeatmapNarrative(); else showHeatmapNarrativePrompt();
+  }
   // Sync GEO Intel iframe header label
   syncGeoIntelScenario();
 }
@@ -3647,9 +3651,34 @@ function initHeatmapChart() {
   yAxis:{type:'category',data:HEATMAP_REGIONS,splitArea:{show:false},axisLabel:{color:'#7a91b3',fontSize:10},axisLine:{show:false}},
   visualMap:{min:0,max:10,calculable:true,orient:'horizontal',left:'center',bottom:0,inRange:{color:['#111d33','#f5a623','#ff3d4a']},textStyle:{color:'#7a91b3',fontSize:9},text:['High','Low'],formatter:v=>v.toFixed(1)},
   series:[{type:'heatmap',data:raw,label:{show:true,formatter:p=>p.data[2].toFixed(1),color:'rgba(255,255,255,.7)',fontSize:9}}]});
-  // Fetch Claude narrative if not already cached for this scenario
+  // AI narrative is generated ON DEMAND (not on load) to conserve AI quota.
+  // If already cached for this scenario, fetchHeatmapNarrative renders instantly
+  // from cache; otherwise show a tap-to-generate prompt.
   const cacheKey = `heatmap_${scenario}`;
-  if (!narrativeCache[cacheKey]) fetchHeatmapNarrative();
+  if (narrativeCache[cacheKey]) {
+    fetchHeatmapNarrative();   // hits cache branch, no network/AI call
+  } else {
+    showHeatmapNarrativePrompt();
+  }
+}
+
+/* Show a lightweight "tap to generate" state instead of auto-calling AI. */
+function showHeatmapNarrativePrompt() {
+  const loading = document.getElementById('heatmapLoading');
+  const body    = document.getElementById('heatmapNarrativeBody');
+  const errDiv  = document.getElementById('heatmapNarrativeError');
+  if (loading) loading.style.display = 'none';
+  if (errDiv)  errDiv.style.display  = 'none';
+  if (body) {
+    body.style.display = 'block';
+    body.innerHTML =
+      '<button id="heatmapNarrativeGenBtn" style="cursor:pointer;background:rgba(245,166,35,.12);' +
+      'border:1px solid var(--amber);color:var(--amber);font-family:var(--mono);font-size:.62rem;' +
+      'letter-spacing:.08em;text-transform:uppercase;padding:.5rem .9rem;border-radius:4px">' +
+      '▸ Generate AI analysis for this scenario</button>';
+    const btn = document.getElementById('heatmapNarrativeGenBtn');
+    if (btn) btn.addEventListener('click', () => fetchHeatmapNarrative());
+  }
 }
 
 function initSpendChart() {
@@ -3822,8 +3851,8 @@ async function fetchHeatmapNarrative() {
     if (loadEl) loadEl.style.display = 'none';
     if (errEl) {
       errEl.style.display = 'block';
-      errEl.textContent = err.message.includes('ANTHROPIC_API_KEY')
-        ? '⚠ Add ANTHROPIC_API_KEY to Vercel Environment Variables to enable AI narratives.'
+      errEl.textContent = (err.message.includes('API key') || err.message.includes('not configured'))
+        ? '⚠ AI service not configured — please try again later.'
         : `⚠ Narrative unavailable: ${err.message}`;
     }
     if (pulseEl) pulseEl.style.background = 'var(--red)';
