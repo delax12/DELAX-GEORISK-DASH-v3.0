@@ -1,90 +1,89 @@
 /**
  * /api/market.js — Vercel Serverless Function (Node.js / CommonJS)
  * ─────────────────────────────────────────────────────────────────
- * Live stock / commodity price proxy for DELAX GEO-RISK dashboard.
+ * Live stock / commodity / index price proxy for DELAX GEO-RISK.
  *
- * FIX NOTES (v3 — stock popup price fixes):
+ * COMMODITY/INDEX FIX (Jun 2026):
+ *   BRENT, WTI, NG/NATGAS and DXY were mapped to Yahoo-style futures/index
+ *   tickers (BZ=F, CL=F, NG=F, DX-Y.NYB). Finnhub's free tier cannot quote
+ *   those (it serves equities/ETFs only), and the old code deliberately
+ *   skipped the Alpha Vantage fallback for futures — so these four symbols
+ *   had NO working source and always returned 502.
  *
- *  FIX 5.1 — GOLD removed from SYMBOL_MAP.
- *    Previously GOLD → GLD (SPDR ETF), hijacking Barrick Gold (NYSE:GOLD)
- *    requests from the popup. Barrick's ticker GOLD is valid on Finnhub/AV
- *    and should pass through unchanged. Ticker seeds wanting GLD ETF already
- *    request 'GLD' directly.
+ *   Now each is routed to a source that actually works, ahead of the
+ *   Finnhub/AV equity path:
+ *     • BRENT / WTI → EIA v2 petroleum spot (RBRTE / RWTC), daily.
+ *     • NG / NATGAS → Alpha Vantage NATURAL_GAS commodity endpoint, daily.
+ *     • DXY         → FRED DTWEXBGS (Nominal Broad US Dollar Index), daily.
+ *   All three are daily series, so responses are edge-cached 6h — which also
+ *   keeps the AV NATURAL_GAS call to ≤4/day, protecting the shared 25/day AV
+ *   quota that the snapshot cron also draws on.
  *
- *  FIX 5.2 — Finnhub prevClose (pc) used when current price (c) is zero.
- *    Finnhub returns c=0 after market hours, on weekends, and for some
- *    free-tier symbols. Previously c=0 triggered return null → 502.
- *    Now: c=0 but pc>0 → return pc as price with isEstimated:true.
- *    This ensures prices display at all times, not just during the
- *    6.5-hour regular market window (9:30am–4pm ET).
+ * Prior fixes retained: GLOBAL_QUOTE fallback, c=0→prevClose, no error caching.
  *
- *  FIX 5.3 — Yahoo Finance fallback replaced with Alpha Vantage.
- *    Yahoo Finance returns 403 from all Vercel/AWS cloud IPs (confirmed).
- *    Alpha Vantage (ALPHA_VANTAGE_KEY already in Vercel) is designed for
- *    server-side access and works reliably from serverless environments.
- *    Note: AV free tier = 25 req/day. Sufficient for popup use (4 symbols
- *    per click). Commodity futures (BRENT, WTI, NG) are Finnhub-only.
- *
- *  FIX 5.4 — Error responses no longer edge-cached.
- *    Cache-Control: s-maxage=30 now only set on 200 success responses.
- *    Previously, 502 errors were cached for 30s causing all users to
- *    see "—" prices even after the upstream source recovered.
- *
- * Sources (priority order):
- *   1. Finnhub  — primary   (FINNHUB_API_KEY,    free 60 req/min)
- *   2. Alpha Vantage — fallback (ALPHA_VANTAGE_KEY, free 25 req/day)
+ * Sources: Finnhub (equities/ETFs) · Alpha Vantage · EIA · FRED
  */
 'use strict';
 
-/* ── Symbol normalisation ──────────────────────────────────────────
-   Maps dashboard IDs → real market tickers.
-   NOTE: GOLD is intentionally absent. NYSE:GOLD (Barrick Gold) is a
-   valid Finnhub symbol. Ticker seeds wanting GLD ETF request 'GLD'.
-─────────────────────────────────────────────────────────────────── */
+/* Equity/ETF symbol normalisation (Finnhub-quotable). Commodity/index IDs are
+   handled by SPECIAL below, BEFORE this map is consulted. */
 const SYMBOL_MAP = {
-  BRENT:  'BZ=F',      // Brent Crude futures
-  WTI:    'CL=F',      // WTI Crude futures
-  NG:     'NG=F',      // Natural Gas futures
-  NATGAS: 'NG=F',      // alias used by index.html TICKER_SEEDS
-  SPX:    'SPY',       // S&P 500 ETF proxy (georisk ticker id:'SPX')
-  VIX:    '^VIX',      // CBOE Volatility Index
-  DXY:    'DX-Y.NYB',  // US Dollar Index
-  EMCS:   'EEM',       // EM ETF proxy for EM Credit Spread
+  SPX:  'SPY',   // S&P 500 ETF proxy
+  EMCS: 'EEM',   // EM ETF proxy for EM Credit Spread
+  VIX:  '^VIX',  // CBOE Volatility Index
+};
+
+/* Commodity & index symbols Finnhub free can't quote → dedicated sources. */
+const SPECIAL = {
+  BRENT:  { kind: 'eia',  series: 'RBRTE', name: 'Brent Crude Spot',        unit: 'USD/bbl'    },
+  WTI:    { kind: 'eia',  series: 'RWTC',  name: 'WTI Cushing Spot',        unit: 'USD/bbl'    },
+  NG:     { kind: 'avc',  fn: 'NATURAL_GAS', name: 'Henry Hub Natural Gas', unit: 'USD/MMBtu'  },
+  NATGAS: { kind: 'avc',  fn: 'NATURAL_GAS', name: 'Henry Hub Natural Gas', unit: 'USD/MMBtu'  },
+  DXY:    { kind: 'fred', series: 'DTWEXBGS', name: 'US Dollar Index (Broad)', unit: 'index'   },
 };
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET')    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET')     return res.status(405).json({ error: 'Method not allowed' });
 
   const rawSymbol = (req.query.symbol || '').toUpperCase().trim();
   if (!rawSymbol) return res.status(400).json({ error: 'symbol query parameter required' });
 
-  const symbol      = SYMBOL_MAP[rawSymbol] || rawSymbol;
-  const finnhubKey  = process.env.FINNHUB_API_KEY;
-  const avKey       = process.env.ALPHA_VANTAGE_KEY;
+  /* ── 0. Commodity / index special-routing (daily data, cached 6h) ── */
+  const special = SPECIAL[rawSymbol];
+  if (special) {
+    try {
+      const result = await fetchSpecial(special);
+      if (result) {
+        res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+        return res.status(200).json({ ...result, requestedSymbol: rawSymbol });
+      }
+    } catch (err) {
+      console.warn(`[market] special source failed for ${rawSymbol}:`, err.message);
+    }
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(502).json({ error: 'Price source failed', symbol: rawSymbol });
+  }
 
-  /* ── 1. Finnhub (primary) ────────────────────────────────────── */
+  /* ── Equities / ETFs: Finnhub primary → Alpha Vantage fallback ── */
+  const symbol     = SYMBOL_MAP[rawSymbol] || rawSymbol;
+  const finnhubKey = process.env.FINNHUB_API_KEY;
+  const avKey      = process.env.ALPHA_VANTAGE_KEY;
+
   if (finnhubKey) {
     try {
       const result = await fetchFinnhub(symbol, finnhubKey);
       if (result) {
-        /* FIX 5.4: only cache successful responses */
         res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=15');
         return res.status(200).json({ ...result, requestedSymbol: rawSymbol });
       }
-    } catch (err) {
-      console.warn('[market] Finnhub failed:', err.message);
-    }
+    } catch (err) { console.warn('[market] Finnhub failed:', err.message); }
   } else {
     console.warn('[market] FINNHUB_API_KEY not set — skipping Finnhub');
   }
 
-  /* ── 2. Alpha Vantage (fallback for stocks/ETFs) ─────────────── */
-  /* Note: AV does not support futures (BZ=F, CL=F, NG=F).
-     For commodity IDs the caller gets a 502 from here — that's correct. */
   const isFutures = symbol.endsWith('=F') || symbol.startsWith('^') || symbol.includes('-Y.');
   if (avKey && !isFutures) {
     try {
@@ -93,123 +92,172 @@ module.exports = async function handler(req, res) {
         res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
         return res.status(200).json({ ...result, requestedSymbol: rawSymbol });
       }
-    } catch (err) {
-      console.warn('[market] Alpha Vantage failed:', err.message);
-    }
+    } catch (err) { console.warn('[market] Alpha Vantage failed:', err.message); }
   } else if (!avKey) {
     console.warn('[market] ALPHA_VANTAGE_KEY not set — skipping AV fallback');
   }
 
-  /* ── 3. Both failed ──────────────────────────────────────────── */
-  /* FIX 5.4: no Cache-Control on errors */
+  res.setHeader('Cache-Control', 'no-store');
   return res.status(502).json({
     error:  'All price sources failed',
     symbol: rawSymbol,
     hints: [
       'Ensure FINNHUB_API_KEY is set correctly in Vercel (no surrounding quotes/spaces)',
-      'After market hours: Finnhub returns c=0; fallback to prevClose is applied automatically',
-      'For commodity futures (BRENT/WTI/NG): only Finnhub is supported',
+      'After market hours Finnhub returns c=0; fallback to prevClose is applied automatically',
     ],
   });
 };
 
-/* ─── Finnhub quote fetch ─────────────────────────────────────────
-   FIX 5.2: When c=0 (after-hours/weekend), use prevClose (pc) field
-   and flag the result as isEstimated:true so the UI can label it.
-──────────────────────────────────────────────────────────────────── */
-async function fetchFinnhub(symbol, apiKey) {
-  const controller = new AbortController();
-  const timeout    = setTimeout(() => controller.abort(), 5000);
-
-  try {
-    const url  = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
-    const resp = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (!resp.ok) throw new Error(`Finnhub HTTP ${resp.status}`);
-    const data = await resp.json();
-
-    /* FIX 5.2: c=0 with valid prevClose → use prevClose, mark estimated */
-    const currentPrice = data.c;
-    const prevClose    = data.pc;
-
-    if ((!currentPrice || currentPrice === 0) && (!prevClose || prevClose === 0)) {
-      return null; // symbol genuinely not found
-    }
-
-    const price = (currentPrice && currentPrice !== 0) ? currentPrice : prevClose;
-    const isEstimated = (!currentPrice || currentPrice === 0);
-
-    /* change/percentChange relative to prevClose */
-    const change        = prevClose ? price - prevClose : 0;
-    const percentChange = prevClose ? (change / prevClose) * 100 : 0;
-
-    return {
-      symbol,
-      price:         parseFloat(price.toFixed(4)),
-      change:        parseFloat(change.toFixed(4)),
-      percentChange: parseFloat(percentChange.toFixed(4)),
-      high:          data.h   || null,
-      low:           data.l   || null,
-      open:          data.o   || null,
-      prevClose:     prevClose || null,
-      isEstimated,          // true = after-hours / prev-close value
-      currency:      'USD',
-      source:        'Finnhub',
-      timestamp:     new Date().toISOString(),
-    };
-  } catch (err) {
-    clearTimeout(timeout);
-    if (err.name === 'AbortError') throw new Error('Finnhub timeout');
-    throw err;
-  }
+/* ═══════════════ Special-source dispatch (commodity / index) ═══════════════ */
+async function fetchSpecial(spec) {
+  if (spec.kind === 'eia')  return fetchEIASeries(spec.series, spec.name, spec.unit);
+  if (spec.kind === 'avc')  return fetchAVCommodity(spec.fn,   spec.name, spec.unit);
+  if (spec.kind === 'fred') return fetchFRED(spec.series,      spec.name, spec.unit);
+  return null;
 }
 
-/* ─── Alpha Vantage GLOBAL_QUOTE fallback ─────────────────────────
-   Supports NYSE/NASDAQ stocks and ETFs. Does NOT support futures.
-──────────────────────────────────────────────────────────────────── */
+/* EIA v2 petroleum spot — single series, newest first. */
+async function fetchEIASeries(series, name, unit) {
+  const key = process.env.EIA_API_KEY;
+  if (!key) throw new Error('EIA_API_KEY not set');
+  const url = 'https://api.eia.gov/v2/petroleum/pri/spt/data/' +
+    '?api_key=' + encodeURIComponent(key) +
+    '&frequency=daily&data[0]=value&facets[series][]=' + series +
+    '&sort[0][column]=period&sort[0][direction]=desc&length=10';
+  const resp = await fetchWithTimeout(url, 7000, { Accept: 'application/json' });
+  if (!resp.ok) throw new Error('EIA HTTP ' + resp.status);
+  const json = await resp.json();
+  const rows = json && json.response && json.response.data;
+  if (!rows || !rows.length) return null;
+  const price = parseFloat(rows[0].value);
+  if (isNaN(price)) return null;
+  const prev = rows[1] ? parseFloat(rows[1].value) : price;
+  return makePayload(series, price, prev, name, unit, 'EIA');
+}
+
+/* Alpha Vantage commodity endpoint (e.g. NATURAL_GAS), daily, newest first.
+   Values can be "." on non-trading days — filter to the first two numerics. */
+async function fetchAVCommodity(fn, name, unit) {
+  const key = process.env.ALPHA_VANTAGE_KEY;
+  if (!key) throw new Error('ALPHA_VANTAGE_KEY not set');
+  const url = 'https://www.alphavantage.co/query?function=' + fn +
+    '&interval=daily&apikey=' + key;
+  const resp = await fetchWithTimeout(url, 7000);
+  if (!resp.ok) throw new Error('Alpha Vantage HTTP ' + resp.status);
+  const json = await resp.json();
+  if (json?.Note || json?.Information) throw new Error('Alpha Vantage rate limit (25/day)');
+  const data = Array.isArray(json?.data) ? json.data : [];
+  const nums = data
+    .map((d) => parseFloat(d.value))
+    .filter((v) => !isNaN(v));
+  if (!nums.length) return null;
+  const price = nums[0];
+  const prev  = nums[1] != null ? nums[1] : price;
+  return makePayload(fn, price, prev, name, unit, 'Alpha Vantage');
+}
+
+/* FRED observations — newest first, "." for missing values. */
+async function fetchFRED(series, name, unit) {
+  const key = process.env.FRED_API_KEY;
+  if (!key) throw new Error('FRED_API_KEY not set');
+  const url = 'https://api.stlouisfed.org/fred/series/observations' +
+    '?series_id=' + series + '&api_key=' + key +
+    '&file_type=json&sort_order=desc&limit=10';
+  const resp = await fetchWithTimeout(url, 7000);
+  if (!resp.ok) throw new Error('FRED HTTP ' + resp.status);
+  const json = await resp.json();
+  const obs = Array.isArray(json?.observations) ? json.observations : [];
+  const nums = obs
+    .map((o) => parseFloat(o.value))
+    .filter((v) => !isNaN(v));
+  if (!nums.length) return null;
+  const price = nums[0];
+  const prev  = nums[1] != null ? nums[1] : price;
+  return makePayload(series, price, prev, name, unit, 'FRED');
+}
+
+/* ═══════════════ Equity sources (unchanged behaviour) ═══════════════ */
+async function fetchFinnhub(symbol, apiKey) {
+  const url  = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
+  const resp = await fetchWithTimeout(url, 5000);
+  if (!resp.ok) throw new Error(`Finnhub HTTP ${resp.status}`);
+  const data = await resp.json();
+
+  const currentPrice = data.c;
+  const prevClose    = data.pc;
+  if ((!currentPrice || currentPrice === 0) && (!prevClose || prevClose === 0)) return null;
+
+  const price       = (currentPrice && currentPrice !== 0) ? currentPrice : prevClose;
+  const isEstimated = (!currentPrice || currentPrice === 0);
+  const change        = prevClose ? price - prevClose : 0;
+  const percentChange = prevClose ? (change / prevClose) * 100 : 0;
+
+  return {
+    symbol,
+    price:         round4(price),
+    change:        round4(change),
+    percentChange: round4(percentChange),
+    high: data.h || null, low: data.l || null, open: data.o || null,
+    prevClose: prevClose || null,
+    isEstimated, currency: 'USD', source: 'Finnhub',
+    timestamp: new Date().toISOString(),
+  };
+}
+
 async function fetchAlphaVantage(symbol, apiKey) {
+  const url  = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
+  const resp = await fetchWithTimeout(url, 6000);
+  if (!resp.ok) throw new Error(`Alpha Vantage HTTP ${resp.status}`);
+  const json = await resp.json();
+  if (json?.Note || json?.Information) throw new Error('Alpha Vantage rate limit (25/day)');
+
+  const q = json?.['Global Quote'];
+  if (!q || !q['05. price']) return null;
+  const price     = parseFloat(q['05. price']);
+  const prevClose = parseFloat(q['08. previous close'] || q['05. price']);
+  const change    = parseFloat(q['09. change'] || '0');
+  const pct       = parseFloat((q['10. change percent'] || '0%').replace('%', ''));
+  if (!price || isNaN(price)) return null;
+
+  return {
+    symbol,
+    price:         round4(price),
+    change:        round4(change),
+    percentChange: round4(pct),
+    prevClose:     round4(prevClose),
+    isEstimated:   false, currency: 'USD', source: 'Alpha Vantage',
+    timestamp:     new Date().toISOString(),
+  };
+}
+
+/* ═══════════════ Shared helpers ═══════════════ */
+function makePayload(symbol, price, prevClose, name, unit, source) {
+  const change = prevClose ? price - prevClose : 0;
+  const pct    = prevClose ? (change / prevClose) * 100 : 0;
+  return {
+    symbol, name,
+    price:         round4(price),
+    change:        round4(change),
+    percentChange: round4(pct),
+    prevClose:     round4(prevClose),
+    isEstimated:   false,
+    unit, currency: unit === 'index' ? null : 'USD',
+    source,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+function round4(n) { return parseFloat(Number(n).toFixed(4)); }
+
+async function fetchWithTimeout(url, ms, headers) {
   const controller = new AbortController();
-  const timeout    = setTimeout(() => controller.abort(), 6000);
-
+  const timer = setTimeout(() => controller.abort(), ms);
   try {
-    const url  = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
-    const resp = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (!resp.ok) throw new Error(`Alpha Vantage HTTP ${resp.status}`);
-    const json = await resp.json();
-
-    /* AV rate-limit message */
-    if (json?.Note || json?.Information) {
-      throw new Error('Alpha Vantage rate limit reached (25 req/day on free tier)');
-    }
-
-    const q = json?.['Global Quote'];
-    if (!q || !q['05. price']) return null;
-
-    const price      = parseFloat(q['05. price']);
-    const prevClose  = parseFloat(q['08. previous close'] || q['05. price']);
-    const change     = parseFloat(q['09. change']         || '0');
-    const pctRaw     = (q['10. change percent'] || '0%').replace('%', '');
-    const pct        = parseFloat(pctRaw);
-
-    if (!price || isNaN(price)) return null;
-
-    return {
-      symbol,
-      price:         parseFloat(price.toFixed(4)),
-      change:        parseFloat(change.toFixed(4)),
-      percentChange: parseFloat(pct.toFixed(4)),
-      prevClose:     parseFloat(prevClose.toFixed(4)),
-      isEstimated:   false,
-      currency:      'USD',
-      source:        'Alpha Vantage',
-      timestamp:     new Date().toISOString(),
-    };
+    return await fetch(url, headers ? { headers, signal: controller.signal } : { signal: controller.signal });
   } catch (err) {
-    clearTimeout(timeout);
-    if (err.name === 'AbortError') throw new Error('Alpha Vantage timeout');
+    if (err.name === 'AbortError') throw new Error('upstream timeout');
     throw err;
+  } finally {
+    clearTimeout(timer);
   }
 }
