@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KEK0Q8HN11"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KEK0Q8HN11');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>DELAX · Exposure Desk</title>
+<meta name="description" content="Stress-test your portfolio against live geopolitical risk structures. See your Conflict Exposure Score in seconds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06080c; --bg2:#0c1118; --panel:#0e141d; --line:#1a242f;
+  --txt:#cdd8e6; --dim:#5d6a7b; --faint:#37424f;
+  --cyan:#2de2e6; --amber:#ffb13d; --red:#ff3b5c; --green:#27d17f;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --disp:'Saira Condensed',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font-family:var(--mono);font-size:14px;-webkit-font-smoothing:antialiased}
+body{
+  min-height:100vh;
+  background-image:
+    linear-gradient(var(--line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:44px 44px;
+  background-position:center;
+  position:relative;
+}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% -10%,rgba(45,226,230,.07),transparent 60%);pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:18px 14px 60px}
+
+/* header */
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-wrap:wrap}
+.brand{font-family:var(--disp);font-weight:800;letter-spacing:.04em;font-size:26px;line-height:.9;text-transform:uppercase}
+.brand small{color:var(--cyan);font-size:.5em;letter-spacing:.3em;display:block;font-weight:600}
+.struct{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
+.struct .live{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.struct b{color:var(--txt)}
+
+.tag{font-size:10px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;margin:22px 0 8px;display:flex;align-items:center;gap:8px}
+.tag::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* layout */
+.grid{display:grid;grid-template-columns:1fr;gap:20px;margin-top:4px}
+@media(min-width:920px){.grid{grid-template-columns:minmax(0,360px) minmax(0,1fr);align-items:start}}
+
+.panel{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:3px}
+.pad{padding:14px}
+
+/* search / build */
+.search{display:flex;gap:8px;margin-bottom:10px}
+.search input{flex:1;background:#070b10;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:13px;padding:9px 10px;border-radius:2px;outline:none}
+.search input:focus{border-color:var(--cyan)}
+.results{max-height:188px;overflow:auto;border:1px solid var(--line);border-radius:2px;display:none}
+.results.show{display:block}
+.res{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;cursor:pointer;border-bottom:1px solid #121a23}
+.res:hover{background:#0f1722}
+.res .sx{font-weight:600}
+.res .sc{font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.custom{margin-top:8px;display:flex;gap:6px}
+.custom select,.custom button{background:#070b10;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;padding:6px;border-radius:2px}
+.custom button{cursor:pointer;color:var(--cyan);border-color:#1d3a3c}
+
+.hold{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #121a23}
+.hold:last-child{border-bottom:0}
+.hold .info{flex:1;min-width:0}
+.hold .sym{font-weight:600;letter-spacing:.02em}
+.hold .meta{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;display:flex;gap:8px;margin-top:2px}
+.hold .px{color:var(--txt)}
+.hold .up{color:var(--green)} .hold .dn{color:var(--red)}
+.hold .wt{display:flex;align-items:center;gap:4px}
+.hold .wt button{width:22px;height:22px;background:#0a1119;border:1px solid var(--line);color:var(--txt);border-radius:2px;cursor:pointer;font-family:var(--mono);line-height:1}
+.hold .wt input{width:42px;background:#070b10;border:1px solid var(--line);color:var(--txt);text-align:center;font-family:var(--mono);font-size:12px;padding:3px;border-radius:2px}
+.hold .rm{color:var(--faint);cursor:pointer;font-size:15px;padding:0 2px}
+.hold .rm:hover{color:var(--red)}
+.empty{color:var(--dim);font-size:12px;text-align:center;padding:20px 8px;line-height:1.6}
+.btnrow{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;background:#0a1119;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px;border-radius:2px;cursor:pointer}
+.btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.wtotal{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:8px;text-align:right}
+
+/* scenario tabs */
+.scn{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px}
+.scn button{background:#0a1119;border:1px solid var(--line);color:var(--dim);font-family:var(--mono);padding:9px 6px;border-radius:2px;cursor:pointer;text-align:left;transition:.15s}
+.scn button .l{font-size:11px;font-weight:600;color:var(--txt);text-transform:uppercase;letter-spacing:.03em;display:block;line-height:1.15}
+.scn button .p{font-size:10px;color:var(--dim);margin-top:3px;display:block}
+.scn button[aria-selected=true]{border-color:var(--amber);background:#15110a}
+.scn button[aria-selected=true] .l{color:var(--amber)}
+
+/* score hero */
+.score{position:relative;text-align:center;padding:24px 14px 18px;overflow:hidden}
+.score .lbl{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
+.score .big{font-family:var(--disp);font-weight:800;font-size:84px;line-height:.86;letter-spacing:-.01em;margin:8px 0 2px;font-variant-numeric:tabular-nums}
+.score .verdict{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.score .sub{font-size:11px;color:var(--dim);margin-top:10px;line-height:1.6;max-width:440px;margin-left:auto;margin-right:auto}
+.score.neg .big,.score.neg .verdict{color:var(--red)} .score.neg::after{background:radial-gradient(ellipse at 50% 40%,rgba(255,59,92,.16),transparent 62%)}
+.score.pos .big,.score.pos .verdict{color:var(--green)} .score.pos::after{background:radial-gradient(ellipse at 50% 40%,rgba(39,209,127,.16),transparent 62%)}
+.score::after{content:'';position:absolute;inset:0;pointer-events:none}
+.score .stamp{position:absolute;top:10px;right:12px;font-size:9px;letter-spacing:.14em;color:var(--faint);text-transform:uppercase}
+
+/* breakdown */
+.bd{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:620px){.bd{grid-template-columns:1fr 1fr}}
+.bd h4{font-family:var(--disp);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:14px;color:var(--txt);margin-bottom:10px}
+.chan{margin-bottom:9px}
+.chan .top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.chan .top .v{font-variant-numeric:tabular-nums}
+.chan .bar{height:6px;background:#0a1119;border-radius:3px;position:relative;overflow:hidden}
+.chan .fill{position:absolute;top:0;bottom:0;border-radius:3px}
+.wh{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #121a23;font-size:12px}
+.wh:last-child{border-bottom:0}
+.wh .s{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.wh .v{font-variant-numeric:tabular-nums}
+
+footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;font-size:10px;color:var(--faint);line-height:1.7;letter-spacing:.04em}
+footer b{color:var(--dim)}
+.prov{color:var(--dim)}
+a{color:var(--cyan);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><small>DELAX Geo-Risk</small>Exposure Desk</div>
+    <div class="struct"><span class="live"></span> Active structure: <b id="structName">—</b></div>
+  </header>
+
+  <div class="grid">
+    <!-- BUILD -->
+    <div>
+      <div class="tag">01 · Build your book</div>
+      <div class="panel pad">
+        <div class="search">
+          <input id="q" type="text" placeholder="Search ticker or sector…" autocomplete="off">
+        </div>
+        <div id="results" class="results"></div>
+        <div class="custom">
+          <input id="customSym" placeholder="Custom ticker" style="flex:1;background:#070b10;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;padding:6px;border-radius:2px;outline:none;text-transform:uppercase">
+          <select id="customSec"></select>
+          <button onclick="addCustom()">+ Add</button>
+        </div>
+        <div id="holds" style="margin-top:12px"></div>
+        <div class="wtotal" id="wtotal"></div>
+        <div class="btnrow">
+          <button class="btn" onclick="loadSample()">Load sample book</button>
+          <button class="btn" onclick="clearBook()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCORE + SIMULATE -->
+    <div>
+      <div class="tag">02 · Simulate the scenario</div>
+      <div class="panel">
+        <div class="pad" style="padding-bottom:0">
+          <div class="scn" id="scn"></div>
+        </div>
+        <div class="score" id="score">
+          <div class="stamp" id="stamp"></div>
+          <div class="lbl">Conflict Exposure Score</div>
+          <div class="big" id="big">—</div>
+          <div class="verdict" id="verdict">Add holdings to begin</div>
+          <div class="sub" id="sub"></div>
+        </div>
+      </div>
+
+      <div class="tag">03 · Where it hits</div>
+      <div class="panel pad">
+        <div class="bd">
+          <div>
+            <h4>By channel</h4>
+            <div id="channels"><div class="empty">No book yet.</div></div>
+          </div>
+          <div>
+            <h4>Most exposed holdings</h4>
+            <div id="worst"><div class="empty">No book yet.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="prov" id="prov">Live data: connecting…</span><br>
+    <b>Methodology.</b> Your book is repriced against the structure's per-channel shock vectors and sector betas — computed in your browser, no live data needed for the score. Live prices via the DELAX snapshot feed.<br>
+    Illustrative geopolitical stress-testing for research only. Not investment advice.
+  </footer>
+</div>
+
+<script src="/risk-structures.js"></script>
+<script>
+const STRUCT_ID='hormuz-iran';
+const CHAN_LABEL={oil:'Oil',shipping:'Shipping',cpi:'Inflation',gdp:'Growth',fx:'EM FX',defense:'Defense',food:'Food'};
+let scenarioId='baseline';
+let book=[];            // {sym, weight, sector}
+let quotes={}, meta=null;
+let symSector={};       // sym -> sector (from UNIVERSE)
+
+function struct(){return window.RISK_STRUCTURES[STRUCT_ID];}
+
+function init(){
+  if(!window.RISK_STRUCTURES||!window.computeExposure){
+    document.getElementById('verdict').textContent='Model failed to load.';return;
+  }
+  document.getElementById('structName').textContent=struct().meta.short;
+  (window.UNIVERSE||[]).forEach(u=>symSector[u.sym]=u.sector);
+
+  // sector dropdown for custom tickers
+  const sel=document.getElementById('customSec');
+  Object.keys(struct().exposure.sectors).forEach(s=>{
+    const o=document.createElement('option');o.value=s;o.textContent=s.replace(/_/g,' ');sel.appendChild(o);
+  });
+
+  // scenario tabs
+  const scn=document.getElementById('scn');
+  struct().scenarios.forEach(s=>{
+    const b=document.createElement('button');
+    b.setAttribute('aria-selected', s.id===scenarioId);
+    b.onclick=()=>{scenarioId=s.id;[...scn.children].forEach(c=>c.setAttribute('aria-selected',false));b.setAttribute('aria-selected',true);render();};
+    b.innerHTML=`<span class="l">${s.label}</span><span class="p">P ${Math.round(s.probability*100)}%</span>`;
+    scn.appendChild(b);
+  });
+
+  document.getElementById('q').addEventListener('input',e=>renderSearch(e.target.value));
+  document.getElementById('q').addEventListener('focus',e=>renderSearch(e.target.value));
+  document.addEventListener('click',e=>{ if(!e.target.closest('.search')&&!e.target.closest('.results')) document.getElementById('results').classList.remove('show');});
+
+  loadSample();
+  fetchSnapshot();
+}
+
+async function fetchSnapshot(){
+  try{
+    const r=await fetch('/api/snapshot');
+    const j=await r.json();
+    quotes=j.quotes||{}; meta=j.meta||null;
+    const when=meta&&meta.quotesUpdated?new Date(meta.quotesUpdated).toLocaleTimeString():'—';
+    document.getElementById('prov').textContent=`Live data: ${Object.keys(quotes).length} quotes · updated ${when}`;
+    renderHolds();
+  }catch(e){ document.getElementById('prov').textContent='Live data: unavailable (score still works offline)'; }
+}
+
+function renderSearch(term){
+  const box=document.getElementById('results'); term=(term||'').toUpperCase().trim();
+  const list=(window.UNIVERSE||[]).filter(u=> !book.find(b=>b.sym===u.sym) &&
+     (term===''||u.sym.includes(term)||u.sector.toUpperCase().includes(term)));
+  if(!list.length){box.classList.remove('show');return;}
+  box.innerHTML=list.slice(0,40).map(u=>`<div class="res" onclick="addSym('${u.sym}')"><span class="sx">${u.sym}</span><span class="sc">${u.sector.replace(/_/g,' ')}</span></div>`).join('');
+  box.classList.add('show');
+}
+
+function addSym(sym){
+  if(book.find(b=>b.sym===sym))return;
+  book.push({sym,weight:10,sector:symSector[sym]||'broad_market'});
+  document.getElementById('q').value='';document.getElementById('results').classList.remove('show');
+  render();
+}
+function addCustom(){
+  const sym=document.getElementById('customSym').value.toUpperCase().trim();
+  if(!sym||book.find(b=>b.sym===sym))return;
+  book.push({sym,weight:10,sector:document.getElementById('customSec').value});
+  document.getElementById('customSym').value='';render();
+}
+function setW(i,d){book[i].weight=Math.max(1,(+book[i].weight||0)+d);render();}
+function setWv(i,v){book[i].weight=Math.max(1,+v||1);render();}
+function rm(i){book.splice(i,1);render();}
+function clearBook(){book=[];render();}
+function loadSample(){
+  book=[
+    {sym:'XOM',weight:18,sector:'energy_producers'},
+    {sym:'RTX',weight:14,sector:'defense'},
+    {sym:'DAL',weight:14,sector:'aviation'},
+    {sym:'EEM',weight:16,sector:'em_equity'},
+    {sym:'GLD',weight:14,sector:'gold_safehaven'},
+    {sym:'AAPL',weight:24,sector:'broad_market'}
+  ];
+  render();
+}
+
+function fmtPx(sym){
+  const q=quotes[sym]; if(!q||q.price==null)return '';
+  const c=q.changePct; const cls=c>0?'up':c<0?'dn':'';
+  const sign=c>0?'+':'';
+  return `<span class="px">$${q.price.toFixed(2)}</span>${c!=null?` <span class="${cls}">${sign}${c.toFixed(2)}%</span>`:''}`;
+}
+
+function renderHolds(){
+  const el=document.getElementById('holds');
+  if(!book.length){el.innerHTML='<div class="empty">Search a ticker above, add a custom one, or load a sample book to see your Conflict Exposure Score.</div>';document.getElementById('wtotal').textContent='';return;}
+  const tot=book.reduce((a,b)=>a+(+b.weight||0),0)||1;
+  el.innerHTML=book.map((h,i)=>`
+    <div class="hold">
+      <div class="info">
+        <div class="sym">${h.sym} ${fmtPx(h.sym)}</div>
+        <div class="meta"><span>${h.sector.replace(/_/g,' ')}</span><span>${((h.weight/tot)*100).toFixed(0)}% of book</span></div>
+      </div>
+      <div class="wt">
+        <button onclick="setW(${i},-5)">–</button>
+        <input value="${h.weight}" onchange="setWv(${i},this.value)" inputmode="numeric">
+        <button onclick="setW(${i},5)">+</button>
+      </div>
+      <span class="rm" onclick="rm(${i})" title="Remove">×</span>
+    </div>`).join('');
+  document.getElementById('wtotal').textContent=`${book.length} holdings · weights auto-normalised`;
+}
+
+function render(){
+  renderHolds();
+  const big=document.getElementById('big'),verdict=document.getElementById('verdict'),
+        sub=document.getElementById('sub'),scoreEl=document.getElementById('score'),
+        stamp=document.getElementById('stamp');
+  const chans=document.getElementById('channels'),worst=document.getElementById('worst');
+  scoreEl.classList.remove('pos','neg');
+
+  if(!book.length){big.textContent='—';verdict.textContent='Add holdings to begin';sub.textContent='';
+    stamp.textContent='';chans.innerHTML='<div class="empty">No book yet.</div>';worst.innerHTML='<div class="empty">No book yet.</div>';return;}
+
+  const r=window.computeExposure(book.map(h=>({sym:h.sym,weight:h.weight,sector:h.sector})),STRUCT_ID,scenarioId);
+  const neg=r.pct<0;
+  scoreEl.classList.add(neg?'neg':'pos');
+  big.textContent=(r.pct>0?'+':'')+r.pct.toFixed(1)+'%';
+  verdict.textContent=neg?'Net exposed':'Net beneficiary';
+  stamp.textContent=struct().meta.short+' · '+r.scenario.label;
+  sub.textContent=`Under "${r.scenario.label}" (P ${Math.round(r.scenario.probability*100)}%), this book would move about ${r.pct.toFixed(1)}% versus pre-conflict normal. ${neg?'Geopolitical risk is a net drag here.':'This book leans into the disruption.'}`;
+
+  // channels
+  const entries=Object.entries(r.byChannel).filter(([,v])=>Math.abs(v)>=0.05).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  const max=Math.max(...entries.map(([,v])=>Math.abs(v)),0.1);
+  chans.innerHTML=entries.length?entries.map(([c,v])=>{
+    const col=v<0?'var(--red)':'var(--green)';const w=(Math.abs(v)/max*100).toFixed(0);
+    return `<div class="chan"><div class="top"><span>${CHAN_LABEL[c]||c}</span><span class="v" style="color:${col}">${v>0?'+':''}${v.toFixed(1)}%</span></div>
+      <div class="bar"><div class="fill" style="width:${w}%;background:${col};${v<0?'right':'left'}:50%"></div></div></div>`;
+  }).join(''):'<div class="empty">Neutral across channels.</div>';
+
+  // worst
+  worst.innerHTML=r.byHolding.slice(0,6).map(h=>{
+    const col=h.impact<0?'var(--red)':'var(--green)';
+    return `<div class="wh"><div><div>${h.sym}</div><div class="s">${h.sector.replace(/_/g,' ')}</div></div>
+      <div class="v" style="color:${col}">${h.impact>0?'+':''}${(h.impact*100).toFixed(1)}</div></div>`;
+  }).join('');
+}
+
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
