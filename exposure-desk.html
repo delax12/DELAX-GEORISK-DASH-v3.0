@@ -126,6 +126,25 @@ footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px;font-si
 footer b{color:var(--dim)}
 .prov{color:var(--dim)}
 a{color:var(--cyan);text-decoration:none}
+.addstatus{font-size:10px;color:var(--cyan);min-height:13px;margin-top:6px;letter-spacing:.04em}
+.customhint{font-size:10px;color:var(--faint);margin-top:4px;line-height:1.5}
+.noprice{color:var(--faint);font-size:10px;letter-spacing:.03em}
+.howto-row{margin-top:18px;text-align:center}
+.howto-btn{background:#0a1119;border:1px solid var(--line);color:var(--cyan);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:9px 16px;border-radius:3px;cursor:pointer}
+.howto-btn:hover,.howto-btn:focus-visible{border-color:var(--cyan);outline:none;box-shadow:0 0 10px rgba(45,226,230,.2)}
+.ov{position:fixed;inset:0;background:rgba(2,5,9,.66);z-index:40}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(420px,92vw);background:linear-gradient(180deg,var(--panel),var(--bg));border-left:1px solid var(--cyan);z-index:50;transform:translateX(100%);transition:transform .22s ease;overflow-y:auto;box-shadow:-20px 0 50px rgba(0,0,0,.5)}
+.drawer.open{transform:translateX(0)}
+.drawer-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.drawer-hd h2{font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:18px;color:var(--cyan)}
+.drawer-x{background:none;border:0;color:var(--dim);font-size:24px;cursor:pointer;line-height:1;padding:0 4px}
+.drawer-x:hover,.drawer-x:focus-visible{color:var(--txt);outline:none}
+.drawer-body{padding:16px 18px 40px}
+.drawer-body ol{margin:0;padding:0;list-style:none;counter-reset:step}
+.drawer-body li{counter-increment:step;position:relative;padding:0 0 16px 34px;font-size:12px;line-height:1.65;color:var(--txt)}
+.drawer-body li::before{content:counter(step);position:absolute;left:0;top:0;width:22px;height:22px;border:1px solid var(--cyan);color:var(--cyan);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+.drawer-body li b{color:var(--cyan);font-weight:600}
+.drawer-body .dnote{font-size:11px;color:var(--dim);border-top:1px solid var(--line);padding-top:14px;margin-top:4px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -145,14 +164,16 @@ a{color:var(--cyan);text-decoration:none}
         </div>
         <div id="results" class="results"></div>
         <div class="custom">
-          <input id="customSym" placeholder="Custom ticker" style="flex:1;background:#070b10;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;padding:6px;border-radius:2px;outline:none;text-transform:uppercase">
-          <select id="customSec"></select>
-          <button onclick="addCustom()">+ Add</button>
+          <select id="customSec" aria-label="Sector for custom add"></select>
+          <input id="customSym" placeholder="Ticker (optional)" aria-label="Custom ticker, optional" style="flex:1;background:#070b10;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;padding:6px;border-radius:2px;outline:none;text-transform:uppercase">
+          <button onclick="addCustom()" aria-label="Add to book">+ Add</button>
         </div>
+        <div id="addStatus" class="addstatus" role="status" aria-live="polite"></div>
+        <div class="customhint">Pick a sector for a sector exposure, or sector + ticker for a specific name.</div>
         <div id="holds" style="margin-top:12px"></div>
         <div class="wtotal" id="wtotal"></div>
         <div class="btnrow">
-          <button class="btn" onclick="loadSample()">Load sample book</button>
+          <button class="btn" onclick="loadSample()">See an example</button>
           <button class="btn" onclick="clearBook()">Clear</button>
         </div>
       </div>
@@ -190,6 +211,8 @@ a{color:var(--cyan);text-decoration:none}
     </div>
   </div>
 
+  <div class="howto-row"><button id="howtoBtn" class="howto-btn" aria-haspopup="dialog">❔ How to use the Exposure Desk</button></div>
+
   <footer>
     <span class="prov" id="prov">Live data: connecting…</span><br>
     <b>Methodology.</b> Your book is repriced against the structure's per-channel shock vectors and sector betas — computed in your browser, no live data needed for the score. Live prices via the DELAX snapshot feed.<br>
@@ -213,7 +236,7 @@ function init(){
     document.getElementById('verdict').textContent='Model failed to load.';return;
   }
   document.getElementById('structName').textContent=struct().meta.short;
-  (window.UNIVERSE||[]).forEach(u=>symSector[u.sym]=u.sector);
+  (window.CATALOG||window.UNIVERSE||[]).forEach(u=>symSector[u.sym]=u.sector);
 
   // sector dropdown for custom tickers
   const sel=document.getElementById('customSec');
@@ -237,6 +260,7 @@ function init(){
 
   loadSample();
   fetchSnapshot();
+  wireHowto();
 }
 
 async function fetchSnapshot(){
@@ -252,7 +276,7 @@ async function fetchSnapshot(){
 
 function renderSearch(term){
   const box=document.getElementById('results'); term=(term||'').toUpperCase().trim();
-  const list=(window.UNIVERSE||[]).filter(u=> !book.find(b=>b.sym===u.sym) &&
+  const list=(window.CATALOG||window.UNIVERSE||[]).filter(u=> !book.find(b=>b.sym===u.sym) &&
      (term===''||u.sym.includes(term)||u.sector.toUpperCase().includes(term)));
   if(!list.length){box.classList.remove('show');return;}
   box.innerHTML=list.slice(0,40).map(u=>`<div class="res" onclick="addSym('${u.sym}')"><span class="sx">${u.sym}</span><span class="sc">${u.sector.replace(/_/g,' ')}</span></div>`).join('');
@@ -266,11 +290,20 @@ function addSym(sym){
   render();
 }
 function addCustom(){
+  const sector=document.getElementById('customSec').value;
   const sym=document.getElementById('customSym').value.toUpperCase().trim();
-  if(!sym||book.find(b=>b.sym===sym))return;
-  book.push({sym,weight:10,sector:document.getElementById('customSec').value});
-  document.getElementById('customSym').value='';render();
+  if(!sector){flash('Pick a sector first');return;}
+  if(sym){
+    if(book.find(b=>b.sym===sym)){flash(sym+' already in book');return;}
+    book.push({sym,weight:10,sector}); flash('Added '+sym);
+  }else{
+    const label=sector.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    if(book.find(b=>b.isSectorExposure&&b.sector===sector)){flash(label+' already in book');return;}
+    book.push({sym:label,weight:10,sector,isSectorExposure:true}); flash('Added '+label);
+  }
+  document.getElementById('customSym').value=''; render();
 }
+function flash(msg){const el=document.getElementById('addStatus');el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>el.textContent='',2200);}
 function setW(i,d){book[i].weight=Math.max(1,(+book[i].weight||0)+d);render();}
 function setWv(i,v){book[i].weight=Math.max(1,+v||1);render();}
 function rm(i){book.splice(i,1);render();}
@@ -287,21 +320,21 @@ function loadSample(){
   render();
 }
 
-function fmtPx(sym){
-  const q=quotes[sym]; if(!q||q.price==null)return '';
-  const c=q.changePct; const cls=c>0?'up':c<0?'dn':'';
-  const sign=c>0?'+':'';
+function fmtPx(h){
+  if(h.isSectorExposure)return '<span class="noprice">· sector exposure</span>';
+  const q=quotes[h.sym]; if(!q||q.price==null)return '<span class="noprice">· score-only</span>';
+  const c=q.changePct; const cls=c>0?'up':c<0?'dn':''; const sign=c>0?'+':'';
   return `<span class="px">$${q.price.toFixed(2)}</span>${c!=null?` <span class="${cls}">${sign}${c.toFixed(2)}%</span>`:''}`;
 }
 
 function renderHolds(){
   const el=document.getElementById('holds');
-  if(!book.length){el.innerHTML='<div class="empty">Search a ticker above, add a custom one, or load a sample book to see your Conflict Exposure Score.</div>';document.getElementById('wtotal').textContent='';return;}
+  if(!book.length){el.innerHTML='<div class="empty">Search a ticker above, add a custom one, or click \u201cSee an example\u201d to see your Conflict Exposure Score.</div>';document.getElementById('wtotal').textContent='';return;}
   const tot=book.reduce((a,b)=>a+(+b.weight||0),0)||1;
   el.innerHTML=book.map((h,i)=>`
     <div class="hold">
       <div class="info">
-        <div class="sym">${h.sym} ${fmtPx(h.sym)}</div>
+        <div class="sym">${h.sym} ${fmtPx(h)}</div>
         <div class="meta"><span>${h.sector.replace(/_/g,' ')}</span><span>${((h.weight/tot)*100).toFixed(0)}% of book</span></div>
       </div>
       <div class="wt">
@@ -342,15 +375,46 @@ function render(){
       <div class="bar"><div class="fill" style="width:${w}%;background:${col};${v<0?'right':'left'}:50%"></div></div></div>`;
   }).join(''):'<div class="empty">Neutral across channels.</div>';
 
-  // worst
-  worst.innerHTML=r.byHolding.slice(0,6).map(h=>{
-    const col=h.impact<0?'var(--red)':'var(--green)';
+  // worst — ranked by WEIGHTED contribution to the book (weight x impact), not raw sector impact
+  const wh=r.byHolding.map(h=>({...h,contrib:h.weight*h.impact})).sort((a,b)=>a.contrib-b.contrib);
+  worst.innerHTML=wh.slice(0,8).map(h=>{
+    const col=h.contrib<0?'var(--red)':'var(--green)';
     return `<div class="wh"><div><div>${h.sym}</div><div class="s">${h.sector.replace(/_/g,' ')}</div></div>
-      <div class="v" style="color:${col}">${h.impact>0?'+':''}${(h.impact*100).toFixed(1)}</div></div>`;
+      <div class="v" style="color:${col}">${h.contrib>0?'+':''}${(h.contrib*100).toFixed(1)}</div></div>`;
   }).join('');
+}
+
+function wireHowto(){
+  const hb=document.getElementById('howtoBtn'),hd=document.getElementById('howtoDrawer'),
+        ho=document.getElementById('howtoOverlay'),hc=document.getElementById('howtoClose');
+  let lastFocus=null;
+  function close(){hd.classList.remove('open');hd.setAttribute('aria-hidden','true');ho.hidden=true;document.removeEventListener('keydown',key);if(lastFocus)lastFocus.focus();}
+  function key(e){
+    if(e.key==='Escape'){close();return;}
+    if(e.key==='Tab'){const f=hd.querySelectorAll('button,a,[tabindex]');if(!f.length)return;
+      const first=f[0],last=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+  }
+  function open(){lastFocus=document.activeElement;ho.hidden=false;hd.classList.add('open');hd.setAttribute('aria-hidden','false');hc.focus();document.addEventListener('keydown',key);}
+  hb.addEventListener('click',open);hc.addEventListener('click',close);ho.addEventListener('click',close);
 }
 
 window.addEventListener('DOMContentLoaded',init);
 </script>
+<div id="howtoOverlay" class="ov" hidden></div>
+<aside id="howtoDrawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="howtoTitle" aria-hidden="true">
+  <div class="drawer-hd"><h2 id="howtoTitle">How to use the Exposure Desk</h2><button id="howtoClose" class="drawer-x" aria-label="Close guide">&times;</button></div>
+  <div class="drawer-body">
+    <ol>
+      <li><b>Build your book.</b> Search a ticker (101 names) and click it, or use the custom row — pick a sector for a quick sector exposure, or sector + a specific ticker.</li>
+      <li><b>Set weights.</b> Use − / + or type a number. Weights auto-normalise to % of book; they need not sum to 100.</li>
+      <li><b>Pick a scenario.</b> Tap Ceasefire, Central War, or Full Closure — the score recomputes instantly, in your browser.</li>
+      <li><b>Read the score.</b> Green = net beneficiary, red = net exposed: how much the book moves vs pre-conflict normal under that scenario.</li>
+      <li><b>See where it hits.</b> “By channel” shows the drivers (oil, growth, FX…); “Most exposed holdings” ranks positions by weighted contribution.</li>
+    </ol>
+    <div class="dnote">Sector-level estimates for research, not investment advice. Live prices show for the core universe; other names are scored and marked “score-only”.</div>
+  </div>
+</aside>
 </body>
 </html>

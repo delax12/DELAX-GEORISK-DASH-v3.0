@@ -130,6 +130,13 @@ const RISK_STRUCTURES = {
         em_equity:        { fx: -0.70, gdp: -0.40, oil: -0.20 },         // EEM, EWZ — importer pain
         em_sovereign:     { fx: -0.80, gdp: -0.30 },                     // EMB — debt-crisis exposed
         broad_market:     { gdp: -0.50, cpi: -0.20, oil: -0.10 },        // SPY, QQQ
+        // ── Added Jun 2026 for the 101 catalog — first-draft betas, tune with the rest ──
+        agriculture_food: { food: +0.70, cpi: +0.20, gdp: -0.10 },       // ADM, BG, NTR — food-spike beneficiary
+        semiconductors:   { gdp: -0.55, fx: -0.20, oil: -0.10 },         // NVDA, TSM — cyclical growth-sensitive
+        big_tech:         { gdp: -0.40, cpi: -0.20 },                    // AAPL, MSFT — mega-cap, broad-like
+        autos:            { oil: -0.60, gdp: -0.50, cpi: -0.30 },        // F, GM, TSLA — fuel/input + demand hit
+        financials:       { gdp: -0.50, fx: -0.20, cpi: -0.10 },         // JPM, GS — cyclical
+        utilities:        { gdp: -0.05, cpi: -0.20 },                    // NEE, DUK — defensive, low beta
       },
       /* Per-ticker overrides for names whose behavior diverges from their sector.
          (empty for v1 — add idiosyncratic cases here as you find them) */
@@ -253,7 +260,118 @@ const UNIVERSE = [
 
 /* Fast lookup: ticker → sector. Out-of-universe holdings get classified once
    (cached fundamentals call) into one of these sectors, then scored for free. */
-const SYM_TO_SECTOR = UNIVERSE.reduce((m, u) => (m[u.sym] = u.sector, m), {});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   3b. SEARCH CATALOG (101 names) — DECOUPLED from the priced UNIVERSE.
+   The Exposure Desk searches & sector-tags against this 101-name catalog. Only the
+   leaner snapshot UNIVERSE gets LIVE PRICES; catalog-only names are scored (by
+   sector) and shown as 'score-only'. Expanding this list costs NO snapshot quota.
+   ════════════════════════════════════════════════════════════════════════════ */
+const CATALOG = [
+  { sym: 'XOM', sector: 'energy_producers' },
+  { sym: 'CVX', sector: 'energy_producers' },
+  { sym: 'SHEL', sector: 'energy_producers' },
+  { sym: 'BP', sector: 'energy_producers' },
+  { sym: 'TTE', sector: 'energy_producers' },
+  { sym: 'COP', sector: 'energy_producers' },
+  { sym: 'EOG', sector: 'energy_producers' },
+  { sym: 'OXY', sector: 'energy_producers' },
+  { sym: 'SLB', sector: 'energy_producers' },
+  { sym: 'VLO', sector: 'energy_producers' },
+  { sym: 'XLE', sector: 'energy_producers' },
+  { sym: 'KSA', sector: 'gulf_producers' },
+  { sym: 'LNG', sector: 'lng' },
+  { sym: 'EQT', sector: 'lng' },
+  { sym: 'AR', sector: 'lng' },
+  { sym: 'WMB', sector: 'lng' },
+  { sym: 'KMI', sector: 'lng' },
+  { sym: 'ET', sector: 'lng' },
+  { sym: 'RTX', sector: 'defense' },
+  { sym: 'LMT', sector: 'defense' },
+  { sym: 'NOC', sector: 'defense' },
+  { sym: 'GD', sector: 'defense' },
+  { sym: 'BA', sector: 'defense' },
+  { sym: 'HII', sector: 'defense' },
+  { sym: 'LHX', sector: 'defense' },
+  { sym: 'BAESY', sector: 'defense' },
+  { sym: 'LDOS', sector: 'defense' },
+  { sym: 'KTOS', sector: 'defense' },
+  { sym: 'ITA', sector: 'defense' },
+  { sym: 'FRO', sector: 'shipping_tankers' },
+  { sym: 'STNG', sector: 'shipping_tankers' },
+  { sym: 'TNK', sector: 'shipping_tankers' },
+  { sym: 'INSW', sector: 'shipping_tankers' },
+  { sym: 'DHT', sector: 'shipping_tankers' },
+  { sym: 'ZIM', sector: 'shipping_tankers' },
+  { sym: 'GLD', sector: 'gold_safehaven' },
+  { sym: 'GDX', sector: 'gold_safehaven' },
+  { sym: 'NEM', sector: 'gold_safehaven' },
+  { sym: 'GOLD', sector: 'gold_safehaven' },
+  { sym: 'AEM', sector: 'gold_safehaven' },
+  { sym: 'FNV', sector: 'gold_safehaven' },
+  { sym: 'WPM', sector: 'gold_safehaven' },
+  { sym: 'DBC', sector: 'gold_safehaven' },
+  { sym: 'JETS', sector: 'aviation' },
+  { sym: 'DAL', sector: 'aviation' },
+  { sym: 'UAL', sector: 'aviation' },
+  { sym: 'AAL', sector: 'aviation' },
+  { sym: 'LUV', sector: 'aviation' },
+  { sym: 'EEM', sector: 'em_equity' },
+  { sym: 'EWZ', sector: 'em_equity' },
+  { sym: 'INDA', sector: 'em_equity' },
+  { sym: 'FXI', sector: 'em_equity' },
+  { sym: 'EWW', sector: 'em_equity' },
+  { sym: 'VWO', sector: 'em_equity' },
+  { sym: 'EMB', sector: 'em_sovereign' },
+  { sym: 'EMLC', sector: 'em_sovereign' },
+  { sym: 'FLR', sector: 'reconstruction' },
+  { sym: 'ACM', sector: 'reconstruction' },
+  { sym: 'PWR', sector: 'reconstruction' },
+  { sym: 'CAT', sector: 'reconstruction' },
+  { sym: 'VMC', sector: 'reconstruction' },
+  { sym: 'MLM', sector: 'reconstruction' },
+  { sym: 'ADM', sector: 'agriculture_food' },
+  { sym: 'BG', sector: 'agriculture_food' },
+  { sym: 'MOS', sector: 'agriculture_food' },
+  { sym: 'NTR', sector: 'agriculture_food' },
+  { sym: 'CF', sector: 'agriculture_food' },
+  { sym: 'CTVA', sector: 'agriculture_food' },
+  { sym: 'NVDA', sector: 'semiconductors' },
+  { sym: 'TSM', sector: 'semiconductors' },
+  { sym: 'AMD', sector: 'semiconductors' },
+  { sym: 'INTC', sector: 'semiconductors' },
+  { sym: 'ASML', sector: 'semiconductors' },
+  { sym: 'MU', sector: 'semiconductors' },
+  { sym: 'SMH', sector: 'semiconductors' },
+  { sym: 'AAPL', sector: 'big_tech' },
+  { sym: 'MSFT', sector: 'big_tech' },
+  { sym: 'GOOGL', sector: 'big_tech' },
+  { sym: 'AMZN', sector: 'big_tech' },
+  { sym: 'META', sector: 'big_tech' },
+  { sym: 'TSLA', sector: 'autos' },
+  { sym: 'F', sector: 'autos' },
+  { sym: 'GM', sector: 'autos' },
+  { sym: 'RIVN', sector: 'autos' },
+  { sym: 'NIO', sector: 'autos' },
+  { sym: 'JPM', sector: 'financials' },
+  { sym: 'BAC', sector: 'financials' },
+  { sym: 'GS', sector: 'financials' },
+  { sym: 'V', sector: 'financials' },
+  { sym: 'NEE', sector: 'utilities' },
+  { sym: 'DUK', sector: 'utilities' },
+  { sym: 'SO', sector: 'utilities' },
+  { sym: 'LVMUY', sector: 'luxury_consumer' },
+  { sym: 'NKE', sector: 'luxury_consumer' },
+  { sym: 'MCD', sector: 'luxury_consumer' },
+  { sym: 'SPY', sector: 'broad_market' },
+  { sym: 'QQQ', sector: 'broad_market' },
+  { sym: 'DIA', sector: 'broad_market' },
+  { sym: 'VTI', sector: 'broad_market' },
+  { sym: 'KO', sector: 'broad_market' },
+  { sym: 'T', sector: 'broad_market' },
+];
+
+const SYM_TO_SECTOR = CATALOG.reduce((m, u) => (m[u.sym] = u.sector, m), {});
 
 /* ════════════════════════════════════════════════════════════════════════════
    4. EXPOSURE SCORE — reference implementation
@@ -327,9 +445,10 @@ function computeExposure(portfolio, structureId, scenarioId) {
 /* ── Exports: browser global + CommonJS (matches your dual frontend/serverless use) ── */
 if (typeof window !== 'undefined') {
   window.RISK_STRUCTURES = RISK_STRUCTURES;
+  window.CATALOG = CATALOG;
   window.UNIVERSE = UNIVERSE;
   window.computeExposure = computeExposure;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { RISK_STRUCTURES, UNIVERSE, SYM_TO_SECTOR, CHANNEL_NORMALIZERS, computeExposure };
+  module.exports = { RISK_STRUCTURES, UNIVERSE, CATALOG, SYM_TO_SECTOR, CHANNEL_NORMALIZERS, computeExposure };
 }
