@@ -129,6 +129,7 @@ a{color:var(--cyan);text-decoration:none}
 .addstatus{font-size:10px;color:var(--cyan);min-height:13px;margin-top:6px;letter-spacing:.04em}
 .customhint{font-size:10px;color:var(--faint);margin-top:4px;line-height:1.5}
 .noprice{color:var(--faint);font-size:10px;letter-spacing:.03em}
+.unverified{color:var(--amber);font-size:10px;letter-spacing:.03em}
 .howto-row{margin-top:18px;text-align:center}
 .howto-btn{background:#0a1119;border:1px solid var(--line);color:var(--cyan);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:9px 16px;border-radius:3px;cursor:pointer}
 .howto-btn:hover,.howto-btn:focus-visible{border-color:var(--cyan);outline:none;box-shadow:0 0 10px rgba(45,226,230,.2)}
@@ -165,11 +166,11 @@ a{color:var(--cyan);text-decoration:none}
         <div id="results" class="results"></div>
         <div class="custom">
           <select id="customSec" aria-label="Sector for custom add"></select>
-          <input id="customSym" placeholder="Ticker (optional)" aria-label="Custom ticker, optional" style="flex:1;background:#070b10;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;padding:6px;border-radius:2px;outline:none;text-transform:uppercase">
+          <input id="customSym" placeholder="Ticker / label (optional)" aria-label="Ticker or label, optional" style="flex:1;background:#070b10;border:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;padding:6px;border-radius:2px;outline:none;text-transform:uppercase">
           <button onclick="addCustom()" aria-label="Add to book">+ Add</button>
         </div>
         <div id="addStatus" class="addstatus" role="status" aria-live="polite"></div>
-        <div class="customhint">Pick a sector for a sector exposure, or sector + ticker for a specific name.</div>
+        <div class="customhint">The <b>sector</b> drives the score. Add a ticker to name it \u2014 off-catalog tickers are scored but marked \u201cunverified\u201d.</div>
         <div id="holds" style="margin-top:12px"></div>
         <div class="wtotal" id="wtotal"></div>
         <div class="btnrow">
@@ -291,11 +292,15 @@ function addSym(sym){
 }
 function addCustom(){
   const sector=document.getElementById('customSec').value;
-  const sym=document.getElementById('customSym').value.toUpperCase().trim();
+  const raw=document.getElementById('customSym').value.toUpperCase().trim();
   if(!sector){flash('Pick a sector first');return;}
-  if(sym){
-    if(book.find(b=>b.sym===sym)){flash(sym+' already in book');return;}
-    book.push({sym,weight:10,sector}); flash('Added '+sym);
+  if(raw){
+    // input sanitation: ticker-shaped only (1-6 letters, optional .X class suffix)
+    if(!/^[A-Z]{1,6}(\.[A-Z])?$/.test(raw)){flash("Doesn't look like a ticker");return;}
+    if(book.find(b=>b.sym===raw)){flash(raw+' already in book');return;}
+    const known=!!symSector[raw];                 // is it a real, catalogued symbol?
+    book.push({sym:raw,weight:10,sector:known?symSector[raw]:sector,isUnverified:!known});
+    flash(known?('Added '+raw):('Added '+raw+' \u2014 unverified'));
   }else{
     const label=sector.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
     if(book.find(b=>b.isSectorExposure&&b.sector===sector)){flash(label+' already in book');return;}
@@ -322,6 +327,7 @@ function loadSample(){
 
 function fmtPx(h){
   if(h.isSectorExposure)return '<span class="noprice">· sector exposure</span>';
+  if(h.isUnverified)return '<span class="unverified">· unverified</span>';
   const q=quotes[h.sym]; if(!q||q.price==null)return '<span class="noprice">· score-only</span>';
   const c=q.changePct; const cls=c>0?'up':c<0?'dn':''; const sign=c>0?'+':'';
   return `<span class="px">$${q.price.toFixed(2)}</span>${c!=null?` <span class="${cls}">${sign}${c.toFixed(2)}%</span>`:''}`;
