@@ -7,6 +7,15 @@
  *
  * GDELT API: https://api.gdeltproject.org
  * Free · No key · Updates every 15 minutes
+ *
+ * v2 hardening (Jul 2026):
+ *  - Content-type + startsWith('{') guard before JSON.parse
+ *    (GDELT's rate limiter returns plain text "Queries conducted…"
+ *    with HTTP 200/429 — previously crashed the parse → 500)
+ *  - 6s AbortController timeout (prevents unbounded hangs)
+ *  - Upstream failures degrade gracefully: 200 + empty results +
+ *    degraded flag, short cache so we retry soon without
+ *    hammering GDELT while it is rate-limiting
  */
 'use strict';
 
@@ -28,6 +37,21 @@ const CC_MAP = {
   OM:'Oman', BH:'Bahrain',
 };
 
+/* Degraded (but valid) payload — frontend renders an empty overlay
+   instead of receiving a 500. Short cache: retry in ~2 min without
+   letting every visitor hit GDELT while it is rate-limiting us. */
+function degrade(res, reason) {
+  console.warn('[gdelt] degraded:', reason);
+  res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=60');
+  return res.status(200).json({
+    results:       [],
+    totalArticles: 0,
+    fetchedAt:     new Date().toISOString(),
+    timespan:      '48h',
+    degraded:      true,
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 's-maxage=900, stale-while-revalidate=300'); // 15min cache
@@ -39,11 +63,48 @@ module.exports = async function handler(req, res) {
     const query = encodeURIComponent('conflict OR war OR attack OR strike OR missile OR explosion');
     const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${query}&mode=artlist&maxrecords=250&timespan=48h&format=json`;
 
-    const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!r.ok) throw new Error(`GDELT HTTP ${r.status}`);
-    const data = await r.json();
+    const controller = new AbortController();
+    const timeout    = setTimeout(() => controller.abort(), 6000);
 
-    const articles = data?.articles || [];
+    let r;
+    try {
+      r = await fetch(url, {
+        signal:  controller.signal,
+        headers: { 'Accept': 'application/json' },
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeout);
+      // Network failure or 6s timeout — upstream unreachable, degrade
+      return degrade(res, fetchErr.name === 'AbortError'
+        ? 'upstream timeout (6s)'
+        : `fetch failed: ${fetchErr.message}`);
+    }
+    clearTimeout(timeout);
+
+    if (!r.ok) {
+      // 429 = GDELT rate limiter; any non-2xx is an upstream problem, not ours
+      return degrade(res, `GDELT HTTP ${r.status}`);
+    }
+
+    /* ── JSON guard (ported from global-pulse.js) ──
+       GDELT's rate limiter can return HTTP 200 with a plain-text body
+       ("Queries conducted…"). Never JSON.parse blindly. */
+    const contentType = r.headers.get('content-type') || '';
+    const bodyText    = await r.text();
+    const trimmed     = bodyText.trim();
+
+    if (!contentType.includes('json') && !trimmed.startsWith('{')) {
+      return degrade(res, `non-JSON upstream body: "${trimmed.slice(0, 60)}"`);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(trimmed);
+    } catch (parseErr) {
+      return degrade(res, `JSON parse failed: "${trimmed.slice(0, 60)}"`);
+    }
+
+    const articles = Array.isArray(data?.articles) ? data.articles : [];
 
     // Count events per country using GDELT source country codes
     const countryCounts = {};
@@ -84,7 +145,9 @@ module.exports = async function handler(req, res) {
     });
 
   } catch (err) {
-    console.error('[gdelt]', err.message);
-    return res.status(500).json({ error: err.message, results: [] });
+    // Truly unexpected internal error — still never surface a 500 to users;
+    // log at error level so it shows in Vercel error clusters for diagnosis.
+    console.error('[gdelt] unexpected:', err.message);
+    return degrade(res, `unexpected: ${err.message}`);
   }
 };
