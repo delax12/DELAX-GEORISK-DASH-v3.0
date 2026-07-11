@@ -4770,13 +4770,13 @@ function eqRenderStats(data) {
 function eqRenderChart(days) {
   const canvas = document.getElementById('eq-chart-canvas');
   if (!canvas) return;
-const ctx = canvas.getContext('2d');
-const dpr = window.devicePixelRatio || 1;
-const W   = canvas.offsetWidth || 600;
-const H   = 240;
-canvas.width  = W * dpr;
-canvas.height = H * dpr;
-ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.offsetWidth || 600;
+  const H   = 240;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Slice to requested range
   const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
@@ -4792,14 +4792,20 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const pad   = { t:20, r:16, b:32, l:58 };
   const cW    = W - pad.l - pad.r;
   const cH    = H - pad.t - pad.b;
-  const prices= candles.flatMap(c => [c.high, c.low]);
+  const xStep = cW / candles.length;
+
+  // Candles need >=5px each to be readable; below that, draw a line chart
+  const useLine = xStep < 5;
+
+  const prices = useLine
+    ? candles.map(c => c.close)
+    : candles.flatMap(c => [c.high, c.low]);
   const minP  = Math.min(...prices);
   const maxP  = Math.max(...prices);
   const range = maxP - minP || 1;
-  const xStep = cW / candles.length;
 
-  const toX   = i  => pad.l + i * xStep + xStep / 2;
-  const toY   = p  => pad.t + cH - ((p - minP) / range) * cH;
+  const toX = i => pad.l + i * xStep + xStep / 2;
+  const toY = p => pad.t + cH - ((p - minP) / range) * cH;
 
   ctx.clearRect(0,0,W,H);
 
@@ -4817,7 +4823,7 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillText(`$${p.toFixed(0)}`, pad.l - 4, y + 3);
   }
 
-  // Date labels (every ~5 candles)
+  // Date labels (every ~5 points)
   ctx.textAlign  = 'center';
   ctx.fillStyle  = '#3d5270';
   ctx.font       = '9px IBM Plex Mono, monospace';
@@ -4828,49 +4834,96 @@ ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
   });
 
-  // Volume bars (faint, in lower 20% of chart)
+  // Volume bars (faint, lower 18% of chart)
   const maxVol = Math.max(...candles.map(c => c.volume || 0));
   if (maxVol > 0) {
     candles.forEach((c, i) => {
       const barH  = ((c.volume || 0) / maxVol) * (cH * 0.18);
       const isUp  = c.close >= c.open;
       ctx.fillStyle = isUp ? 'rgba(0,230,118,.15)' : 'rgba(255,61,74,.15)';
-      ctx.fillRect(toX(i) - xStep * 0.35, H - pad.b - barH, xStep * 0.7, barH);
+      ctx.fillRect(toX(i) - xStep * 0.35, H - pad.b - barH, Math.max(xStep * 0.7, 1), barH);
     });
   }
 
-  // Candles
-  candles.forEach((c, i) => {
-    const isUp  = c.close >= c.open;
-    const col   = isUp ? '#00e676' : '#ff3d4a';
-    const x     = toX(i);
-    const oY    = toY(c.open);
-    const cY    = toY(c.close);
-    const hY    = toY(c.high);
-    const lY    = toY(c.low);
+  if (useLine) {
+    /* ── LINE MODE (dense ranges / mobile) ── */
+    const first = candles[0].close;
+    const last  = candles[candles.length - 1].close;
+    const up    = last >= first;
+    const col   = up ? '#00e676' : '#ff3d4a';
 
-    // Wick
+    // Gradient area under the close line
+    const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+    grad.addColorStop(0, up ? 'rgba(0,230,118,.22)' : 'rgba(255,61,74,.22)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    candles.forEach((c, i) => {
+      if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+      else         ctx.lineTo(toX(i), toY(c.close));
+    });
+    ctx.lineTo(toX(candles.length - 1), H - pad.b);
+    ctx.lineTo(toX(0), H - pad.b);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Close-price line with subtle glow
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur  = 6;
     ctx.strokeStyle = col;
-    ctx.lineWidth   = 1;
-    ctx.beginPath(); ctx.moveTo(x, hY); ctx.lineTo(x, lY); ctx.stroke();
+    ctx.lineWidth   = 1.8;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    candles.forEach((c, i) => {
+      if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+      else         ctx.lineTo(toX(i), toY(c.close));
+    });
+    ctx.stroke();
+    ctx.restore();
 
-    // Body
+    // Endpoint dot + last price tag
+    const lx = toX(candles.length - 1), ly = toY(last);
     ctx.fillStyle = col;
-    const bodyTop = Math.min(oY, cY);
-    const bodyH   = Math.max(Math.abs(oY - cY), 1);
-    ctx.fillRect(x - xStep * 0.35, bodyTop, xStep * 0.7, bodyH);
-  });
+    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`$${last.toFixed(2)}`, W - pad.r, Math.max(ly - 8, pad.t + 10));
 
-  // Close-price trend line (subtle overlay)
-  ctx.strokeStyle = 'rgba(0,212,255,.35)';
-  ctx.lineWidth   = 1.5;
-  ctx.lineJoin    = 'round';
-  ctx.beginPath();
-  candles.forEach((c, i) => {
-    if (i === 0) ctx.moveTo(toX(i), toY(c.close));
-    else         ctx.lineTo(toX(i), toY(c.close));
-  });
-  ctx.stroke();
+  } else {
+    /* ── CANDLE MODE (sparse ranges / desktop) ── */
+    candles.forEach((c, i) => {
+      const isUp  = c.close >= c.open;
+      const col   = isUp ? '#00e676' : '#ff3d4a';
+      const x     = toX(i);
+      const oY    = toY(c.open);
+      const cY    = toY(c.close);
+      const hY    = toY(c.high);
+      const lY    = toY(c.low);
+
+      // Wick
+      ctx.strokeStyle = col;
+      ctx.lineWidth   = 1;
+      ctx.beginPath(); ctx.moveTo(x, hY); ctx.lineTo(x, lY); ctx.stroke();
+
+      // Body
+      ctx.fillStyle = col;
+      const bodyTop = Math.min(oY, cY);
+      const bodyH   = Math.max(Math.abs(oY - cY), 1);
+      ctx.fillRect(x - xStep * 0.35, bodyTop, xStep * 0.7, bodyH);
+    });
+
+    // Close-price trend line (subtle overlay)
+    ctx.strokeStyle = 'rgba(0,212,255,.35)';
+    ctx.lineWidth   = 1.5;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    candles.forEach((c, i) => {
+      if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+      else         ctx.lineTo(toX(i), toY(c.close));
+    });
+    ctx.stroke();
+  }
 }
 
 function eqSetRange(days, btn) {
