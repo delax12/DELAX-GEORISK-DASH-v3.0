@@ -4770,9 +4770,13 @@ function eqRenderStats(data) {
 function eqRenderChart(days) {
   const canvas = document.getElementById('eq-chart-canvas');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W   = canvas.width  = canvas.offsetWidth  || 600;
-  const H   = canvas.height = 240;
+const ctx = canvas.getContext('2d');
+const dpr = window.devicePixelRatio || 1;
+const W   = canvas.offsetWidth || 600;
+const H   = 240;
+canvas.width  = W * dpr;
+canvas.height = H * dpr;
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   // Slice to requested range
   const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
