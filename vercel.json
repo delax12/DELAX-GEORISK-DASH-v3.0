@@ -1,7 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/snapshot.js": { "maxDuration": 60 }
+  },
   "crons": [
-    { "path": "/api/snapshot", "schedule": "0 9 * * *" }
+    { "path": "/api/snapshot", "schedule": "5 5 * * *" }
   ],
   "rewrites": [
     { "source": "/georisk-intelligence.html", "destination": "/georisk-intelligence.html" },
