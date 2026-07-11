@@ -7,17 +7,34 @@
  * dividend yield, analyst target, profit margin) from Finnhub
  * and Alpha Vantage server-side — API keys never touch the browser.
  *
- * Also returns 30-day OHLCV history for the candlestick chart.
+ * Also returns daily OHLC history for the candlestick chart.
+ *
+ * CANDLE FIX (Jul 2026):
+ *   Finnhub moved /stock/candle behind its paid tier — free keys get 403,
+ *   so the chart showed "No chart data available" for every symbol.
+ *   Candles are now sourced in priority order:
+ *     1. SNAPSHOT BLOB  — the 34-ticker universe seeded by /api/snapshot
+ *        (instant, zero external API calls, 120 daily rows)
+ *     2. TWELVE DATA    — on-demand for any other symbol from search
+ *        (1 credit of 800/day, ~120 daily rows, edge-cached)
+ *     3. FINNHUB CANDLE — legacy attempt, kept as a last resort
+ *   Response includes candleSource for observability.
  *
  * ENDPOINT:
  *   GET /api/market-equity?symbol=XOM
- *   Returns: { quote, fundamentals, candles, source, fetchedAt }
+ *   Returns: { quote, fundamentals, candles, candleSource, fetchedAt }
  *
  * ENV VARS (already set in Vercel):
- *   FINNHUB_API_KEY   — primary (quote + basic financials + candles)
+ *   FINNHUB_API_KEY   — quote + basic financials
  *   ALPHA_VANTAGE_KEY — fallback fundamentals (OVERVIEW endpoint)
+ *   TWELVE_DATA_KEY   — on-demand candles for off-universe symbols
+ *   (Blob store connected — snapshot candle reads)
  */
 'use strict';
+
+const { list } = require('@vercel/blob');
+
+const CANDLES_PATH = 'snapshot/candles.json';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
@@ -37,7 +54,7 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'No market data API keys configured' });
   }
 
-  const result  = { symbol, quote: null, fundamentals: null, candles: null, fetchedAt: new Date().toISOString() };
+  const result  = { symbol, quote: null, fundamentals: null, candles: null, candleSource: null, fetchedAt: new Date().toISOString() };
   const errors  = [];
 
   /* ── 1. Finnhub quote (price, change, 52W, beta) ── */
@@ -83,15 +100,66 @@ module.exports = async function handler(req, res) {
           source:         'Finnhub',
         };
       }
+    } catch (err) {
+      errors.push(`Finnhub: ${err.message}`);
+    }
+  }
 
-      /* ── 2. Candlestick — 30 trading days ── */
+  /* ── 2. Candles — snapshot blob → Twelve Data → Finnhub legacy ── */
+
+  // 2a. Snapshot blob (universe tickers seeded by /api/snapshot)
+  try {
+    const snap = await readJsonBlob(CANDLES_PATH);
+    const bundle = snap?.candles?.[symbol];
+    if (bundle && Array.isArray(bundle.daily) && bundle.daily.length) {
+      result.candles = bundle.daily.map((row) => ({
+        time:   Math.floor(Date.parse(row[0] + 'T00:00:00Z') / 1000),
+        open:   row[1],
+        high:   row[2],
+        low:    row[3],
+        close:  row[4],
+        volume: 0, // snapshot stores OHLC only; chart skips volume bars at 0
+      }));
+      result.candleSource = 'snapshot';
+    }
+  } catch (err) {
+    errors.push(`Snapshot: ${err.message}`);
+  }
+
+  // 2b. Twelve Data on-demand (off-universe symbols from the 50k search)
+  if (!result.candles && process.env.TWELVE_DATA_KEY) {
+    try {
+      const td = await fetchJSON(
+        `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}` +
+        `&interval=1day&outputsize=120&apikey=${process.env.TWELVE_DATA_KEY}`
+      );
+      if (td?.status === 'ok' && Array.isArray(td.values) && td.values.length) {
+        result.candles = td.values.slice().reverse().map((v) => ({
+          time:   Math.floor(Date.parse(v.datetime + 'T00:00:00Z') / 1000),
+          open:   +v.open,
+          high:   +v.high,
+          low:    +v.low,
+          close:  +v.close,
+          volume: v.volume != null ? +v.volume : 0,
+        }));
+        result.candleSource = 'twelvedata';
+      } else if (td?.message) {
+        errors.push(`TwelveData: ${String(td.message).slice(0, 120)}`);
+      }
+    } catch (err) {
+      errors.push(`TwelveData: ${err.message}`);
+    }
+  }
+
+  // 2c. Finnhub candle — legacy last resort (paid tier; usually 403 on free)
+  if (!result.candles && finnhubKey) {
+    try {
       const to   = Math.floor(Date.now() / 1000);
       const from = to - 45 * 24 * 3600; // 45 calendar days → ~30 trading days
       const candleRes = await fetchJSON(
         `https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(symbol)}` +
         `&resolution=D&from=${from}&to=${to}&token=${finnhubKey}`
       );
-
       if (candleRes?.s === 'ok' && candleRes.t?.length) {
         result.candles = candleRes.t.map((t, i) => ({
           time:  t,
@@ -101,9 +169,10 @@ module.exports = async function handler(req, res) {
           close: candleRes.c[i],
           volume:candleRes.v[i],
         }));
+        result.candleSource = 'finnhub';
       }
     } catch (err) {
-      errors.push(`Finnhub: ${err.message}`);
+      errors.push(`Finnhub candles: ${err.message}`);
     }
   }
 
@@ -187,4 +256,11 @@ async function fetchJSON(url, timeoutMs = 6000) {
     if (err.name === 'AbortError') throw new Error('Timeout');
     throw err;
   }
+}
+
+async function readJsonBlob(pathname) {
+  const { blobs } = await list({ prefix: pathname, limit: 1 });
+  if (!blobs.length) return null;
+  const r = await fetch(blobs[0].url, { cache: 'no-store' });
+  return r.ok ? r.json() : null;
 }
