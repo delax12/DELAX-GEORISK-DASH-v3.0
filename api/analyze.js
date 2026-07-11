@@ -1,6 +1,16 @@
 /**
  * /api/analyze.js — Vercel Serverless Function (CommonJS)
  * Multi-provider AI narrative engine for DELAX GEO-RISK dashboard.
+ *
+ * STOCKINSIGHTS FIX (Jul 2026):
+ *   Two frontend callers share type:'stockinsights' with different payloads:
+ *     • Equities tab (eqGetAI):        sends `symbol` + price/pe/beta/sector
+ *     • Country/watchlist insight:     sends `countryName` + stocks/stressIndex
+ *   Previously only the country path existed — it ignored the equity payload
+ *   and returned { theme, stocks, risk }, while the equity tab reads
+ *   data.analysis → rendered an empty string (silent blank panel).
+ *   Now: payload with `symbol` → single-stock prose returned as { analysis },
+ *   payload without → the original country JSON path, unchanged.
  */
 'use strict';
 
@@ -41,6 +51,13 @@ module.exports = async function handler(req, res) {
     stocks,
     stressIndex,
     countryData,
+    // Equities-tab single-stock payload (eqGetAI)
+    symbol,
+    price,
+    change,
+    pe,
+    beta,
+    sector,
   } = req.body || {};
 
   if (!type) {
@@ -161,6 +178,39 @@ Output the sentence only. No quotes. No explanation.`;
   }
 
   if (type === 'stockinsights') {
+
+    /* ── Branch A: Equities tab (eqGetAI) — payload carries `symbol` ──
+       Returns plain prose as { analysis } (frontend reads data.analysis). */
+    if (symbol) {
+      const fmt = (v, prefix = '', suffix = '') =>
+        (v === null || v === undefined || v === '' || Number.isNaN(v)) ? 'N/A' : `${prefix}${v}${suffix}`;
+
+      const prompt = `You are DELAX GEO-RISK's senior equity analyst. An investor viewing ${symbol} on the dashboard clicked "Get AI Analysis" for a plain-English read on this stock under the active conflict scenario.
+
+STOCK: ${symbol} | Price: ${fmt(price, '$')} | Today: ${fmt(change, '', '%')}
+P/E: ${fmt(pe)} | Beta: ${fmt(beta)} | Sector: ${sector || 'general'}
+ACTIVE SCENARIO: ${String(scenario).toUpperCase()} | Brent: $${oilPrice}/bbl
+
+Write exactly 3 short paragraphs of plain prose. No markdown, no asterisks, no bullet points, no headers.
+
+Paragraph 1 — CONFLICT EXPOSURE: How the ${sector || 'stock\'s'} sector transmits the ${scenario} scenario to ${symbol} specifically (oil at $${oilPrice}/bbl, shipping, defense demand, or risk-off flows — whichever applies).
+Paragraph 2 — WHAT THE NUMBERS SAY: Interpret the figures provided above (price move, P/E, beta) in the context of this scenario. If a figure reads N/A, skip it — never invent a number.
+Paragraph 3 — POSITIONING: One concrete takeaway — hold, hedge, trim, or add — with the single most important thing to watch next.
+
+35-55 words per paragraph. Use ONLY the figures provided above; never invent data. Begin immediately with Paragraph 1 — no intro line.`;
+
+      const result = await route(PROVIDERS, prompt, 380);
+      if (result.error) return res.status(500).json({ error: result.error });
+
+      return res.status(200).json({
+        analysis: result.text.trim(),
+        symbol,
+        scenario,
+        generatedAt: new Date().toISOString(),
+      });
+    }
+
+    /* ── Branch B: Country/watchlist insight — original structured JSON path ── */
     const country = countryName || 'Unknown';
     const stockList = (stocks || []).slice(0, 6).map((s) => `${s[0]} (${s[1]})`).join(', ') || 'XOM, GLD, LMT, RTX';
     const stress = stressIndex || 'N/A';

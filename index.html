@@ -2151,6 +2151,9 @@ document.addEventListener('DOMContentLoaded', () => {
     buildSectorTable();
     initAllCharts();
     loadPortfolioFromStorage();
+    // Render KPI tiles from KPI_MAP immediately — previously the static HTML
+    // defaults (stale numbers) sat on screen until the first scenario click.
+    setScenario(scenario);
     // initGlobeMap removed — Fix 2.1
     doRefresh(); // fetch EIA on load
     // Step 14: start GDELT conflict event polling (15 min, no API key)
