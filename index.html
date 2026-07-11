@@ -2376,7 +2376,10 @@ function setScenario(s) {
     const el = document.getElementById('kpi'+k);
     if(el) el.textContent = Object.values(kpi)[i];
   });
-  if(liveBrentPrice) document.getElementById('kpiOil').textContent = `$${Math.round(liveBrentPrice)}`;
+  // (Removed legacy live-spot override of kpiOil — per Hotfix A, the tile shows
+  //  the MODEL PROJECTED PEAK for the scenario; live spot lives in the header
+  //  pill and the tile subtitle. The override made the tile contradict its
+  //  own "(PEAK)" label and erased the scenario differentiation.)
   updateKpiTimestamps(); // Step 13: stamp all cards with scenario-change time
   updateCharts();
   calcPortfolioImpact();
