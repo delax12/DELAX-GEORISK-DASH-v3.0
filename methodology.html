@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methodology · DELAX GEO-RISK</title>
+<meta name="description" content="How the DELAX GEO-RISK Exposure Score is calibrated: sector betas fitted against Ukraine 2022 and the Red Sea crisis 2023-24, using six years of weekly price history, net of market.">
+<meta property="og:title" content="How the Exposure Score is calibrated · DELAX GEO-RISK">
+<meta property="og:description" content="Sector betas fitted against two real conflicts. 41 tickers, six years of weekly data, all returns net of market. Including where the model was wrong.">
+<meta property="og:type" content="article">
+<style>
+  :root{
+    --bg:#0a0c11;
+    --panel:#11151d;
+    --panel-2:#151a24;
+    --line:#1e2530;
+    --line-soft:#161c26;
+    --text:#dfe5ec;
+    --muted:#78849a;
+    --dim:#4d5769;
+    --accent:#f0a83c;
+    --up:#4ade80;
+    --down:#f2495c;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:"Helvetica Neue",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--line-soft) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:88px 88px;
+    background-position:-1px -1px;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px 96px}
+
+  /* ── nav ── */
+  .nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:20px 0;border-bottom:1px solid var(--line);margin-bottom:48px;
+  }
+  .brand{
+    font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--text);text-decoration:none;font-weight:700;
+  }
+  .brand span{color:var(--accent)}
+  .back{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-decoration:none;border:1px solid var(--line);
+    padding:7px 12px;transition:border-color .15s,color .15s;
+  }
+  .back:hover,.back:focus-visible{color:var(--accent);border-color:var(--accent)}
+
+  /* ── eyebrow / section markers ── */
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:14px;
+  }
+
+  /* ── hero ── */
+  .hero{margin-bottom:14px}
+  h1{
+    font-size:clamp(30px,6.4vw,50px);line-height:1.08;font-weight:800;
+    letter-spacing:-.02em;margin-bottom:22px;
+  }
+  h1 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:clamp(16px,2.3vw,19px);color:var(--muted);max-width:62ch}
+
+  .stamp{
+    display:flex;flex-wrap:wrap;gap:0;margin:36px 0 64px;
+    border:1px solid var(--line);background:var(--panel);
+  }
+  .stamp div{
+    flex:1 1 130px;padding:14px 16px;border-right:1px solid var(--line);
+  }
+  .stamp div:last-child{border-right:none}
+  .stamp dt{
+    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:5px;
+  }
+  .stamp dd{font-family:var(--mono);font-size:15px;color:var(--text);font-weight:600}
+  .stamp dd.on{color:var(--up)}
+
+  /* ── sections ── */
+  section{margin-bottom:60px}
+  h2{
+    font-size:clamp(20px,3.4vw,26px);font-weight:700;letter-spacing:-.01em;
+    margin-bottom:18px;
+  }
+  h3{
+    font-size:16px;font-weight:700;margin:30px 0 10px;
+  }
+  p{margin-bottom:16px;max-width:68ch}
+  p:last-child{margin-bottom:0}
+  strong{color:#fff;font-weight:650}
+  .muted{color:var(--muted)}
+
+  /* ── data table ── */
+  .tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin:22px 0}
+  .tbl th{
+    text-align:left;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dim);font-weight:500;padding:0 12px 9px 0;border-bottom:1px solid var(--line);
+  }
+  .tbl td{padding:9px 12px 9px 0;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl .num{text-align:right;white-space:nowrap}
+  .up{color:var(--up)}
+  .down{color:var(--down)}
+
+  /* ── the signature: the ledger of corrections ── */
+  .fix{
+    border:1px solid var(--line);border-left:2px solid var(--down);
+    background:var(--panel);padding:20px;margin:22px 0;
+  }
+  .fix-head{
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--down);margin-bottom:12px;
+  }
+  .fix h3{margin-top:0;font-size:17px}
+  .diff{font-family:var(--mono);font-size:13px;margin:14px 0 4px}
+  .diff div{padding:5px 10px;border-left:2px solid transparent}
+  .diff .was{color:var(--down);background:rgba(242,73,92,.06);border-left-color:var(--down)}
+  .diff .now{color:var(--up);background:rgba(74,222,128,.06);border-left-color:var(--up)}
+
+  /* ── limits ── */
+  .limit{
+    border-top:1px solid var(--line);padding-top:16px;margin-top:22px;
+  }
+  .limit h3{margin-top:0}
+
+  /* ── callout ── */
+  .key{
+    background:var(--panel-2);border:1px solid var(--line);border-top:2px solid var(--accent);
+    padding:22px;margin:24px 0;
+  }
+  .key .eyebrow{color:var(--accent)}
+
+  footer{
+    border-top:1px solid var(--line);margin-top:72px;padding-top:24px;
+    font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim);
+    display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;
+  }
+  footer a{color:var(--muted);text-decoration:none}
+  footer a:hover,footer a:focus-visible{color:var(--accent)}
+
+  a:focus-visible,.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  @media (max-width:600px){
+    body{background-size:56px 56px}
+    .wrap{padding:0 16px 72px}
+    .stamp div{flex:1 1 50%;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .tbl{font-size:12px}
+    .tbl th:nth-child(2),.tbl td:nth-child(2){display:none} /* hide 'channel' col on mobile */
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="nav">
+    <a class="brand" href="/">DELAX <span>GEO-RISK</span></a>
+    <a class="back" href="/exposure-desk.html">← Exposure Desk</a>
+  </nav>
+
+  <header class="hero">
+    <div class="eyebrow">Methodology · Exposure Score</div>
+    <h1>Every beta in this model was tested against a war that <em>already happened</em>.</h1>
+    <p class="lede">Including the two it got wrong. Here is what we measured, how we measured it, and where the data overruled us.</p>
+  </header>
+
+  <dl class="stamp">
+    <div><dt>Model</dt><dd>v3.0</dd></div>
+    <div><dt>Calibrated</dt><dd>2026-07-11</dd></div>
+    <div><dt>Status</dt><dd class="on">Empirical</dd></div>
+    <div><dt>Sample</dt><dd>41 tickers</dd></div>
+  </dl>
+
+  <section>
+    <h2>What the Exposure Score is doing</h2>
+    <p>Every sector on the Exposure Desk carries a <strong>beta</strong> for each risk channel — a number describing how much that sector moves when oil, shipping, food, defense spending, global growth, or emerging-market currencies come under stress. Your score is your holdings, weighted, run through those betas.</p>
+    <p>So the betas are the whole model. If they are guesses, the score is a guess. They are not guesses.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">01 · The evidence</div>
+    <h2>Two conflicts, six years of weekly prices</h2>
+    <p>Sector betas were fitted against <strong>41 tickers</strong> of weekly closing prices running January 2020 through July 2026, across two historical analogues:</p>
+
+    <table class="tbl">
+      <thead>
+        <tr><th>Event</th><th>Role</th><th>Window</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Russia–Ukraine, 2022</strong></td>
+          <td>Primary analogue</td>
+          <td>Q4-2021 baseline<br>vs 24 Feb – 30 Jun 2022</td>
+        </tr>
+        <tr>
+          <td><strong>Red Sea crisis, 2023–24</strong></td>
+          <td>Falsification test</td>
+          <td>Sep–Nov 2023 baseline<br>vs Dec 2023 – Feb 2024</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Ukraine is the fitting event: a genuine multi-channel shock where oil, food, defense budgets and global growth all moved at once. WTI went from a $77 pre-war average to a $124 peak.</p>
+    <p>The Red Sea is the control. It was a <em>shipping-only</em> event — oil barely registered, stress of roughly 0.01 on our scale. If our betas were over-firing, oil-sensitive sectors would have lit up anyway. They didn't. That is the test that matters, and it's the reason a second, quieter event was worth as much as the loud one.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">02 · The method</div>
+    <h2>One choice carries everything</h2>
+
+    <div class="key">
+      <div class="eyebrow">The rule</div>
+      <p><strong>Every return is measured net of the S&amp;P 500 over the same window.</strong></p>
+      <p class="muted" style="margin-bottom:0">Sector return minus market return. That's the whole arithmetic.</p>
+    </div>
+
+    <p>The first half of 2022 was not only a war. It was the fastest Federal Reserve hiking cycle in four decades. Growth stocks fell hard in that window and <strong>most of that fall was about interest rates, not Ukraine.</strong></p>
+    <p>A naive calibration absorbs the rate shock into the war beta and produces a model that screams whenever anything happens. Netting each sector against the broad market strips out what the whole market was doing anyway, and leaves the part that belongs to the conflict.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">03 · What held</div>
+    <h2>Seven sectors came through untouched</h2>
+    <p>These betas already reproduced what actually happened. They were left alone.</p>
+
+    <table class="tbl">
+      <thead>
+        <tr><th>Sector</th><th>Channel</th><th class="num">Predicted</th><th class="num">Observed</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Gulf producers</td><td>oil</td><td class="num">+19.0%</td><td class="num up">+19.4%</td></tr>
+        <tr><td>Defense</td><td>defense</td><td class="num">+22.0%</td><td class="num up">+26.5%</td></tr>
+        <tr><td>Tankers</td><td>shipping</td><td class="num">+7.7%<span class="muted"> ᴿˢ</span></td><td class="num up">+5.3%<span class="muted"> ᴿˢ</span></td></tr>
+        <tr><td>Gold</td><td>cpi / fx</td><td class="num">+17.0%</td><td class="num up">+14.4%</td></tr>
+        <tr><td>EM sovereign debt</td><td>fx</td><td class="num">−7.0%</td><td class="num down">−6.1%</td></tr>
+        <tr><td>Financials</td><td>gdp</td><td class="num">−11.5%</td><td class="num down">−12.6%</td></tr>
+        <tr><td>Utilities</td><td>gdp / cpi</td><td class="num">−1.0%</td><td class="num down">−1.1%</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="font-size:14px">All figures are market-excess returns in the Ukraine window unless marked <strong>ᴿˢ</strong> (Red Sea). Nine further sectors kept their direction but had their magnitude adjusted.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">04 · What broke</div>
+    <h2>Two betas were wrong. The data corrected them.</h2>
+
+    <div class="fix">
+      <div class="fix-head">Correction 01 · Aviation</div>
+      <h3>Airlines did not get crushed by expensive oil.</h3>
+      <p>The draft model assumed the obvious: oil spikes, jet fuel costs explode, airlines crater. It carried a beta of −0.90 — near the maximum the model allows.</p>
+      <p>In 2022, <strong>airlines beat the market.</strong> Delta finished the invasion window +4.4% over the S&amp;P; United +3.5%. Fuel did get far more expensive, and it didn't matter, because post-COVID travel demand was surging at exactly the same time.</p>
+      <div class="diff">
+        <div class="was">was &nbsp; aviation · oil −0.90 &nbsp;&nbsp;→ predicts −59.6%</div>
+        <div class="now">now &nbsp; aviation · oil −0.55 &nbsp;&nbsp;→ predicts −40.4%</div>
+      </div>
+      <p class="muted" style="font-size:14px;margin-top:12px">Fuel is a real cost channel, so the beta stays negative. But it was nearly halved. This was the largest error in the draft model.</p>
+    </div>
+
+    <div class="fix">
+      <div class="fix-head">Correction 02 · Emerging markets</div>
+      <h3>The sector average was hiding two opposite stories.</h3>
+      <p>EM commodity <strong>exporters</strong> rallied in 2022 — Brazil gained 21.3% over the market. EM <strong>importers</strong> fell. Averaging them produced a number that described neither.</p>
+      <div class="diff">
+        <div class="was">was &nbsp; em_equity · fx −0.70</div>
+        <div class="now">now &nbsp; em_equity · fx −0.50 &nbsp;&nbsp;+ oil channel added</div>
+      </div>
+      <p class="muted" style="font-size:14px;margin-top:12px">The importer-pain thesis is retained, because a Hormuz event skews importer-heavy in a way Ukraine did not. But it is tempered, and this remains the weakest-evidenced sector in the model.</p>
+    </div>
+
+    <div class="fix" style="border-left-color:var(--accent)">
+      <div class="fix-head" style="color:var(--accent)">Correction 03 · Mislabelled funds</div>
+      <h3>Two commodity funds were being scored as safe havens.</h3>
+      <p>DBC and GSG sat in the gold bucket. They are broad commodity trackers. In 2022 they moved with the oil complex — <span class="up">+41.5%</span> and <span class="up">+48.2%</span> over market — not with the fear bid that lifted gold (<span class="up">+14.4%</span>).</p>
+      <p class="muted" style="font-size:14px;margin-bottom:0">They now score off the oil channel, which is what they actually track.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">05 · The limits</div>
+    <h2>What we are not claiming</h2>
+
+    <div class="limit">
+      <h3>These are analogues, not replays.</h3>
+      <p>A Strait of Hormuz event would be more oil- and shipping-intensive than Ukraine was, and would hit energy-importing emerging markets harder. The betas are fitted to the closest real evidence available. They are not a forecast of a specific future.</p>
+    </div>
+
+    <div class="limit">
+      <h3>The currency channel is the weakest link.</h3>
+      <p>The EM currency basket moved less than 1% during the 2022 invasion, because exporters and importers cancelled each other out. Our EM betas rest more on economic reasoning than on a clean measured response. We would rather say that than present false precision.</p>
+    </div>
+
+    <div class="limit">
+      <h3>Shipping has no free rate index.</h3>
+      <p>The obvious instrument — the dry-bulk freight ETF — <em>fell</em> 21% during Ukraine while tanker equities gained 51%. Wrong ship, wrong cargo. The shipping betas were validated through the Red Sea event instead, where the model predicted +7.7% for tankers and the market delivered +5.3%.</p>
+    </div>
+
+    <div class="limit">
+      <h3>Inflation betas are still judgment.</h3>
+      <p>Monthly CPI gives roughly four data points inside a shock window. That is not enough to fit anything honestly, and we did not pretend otherwise.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why this page exists</h2>
+    <p>An exposure score you cannot interrogate is a number taken on faith. This one can be checked. The events are public. The tickers are liquid. The windows are stated above. The method is one line of arithmetic.</p>
+    <p><strong>If you think a beta is wrong, you now have everything you need to argue with us.</strong></p>
+  </section>
+
+  <footer>
+    <span>DELAX GEO-RISK · Model v3.0 · Calibrated 2026-07-11</span>
+    <span><a href="/exposure-desk.html">Exposure Desk</a> &nbsp;·&nbsp; Not financial advice.</span>
+  </footer>
+
+</div>
+</body>
+</html>
