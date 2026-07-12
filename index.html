@@ -778,11 +778,11 @@ body.beginner-mode body.beginner-mode
     </div>
     <div class="scenario-impact">
       <h5>Live Impact Estimate</h5>
-      <div class="impact-row"><span>Est. Oil Peak</span><span class="impact-val up" id="sbOil">$148/bbl</span></div>
-      <div class="impact-row"><span>CPI Addition Yr1</span><span class="impact-val up" id="sbCPI">+3.8%</span></div>
-      <div class="impact-row"><span>Global GDP Yr1</span><span class="impact-val down" id="sbGDP">−1.9%</span></div>
-      <div class="impact-row"><span>Shipping Index</span><span class="impact-val up" id="sbShip">+310%</span></div>
-      <div class="impact-row"><span>Conflict Duration</span><span class="impact-val warn" id="sbDur">24 months</span></div>
+      <div class="impact-row"><span>Est. Brent Peak</span><span class="impact-val up" id="sbOil">$102/bbl</span></div>
+      <div class="impact-row"><span>CPI Addition Yr1</span><span class="impact-val up" id="sbCPI">+1.2%</span></div>
+      <div class="impact-row"><span>Global GDP Yr1</span><span class="impact-val down" id="sbGDP">−0.7%</span></div>
+      <div class="impact-row"><span>Shipping Index</span><span class="impact-val up" id="sbShip">+120%</span></div>
+      <div class="impact-row"><span>Truce Duration</span><span class="impact-val warn" id="sbDur">18 months</span></div>
     </div>
     <div style="margin-top:1rem;display:flex;gap:.5rem">
       <button class="btn amber" onclick="applyCustomScenario()" style="flex:1">▶ APPLY TO ALL CHARTS</button>
@@ -858,18 +858,18 @@ body.beginner-mode body.beginner-mode
   <div style="margin-bottom:1.5rem">
     <div class="mode-strip" style="padding:.4rem 0 .6rem;border-bottom:none">
       <div class="section-label" style="margin-bottom:0">
-        Indicators — Scenario: <span id="scenarioLabel" style="color:var(--cyan);margin-left:.25rem">Baseline</span>
+        Indicators — Scenario: <span id="scenarioLabel" style="color:var(--cyan);margin-left:.25rem">Armed Truce</span>
       </div>
       <span class="mode-badge" id="modeBadge" style="display:none"></span>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)"
       role="region" aria-label="Key Performance Indicators — click any card for AI analysis">
     <div class="kpi-card up clickable" onclick="showKPINarrative('oil','WTI Crude (Projected Peak)',document.getElementById('kpiOil').textContent)" role="button" tabindex="0">
-      <div class="kpi-label"><span data-jargon="WTI Crude">WTI Crude</span> (Peak)
-        <i class="info-icon" data-prov="Source: EIA RBRTE · Proxy: /api/eia-oil · Model v2.2 · Confidence: 88%">i</i></div>
-      <div class="kpi-value" id="kpiOil">$148</div>
-      <div class="kpi-plain">WTI crude near $148/bbl — nearly double the pre-conflict price of $78.</div>
-      <div class="kpi-delta">Pre-conflict WTI: $78 · <span>+89.7%</span></div>
+      <div class="kpi-label"><span data-jargon="Brent Crude">Brent Crude</span> (Peak)
+        <i class="info-icon" data-prov="Source: FRED DCOILBRENTEU · Model v3.1 — fitted to the 2026 Hormuz war · Confidence: 84%">i</i></div>
+      <div class="kpi-value" id="kpiOil">$102</div>
+      <div class="kpi-plain">Armed Truce peak Brent ~$102. The real war peaked at $138 (7 Apr 2026) and round-tripped to ~$69.</div>
+      <div class="kpi-delta">Pre-war Brent: $70 · <span>+45.7% at model peak</span></div>
       <div class="kpi-ts" id="kpiTsOil">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
     </div>
@@ -877,7 +877,7 @@ body.beginner-mode body.beginner-mode
     <div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
       <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
         <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
-      <div class="kpi-value" id="kpiCPI">+3.8%</div>
+      <div class="kpi-value" id="kpiCPI">+1.2%</div>
       <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
       <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
       <div class="kpi-ts" id="kpiTsCPI">—</div>
@@ -1058,9 +1058,9 @@ body.beginner-mode body.beginner-mode
   <div class="controls-row">
     <div class="control-group">
       <span class="control-label">Scenario:</span>
-      <button class="toggle-btn active-baseline" id="btn-baseline"    onclick="setScenario('baseline')"    aria-pressed="true">Baseline</button>
-      <button class="toggle-btn"                 id="btn-optimistic"   onclick="setScenario('optimistic')"  aria-pressed="false">Optimistic</button>
-      <button class="toggle-btn"                 id="btn-pessimistic"  onclick="setScenario('pessimistic')" aria-pressed="false">Pessimistic</button>
+      <button class="toggle-btn active-baseline" id="btn-baseline"    onclick="setScenario('baseline')"    aria-pressed="true">Armed Truce</button>
+      <button class="toggle-btn"                 id="btn-optimistic"   onclick="setScenario('optimistic')"  aria-pressed="false">Normalisation</button>
+      <button class="toggle-btn"                 id="btn-pessimistic"  onclick="setScenario('pessimistic')" aria-pressed="false">Re-escalation</button>
       <button class="btn" onclick="openScenarioBuilder()" title="Build custom scenario" aria-haspopup="dialog">⚙ Custom</button>
     </div>
     <div class="export-row" style="margin-bottom:0">
@@ -1078,7 +1078,7 @@ body.beginner-mode body.beginner-mode
         </div>
         <div class="chart-desc" id="oilNearTermDesc">USD/BBL · Current Month through Next 11 Months · Live EIA Anchored</div>
       </div>
-      <div class="chart-desc">Pre-conflict anchor: $78/bbl</div>
+      <div class="chart-desc">Pre-war Brent anchor: $70/bbl · 2026 war peak: $138 (7 Apr)</div>
     </div>
     <div class="chart-body">
       <div id="chartOilNear" class="echart" style="height:300px" role="img" aria-label="Near-term oil price forecast"></div>
@@ -1139,7 +1139,7 @@ body.beginner-mode body.beginner-mode
         <div class="chart-title">Shipping & Supply Chain Disruption
           <i class="info-icon" data-prov="Source: Baltic Exchange BDI · DELAX Hormuz rerouting model · Confidence: 85%">i</i>
         </div>
-        <div class="chart-desc">Index (100 = pre-conflict) · Container Costs</div>
+        <div class="chart-desc">Index (100 = pre-war) · War-risk premia &amp; re-routing</div>
       </div></div>
       <div class="chart-body"><div id="chartShipping" class="echart" style="height:320px" role="img" aria-label="Shipping disruption chart"></div></div>
     </div>
@@ -1160,7 +1160,7 @@ body.beginner-mode body.beginner-mode
         <div class="narrative-header-left">
           <span class="narrative-pulse" id="narrativePulse"></span>
           <span class="narrative-label">AI Analysis Output:</span>
-          <span class="narrative-scenario" id="narrativeScenarioTag">Baseline</span>
+          <span class="narrative-scenario" id="narrativeScenarioTag">Armed Truce</span>
         </div>
         <span id="narrativeMetaInline" style="font-family:var(--mono);font-size:.54rem;color:var(--text-dim)"></span>
       </div>
@@ -1193,18 +1193,19 @@ body.beginner-mode body.beginner-mode
   </div>
   <div class="exec-card">
     <h3>Executive Summary</h3>
-    <p>The 2026 Iran conflict represents the most significant geopolitical shock to global energy markets since the 1973 OPEC embargo. Unlike the 2003 Iraq invasion — which was rapid and relatively contained — this conflict combines <strong>Strait of Hormuz closure risk</strong>, IAEA inspection expulsion, Gulf Coalition military mobilization, and credible Iranian ballistic and drone capacity that threatens critical infrastructure across the Arabian Peninsula and beyond.</p>
-    <p>Our <strong>Baseline Scenario</strong> (P=50%) projects a 24-month active conflict phase, Brent crude peaking at $148/bbl within months 3–6, global inflation adding 3.8 percentage points in Year 1, and a cumulative global GDP loss of approximately <strong>$4.2 trillion over three years</strong>. The Middle East, East Africa, and South Asia bear the greatest humanitarian costs.</p>
-    <p>The <strong>Pessimistic Scenario</strong> (P=28%) involves Iranian closure of the Strait of Hormuz, triggering oil at $195–220/bbl, global recession in Years 1–2, and a potential fracture of the petrodollar system. The <strong>Optimistic Scenario</strong> (P=22%) assumes ceasefire by Month 10, oil at $105, and rapid reconstruction demand driving MENA equities higher.</p>
-    <p><strong>Investor Action:</strong> Overweight defense (RTX, LMT, BAESY), energy producers (XOM, CVX, SHEL), and reconstruction (FLR, MDR). Underweight aviation, luxury consumer, and EM sovereigns. Hedge with gold, USD, and GSCI commodity futures.</p>
+    <p><strong>The Hormuz shock is no longer a scenario. It happened.</strong> On 28 February 2026 a US–Israeli air war against Iran closed the Strait of Hormuz. Iran mined the waterway and struck merchant shipping; tanker traffic fell to almost nothing and the IEA called it the largest supply disruption in the history of the oil market. Brent ran from $70.9 to a peak of <strong>$138.2 on 7 April</strong> — the day before the ceasefire — and has since round-tripped to about $69.</p>
+    <p>But the strait has <strong>not normalised</strong>. Mines remain, war-risk premiums remain, transits sit well below pre-war levels, vessel attacks continue, and Iran now asserts standing authority over passage. The live question is no longer whether a Hormuz shock occurs. It is whether this armed truce holds, normalises, or breaks.</p>
+    <p>Our <strong>Armed Truce</strong> case (P=50%) is therefore a description of the present, not a forecast of a war: Brent grinding $75–95 with headline-driven spikes toward $102, roughly 1.2 points of excess inflation, and a persistent shipping-cost tax rather than a supply crisis. <strong>Re-escalation</strong> (P=25%) reopens the closure from a worse starting point — inventories drawn down, mines already laid, insurers withdrawn — with Brent at $150–180. <strong>Normalisation</strong> (P=25%) sees the MOU hold, mines cleared and premiums decay, with Brent settling $70–78.</p>
+    <p><strong>What the war actually did to portfolios</strong> (measured, net of market): energy producers +19.4%, LNG +26.4%, tankers +25.1%, defense +6.1%, utilities +10.1% — against aviation −9.9% and luxury −19.7%. Gold, notably, delivered +0.9%: it did not show up. Every sector sensitivity in this model is now fitted to those observed moves rather than to a proxy conflict. <a href="/methodology" style="color:var(--amber)">Read the methodology →</a></p>
+    <p style="font-size:.72rem;color:var(--text-dim)"><strong>Not financial advice.</strong> Sector sensitivities are estimates fitted to one six-week war and one secondary analogue. A longer closure could transmit through earnings in ways this sample never observed.</p>
   </div>
   <div class="section-label">Key Assumptions & Methodology</div>
   <div class="assumption-grid">
     <div class="assumption-card"><h4>Scenario Framework</h4><ul>
-      <li>Baseline (P=50%): 24-month conflict, partial Hormuz disruption</li>
-      <li>Optimistic (P=22%): Ceasefire Month 10, Hormuz reopens Month 8</li>
-      <li>Pessimistic (P=28%): Full Hormuz closure 6+ months, regional expansion</li>
-      <li>Black swan tail: Nuclear threshold breach (P=4%) not modeled</li>
+      <li>Armed Truce (P=50%): Iran retains leverage over the strait; transits below pre-war; Brent peaks ~$102</li>
+      <li>Normalisation (P=25%): MOU holds, mines cleared, premiums decay; Brent settles $70–78</li>
+      <li>Re-escalation (P=25%): Truce collapses, strait closes again from a worse base; Brent $150–180</li>
+      <li>Betas fitted to the 2026 Hormuz war itself (70%) + Ukraine 2022 (30%), net of market</li>
     </ul></div>
     <div class="assumption-card"><h4>Historical Precedents</h4><ul>
       <li>1973 Oil Embargo: CPI +9%, GDP −2.9% OECD (18-month lag)</li>
@@ -1214,7 +1215,7 @@ body.beginner-mode body.beginner-mode
       <li>Hormuz closure analog: 1987–88 Tanker War partial disruption</li>
     </ul></div>
     <div class="assumption-card"><h4>Energy Assumptions</h4><ul>
-      <li>Iran produces ~3.3M bbl/day (pre-conflict)</li>
+      <li>Iran produced ~3.3M bbl/day pre-war; ~20% of seaborne oil and up to ~30% of traded fertiliser transit Hormuz</li>
       <li>Hormuz: 20% of global oil, 18% of LNG transits daily</li>
       <li>SPR releases offset ~8–12 weeks of supply gap</li>
       <li>Saudi spare capacity: ~2.5M bbl/day short-term relief</li>
@@ -1272,7 +1273,7 @@ body.beginner-mode body.beginner-mode
     <!-- Results -->
     <div style="margin-top:1.25rem">
       <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);margin-bottom:.6rem;letter-spacing:.1em;text-transform:uppercase">
-        Scenario Impact — <span id="portfolioScenarioLabel">Baseline</span>
+        Scenario Impact — <span id="portfolioScenarioLabel">Armed Truce</span>
       </div>
       <div class="portfolio-results" id="portfolioResults">
         <div class="portfolio-result-row">
@@ -1610,7 +1611,7 @@ body.beginner-mode body.beginner-mode
 
         <!-- AI Investor Insight — Pro gated -->
         <div class="eq-ai-box">
-          <div class="eq-ai-header">🧠 AI Investor Analysis · <span id="eqAiScenarioTag">Baseline</span></div>
+          <div class="eq-ai-header">🧠 AI Investor Analysis · <span id="eqAiScenarioTag">Armed Truce</span></div>
           <div class="eq-ai-content" id="eqAiContent">
             <div style="color:var(--text-dim);font-size:.72rem">
               Click <strong style="color:var(--purple)">Get AI Analysis</strong> for a plain-English breakdown of this stock's conflict exposure, sector dynamics, and what the current scenario means for your position.
@@ -1673,10 +1674,10 @@ body.beginner-mode body.beginner-mode
       <div class="eq-sidebar-box" style="border-left:2px solid var(--amber)">
         <div class="eq-sidebar-title">Active Scenario</div>
         <div style="font-family:var(--display);font-size:1.1rem;color:var(--amber);
-          margin-bottom:.4rem;text-transform:capitalize" id="eqSideScenario">Baseline</div>
+          margin-bottom:.4rem" id="eqSideScenario">Armed Truce</div>
         <div style="font-family:var(--sans);font-size:.68rem;color:var(--text-sec);line-height:1.5"
           id="eqSideScenarioDesc">
-          24-month conflict · Partial Hormuz disruption · WTI at model peak
+          Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102
         </div>
         <div style="margin-top:.65rem;font-family:var(--mono);font-size:.58rem;
           color:var(--text-dim)">
@@ -1807,7 +1808,9 @@ body.beginner-mode body.beginner-mode
   Model calibrated: <span id="footerDate">—</span> · Live data: EIA.gov WTI RWTC ·
   Sources: EIA · IMF WEO · SIPRI · FAO · Baltic Exchange · BIS · GDELT ·
   <a onclick="document.getElementById('transparencyPanel').scrollIntoView({behavior:'smooth'})"
-     style="color:var(--text-dim);text-decoration:underline;cursor:pointer;font-size:.56rem">ⓘ Model assumptions &amp; methodology</a><br>
+     style="color:var(--text-dim);text-decoration:underline;cursor:pointer;font-size:.56rem">ⓘ Model assumptions</a>
+     &nbsp;·&nbsp;
+     <a href="/methodology" style="color:var(--amber);text-decoration:underline;font-size:.56rem">ⓘ How the betas were calibrated — against the 2026 Hormuz war itself →</a><br>
   <span style="color:var(--red)">⚠ IMPORTANT DISCLAIMER:</span>
   This dashboard is for <strong>informational and research purposes only</strong> and does not constitute financial, investment, or legal advice.
   All projections are probabilistic model outputs — not guarantees or predictions.
@@ -1826,16 +1829,17 @@ body.beginner-mode body.beginner-mode
    Future: replace hardcoded values with live IMF/EIA API calls here.
    ════════════════════════════════════════════════════════════════ */
 const dataStore = {
-  meta: { version: '2.2', modelDate: '2026-04-05', monteCarloRuns: 10000 },
+  meta: { version: '3.1', modelDate: '2026-07-11', monteCarloRuns: 10000,
+          calibration: 'Fitted to the 2026 Hormuz war itself. See /methodology.' },
   kpi: {
-    oil:  { value: '$148', source: 'EIA RBRTE + DELAX model', lastUpdated: '2026-04-05', confidence: 88 },
-    cpi:  { value: '+3.8%', source: 'IMF WEO Apr 2026', lastUpdated: '2026-04-05', confidence: 82 },
-    gdp:  { value: '−1.9%', source: 'IMF WEO + DELAX multiplier', lastUpdated: '2026-04-05', confidence: 79 },
-    ship: { value: '+310%', source: 'Baltic Exchange + DELAX rerouting', lastUpdated: '2026-04-05', confidence: 85 },
-    def:  { value: '+$680B', source: 'SIPRI 2026 projections', lastUpdated: '2026-04-05', confidence: 87 },
-    fao:  { value: '+27%', source: 'FAO FFPI model', lastUpdated: '2026-04-05', confidence: 83 },
-    fx:   { value: '−14%', source: 'BIS FX data + DELAX flight-to-safety model', lastUpdated: '2026-04-05', confidence: 80 },
-    dur:  { value: '18–36M', source: 'DELAX conflict duration model', lastUpdated: '2026-04-05', confidence: 65 },
+    oil:  { value: '$102', source: 'FRED DCOILBRENTEU (Brent) + DELAX v3.1', lastUpdated: '2026-07-11', confidence: 84 },
+    cpi:  { value: '+1.2%', source: 'FRED CPIAUCSL + DELAX pass-through', lastUpdated: '2026-07-11', confidence: 78 },
+    gdp:  { value: '−0.7%', source: 'IMF WEO + DELAX multiplier', lastUpdated: '2026-07-11', confidence: 66 },
+    ship: { value: '+120%', source: 'DELAX estimate — NO free tanker-rate index exists', lastUpdated: '2026-07-11', confidence: 52 },
+    def:  { value: '+$480B', source: 'SIPRI projections + DELAX', lastUpdated: '2026-07-11', confidence: 71 },
+    fao:  { value: '+12%', source: 'FRED PFOODINDEXM + DELAX', lastUpdated: '2026-07-11', confidence: 76 },
+    fx:   { value: '−5%', source: 'FRED DTWEXEMEGS — weakest-evidenced channel', lastUpdated: '2026-07-11', confidence: 48 },
+    dur:  { value: '12–30M', source: 'DELAX truce-duration model', lastUpdated: '2026-07-11', confidence: 55 },
   },
   // Scenario multipliers for custom builder (baseline = 1.0)
   scenarioMultipliers: {
@@ -1852,23 +1856,27 @@ const MONTHS_12  = ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M1
 const YEARS_10   = ['Y1','Y2','Y3','Y4','Y5','Y6','Y7','Y8','Y9','Y10'];
 const OIL_LABELS = [...MONTHS_12,'Q1Y2','Q2Y2','Q3Y2','Q4Y2','Q1Y3','Q2Y3','Q3Y3','Q4Y3','Y4','Y5','Y6','Y7'];
 
-// Base oil data — re-anchored by EIA live fetch
+// Base oil data (BRENT) — FORWARD from Jul 2026, re-anchored by live fetch.
+// Peaks reconcile to KPI_MAP: optimistic $78 · baseline $102 · pessimistic $165.
 let OIL_DATA = {
-  baseline:    [88,102,125,148,141,136,132,128,122,118,114,110,107,104,100,97,96,95,93,92,90,89],
-  optimistic:  [84,93,105,112,108,104,100,97,95,93,91,90,88,87,86,85,84,83,83,82,82,81],
-  pessimistic: [92,115,148,188,195,185,172,163,155,148,140,133,128,122,116,112,110,108,106,104,102,100],
+  baseline:    [69,74,80,88,96,102,95,88,85,82,80,79,80,84,88,85,82,80,79,78,78,77],
+  optimistic:  [69,70,71,72,72,73,74,74,75,76,76,77,77,78,78,78,78,78,78,78,78,78],
+  pessimistic: [69,88,115,142,165,158,146,135,124,116,108,102,98,96,94,92,90,89,88,87,86,85],
 };
 const GDP_REGIONS = ['N. America','Europe','Middle East','East Asia','South Asia','Africa','S. America','Oceania'];
+// Forward GDP drag from the truce onward, scaled to the v3.1 scenario gdp values.
 const GDP_DATA = {
-  baseline:    {yr1:[-0.9,-1.8,-8.2,-1.1,-2.4,-3.1,-1.2,-0.6],yr2:[-0.3,-0.9,-4.1,-0.5,-1.2,-1.8,-0.7,-0.2],yr3:[0.4,0.2,-1.2,0.3,-0.3,-0.5,0.1,0.4]},
-  optimistic:  {yr1:[-0.4,-0.9,-4.1,-0.5,-1.1,-1.6,-0.6,-0.3],yr2:[0.1,0.1,-1.8,0.2,-0.3,-0.5,0.1,0.2],yr3:[0.8,0.7,0.5,0.7,0.5,0.3,0.6,0.8]},
-  pessimistic: {yr1:[-1.8,-3.2,-12.4,-2.1,-4.1,-5.3,-2.2,-1.1],yr2:[-1.1,-1.9,-6.8,-1.2,-2.6,-3.4,-1.4,-0.6],yr3:[-0.2,-0.5,-2.8,-0.3,-0.9,-1.4,-0.4,-0.1]},
+  baseline:    {yr1:[-0.3,-0.7,-3.0,-0.4,-0.9,-1.1,-0.4,-0.2],yr2:[-0.1,-0.3,-1.5,-0.2,-0.4,-0.7,-0.3,-0.1],yr3:[0.3,0.2,-0.4,0.2,0.0,-0.2,0.1,0.3]},
+  optimistic:  {yr1:[-0.2,-0.3,-1.5,-0.2,-0.4,-0.6,-0.2,-0.1],yr2:[0.1,0.1,-0.6,0.1,-0.1,-0.2,0.1,0.1],yr3:[0.5,0.4,0.4,0.4,0.3,0.2,0.4,0.5]},
+  pessimistic: {yr1:[-1.2,-2.1,-8.0,-1.4,-2.7,-3.4,-1.4,-0.7],yr2:[-0.7,-1.2,-4.4,-0.8,-1.7,-2.2,-0.9,-0.4],yr3:[-0.1,-0.3,-1.8,-0.2,-0.6,-0.9,-0.3,-0.1]},
 };
 const INFLATION_LABELS = [...MONTHS_12,'Y2','Y3','Y4','Y5','Y6'];
+// Excess CPI points ABOVE trend, forward from the truce. The war's own CPI pass-through
+// (US y/y 2.43% → 4.17%, i.e. +1.73pts) is already in the base — this is what comes NEXT.
 const INFLATION_DATA = {
-  baseline:    [0.4,0.8,1.4,2.1,2.8,3.4,3.8,3.9,3.6,3.2,2.8,2.4,1.8,1.1,0.6,0.3,0.1],
-  optimistic:  [0.3,0.6,0.9,1.3,1.6,1.8,1.9,1.7,1.5,1.2,1.0,0.8,0.5,0.2,0.1,0.0,0.0],
-  pessimistic: [0.6,1.2,2.1,3.4,4.8,5.6,6.1,6.4,6.2,5.8,5.2,4.6,3.4,2.2,1.4,0.8,0.4],
+  baseline:    [0.6,0.8,1.0,1.2,1.2,1.1,1.0,0.9,0.8,0.7,0.7,0.6,0.5,0.3,0.2,0.1,0.0],
+  optimistic:  [0.3,0.3,0.3,0.2,0.2,0.2,0.2,0.1,0.1,0.1,0.1,0.0,0.0,0.0,0.0,0.0,0.0],
+  pessimistic: [0.8,1.6,2.6,3.5,4.2,4.1,3.8,3.5,3.2,2.9,2.6,2.3,1.7,1.1,0.6,0.3,0.1],
 };
 const RADAR_LABELS = ['Energy Prod.','Defense','Infrastructure','Airlines','Luxury','Commodities','Agri-Tech','Healthcare'];
 const RADAR_DATA = {
@@ -1876,10 +1884,12 @@ const RADAR_DATA = {
   optimistic:  {buy:[78,65,55,38,35,80,72,48],monitor:[60,62,50,58,52,65,55,62],avoid:[25,28,22,70,72,20,30,38]},
   pessimistic: {buy:[90,80,78,22,18,95,88,35],monitor:[50,55,40,50,42,55,48,68],avoid:[15,18,12,82,88,10,20,30]},
 };
+// Index, 100 = pre-war normal. Today sits ELEVATED (~125): mines, war-risk premia,
+// transits still below pre-war. Peaks = 100 + KPI ship %.
 const SHIPPING_DATA = {
-  baseline:    [100,145,210,280,310,295,268,240,222,210,200,192,185,178,170,165,160,155,150,148,145,143],
-  optimistic:  [100,130,175,220,240,225,205,188,175,165,155,148,142,138,133,130,127,125,123,121,120,118],
-  pessimistic: [100,162,255,345,390,375,340,308,285,268,254,240,228,218,208,200,195,190,186,182,178,175],
+  baseline:    [128,140,165,190,220,205,185,170,160,152,146,142,145,155,150,144,138,134,130,128,126,124],
+  optimistic:  [125,122,118,115,112,109,107,105,104,103,102,101,101,100,100,100,100,100,100,100,100,100],
+  pessimistic: [135,200,300,400,500,470,430,395,365,340,320,305,295,285,275,265,258,250,244,238,232,228],
 };
 const HEATMAP_REGIONS = ['N. America','Europe','Mid. East','E. Asia','S. Asia','Africa','S. America','Oceania'];
 const HEATMAP_RAW = [
@@ -1893,14 +1903,14 @@ const HEATMAP_RAW = [
   [1.4,0.9,0.6,0.5,0.4,0.3,0.2,0.2,0.2,0.1],
 ];
 const SPEND_LABELS = ['Y1','Y2','Y3','Y4','Y5'];
-const SPEND_DATA = {defense:[680,820,790,650,580],energy:[210,380,450,520,490],recon:[40,120,280,420,510]};
+const SPEND_DATA = {defense:[480,610,640,560,510],energy:[190,320,410,470,450],recon:[60,180,330,460,530]};
 const RISK_LINE_DATA = {
   baseline:   [8.2,7.6,6.8,5.9,5.1,4.4,3.8,3.3,2.9,2.5],
   optimistic: [6.1,5.2,4.0,3.1,2.4,1.9,1.6,1.3,1.1,0.9],
   pessimistic:[9.1,8.8,8.2,7.5,6.8,6.1,5.5,4.9,4.4,3.9],
 };
 const RISK_BUBBLE = [
-  {name:'Hormuz Closure >90d',   prob:18,impact:9.8, size:45,color:'#ff3d4a'},
+  {name:'Second Hormuz Closure', prob:25,impact:9.4, size:52,color:'#ff3d4a'},
   {name:'Saudi Infra Strike',     prob:12,impact:9.5, size:40,color:'#ff3d4a'},
   {name:'Regional Expansion',    prob:35,impact:7.2, size:60,color:'#f5a623'},
   {name:'China Sanctions Defiance',prob:42,impact:6.8,size:55,color:'#f5a623'},
@@ -1908,27 +1918,42 @@ const RISK_BUBBLE = [
   {name:'US Recession Trigger',   prob:38,impact:7.8, size:52,color:'#f5a623'},
   {name:'Global Food Crisis',     prob:48,impact:6.5, size:48,color:'#ffe040'},
   {name:'Nuclear Breach',         prob:4, impact:10.0,size:35,color:'#b388ff'},
-  {name:'Ceasefire (Positive)',   prob:22,impact:-5.0,size:38,color:'#00e676'},
+  {name:'Full Normalisation',     prob:25,impact:-4.2,size:42,color:'#00e676'},
   {name:'Reconstruction Boom',   prob:30,impact:-4.5,size:42,color:'#00e676'},
 ];
+/* KPI_MAP — MIRRORS risk-structures.js v3.1 scenarios EXACTLY. If you change one,
+   change both, or the Exposure Desk and the front page will disagree.
+   Scenarios are FORWARD from the July 2026 armed truce — the war itself is history. */
 const KPI_MAP = {
-  baseline:    {oil:'$148',cpi:'+3.8%',gdp:'−1.9%',ship:'+310%',def:'+$680B',fao:'+27%',fx:'−14%',dur:'18–36M'},
-  optimistic:  {oil:'$112',cpi:'+1.9%',gdp:'−0.8%',ship:'+185%',def:'+$480B',fao:'+14%',fx:'−7%', dur:'8–14M'},
-  pessimistic: {oil:'$195',cpi:'+6.1%',gdp:'−3.4%',ship:'+490%',def:'+$920B',fao:'+42%',fx:'−22%',dur:'36–60M'},
+  baseline:    {oil:'$102',cpi:'+1.2%',gdp:'−0.7%',ship:'+120%',def:'+$480B',fao:'+12%',fx:'−5%', dur:'12–30M'},
+  optimistic:  {oil:'$78', cpi:'+0.3%',gdp:'−0.3%',ship:'+25%', def:'+$320B',fao:'+5%', fx:'−2%', dur:'6–12M'},
+  pessimistic: {oil:'$165',cpi:'+4.2%',gdp:'−2.2%',ship:'+400%',def:'+$780B',fao:'+30%',fx:'−12%',dur:'12–36M'},
 };
+/* Display names. Internal ids stay baseline/optimistic/pessimistic so nothing else breaks. */
+const SCENARIO_LABELS = { optimistic:'Normalisation', baseline:'Armed Truce', pessimistic:'Re-escalation' };
+/* The war that already happened — measured monthly-average Brent (FRED DCOILBRENTEU).
+   Not a model output. This is the spine of the v3.1 calibration. */
+const ACTUAL_WAR = {
+  labels: ['Feb 26','Mar 26','Apr 26','May 26','Jun 26','Jul 26'],
+  brent:  [70.9, 103.1, 117.3, 107.1, 85.4, 69.0],
+  peak:   138.2,   // 7 Apr 2026 — the day before the ceasefire
+};
+/* THE WAR THAT HAPPENED — months 1-6 are HISTORY, not forecast.
+   Brent figures are measured monthly averages (FRED DCOILBRENTEU). Events are public record.
+   Months 7+ are the forward Armed Truce path. `actual: true` marks the retrospective rows. */
 const MONTHLY_BREAKDOWN = [
-  {m:'Month 1', phase:'SHOCK INITIATION',   oil:'$88', cpi:'+0.4%',gdp:'−0.3%',desc:'Conflict declared; oil futures spike +12%. Markets −8%. Hormuz war-risk alert. Safe haven inflows to USD, gold, CHF.'},
-  {m:'Month 2', phase:'ACUTE DISRUPTION',   oil:'$102',cpi:'+0.8%',gdp:'−0.6%',desc:'Shipping insurance +180%. IAEA expulsion confirmed. Saudi neutrality. US carrier group deployed to Gulf.'},
-  {m:'Month 3', phase:'ESCALATION PEAK',    oil:'$125',cpi:'+1.4%',gdp:'−0.9%',desc:'Partial Hormuz disruption. SPR release 60M bbl. EU emergency energy summit. Pakistan and India FX reserves under severe pressure.'},
-  {m:'Month 4', phase:'PRICE PEAK',         oil:'$148',cpi:'+2.1%',gdp:'−1.2%',desc:'Oil peaks at $148/bbl. Food prices +18%. Central banks face stagflation. IMF emergency facility activated.'},
-  {m:'Month 5', phase:'DEMAND DESTRUCTION', oil:'$141',cpi:'+2.8%',gdp:'−1.5%',desc:'Demand destruction in aviation, trucking, manufacturing. EM central banks hike 200–400bps. Trade volume −8%.'},
-  {m:'Month 6', phase:'STABILIZATION BID',  oil:'$136',cpi:'+3.4%',gdp:'−1.7%',desc:'OPEC+ emergency meeting. Saudi spare capacity deployed. LNG spot +240%. Europe demand rationing. PMI 43.5.'},
-  {m:'Month 7', phase:'SUPPLY RESPONSE',    oil:'$132',cpi:'+3.8%',gdp:'−1.9%',desc:'US shale +400k bbl/day announced (6M lag). Qatar/UAE LNG surge. G7 food aid $48B.'},
-  {m:'Month 8', phase:'GEOPOLITICAL TALKS', oil:'$128',cpi:'+3.9%',gdp:'−1.9%',desc:'Ceasefire back-channels reported. Oil eases on diplomacy. Defense stocks peak. Reconstruction speculation begins.'},
-  {m:'Month 9', phase:'POLITICAL PRESSURE', oil:'$122',cpi:'+3.6%',gdp:'−1.8%',desc:'US midterm pressure on war posture. Saudi-Iran talks via Oman. China multilateral framework. EM debt restructuring in 3 countries.'},
-  {m:'Month 10',phase:'PARTIAL RESOLUTION', oil:'$118',cpi:'+3.2%',gdp:'−1.6%',desc:'Ceasefire speculation intensifies. Shipping partially reopens under naval escort. Commodity prices descend. Central bank pause.'},
-  {m:'Month 11',phase:'NEW EQUILIBRIUM',    oil:'$114',cpi:'+2.8%',gdp:'−1.3%',desc:'Oil settles $110–120. Defense contracts locked 5 years. MENA reconstruction planning begins. GCC SWF committed.'},
-  {m:'Month 12',phase:'RECOVERY ONSET',     oil:'$110',cpi:'+2.4%',gdp:'−1.0%',desc:'Year 1 ends: $1.1T global GDP loss. Energy transition $680B commitment. EM recovery uneven. Reconstruction ETFs +25% from trough.'},
+  {m:'Feb 2026', actual:true, phase:'WAR OPENS',        oil:'$71', cpi:'+0.0%',gdp:'−0.0%',desc:'28 Feb: US and Israel open an air war against Iran. Brent averages $70.9. Markets treat it as contained; the strait is still moving.'},
+  {m:'Mar 2026', actual:true, phase:'STRAIT CLOSES',    oil:'$103',cpi:'+0.4%',gdp:'−0.3%',desc:'IRGC forbids passage, mines the waterway and boards merchant ships. Tanker traffic collapses to near nil. 27 Mar: strait declared closed to vessels to/from the US, Israel and allies. Brent averages $103, peaking $127.'},
+  {m:'Apr 2026', actual:true, phase:'PEAK · CEASEFIRE',  oil:'$117',cpi:'+1.1%',gdp:'−0.6%',desc:'7 Apr: Brent peaks at $138.2. 8 Apr: ceasefire. 13 Apr: US blockades Iranian ports. 21 Apr: IMO reports ~2,000 ships and ~20,000 mariners stranded in the Gulf. The strait opens on the 17th and shuts again on the 18th.'},
+  {m:'May 2026', actual:true, phase:'FRAGILE TRUCE',     oil:'$107',cpi:'+1.5%',gdp:'−0.7%',desc:'2 May: Spirit Airlines ceases all operations, citing fuel costs — North American jet fuel is up ~95%. Late May: IRGC redefines the strait as a "vast operational area". Brent averages $107.'},
+  {m:'Jun 2026', actual:true, phase:'DE-ESCALATION',     oil:'$85', cpi:'+1.7%',gdp:'−0.7%',desc:'US–Iran memorandum of understanding signed. Transits resume but stay far below pre-war. 26 Jun: a vessel is struck, halting the IMO evacuation plan. 29 Jun: tit-for-tat strikes. Brent averages $85.'},
+  {m:'Jul 2026', actual:true, phase:'ROUND TRIP',        oil:'$69', cpi:'+1.7%',gdp:'−0.7%',desc:'Brent completes the round trip to ~$69 — essentially pre-war. But the strait has NOT normalised: mines, war-risk premia and sporadic attacks persist. 7 Jul: Iran strikes a Qatari LNG tanker; the US revokes Iran\'s oil sale licence.'},
+  {m:'M+1',  phase:'ARMED TRUCE',        oil:'$74', cpi:'+0.6%',gdp:'−0.2%',desc:'FORWARD. Iran retains standing leverage over passage. Insurers stay out; transits stay below pre-war. Headline-driven spikes, no sustained shortage.'},
+  {m:'M+2',  phase:'INSURANCE DRAG',     oil:'$80', cpi:'+0.8%',gdp:'−0.3%',desc:'FORWARD. War-risk premiums remain the binding constraint, not barrels. Shipping costs, not crude supply, carry the inflation.'},
+  {m:'M+3',  phase:'INVENTORY REBUILD',  oil:'$88', cpi:'+1.0%',gdp:'−0.4%',desc:'FORWARD. Every importer rebuilds drawn-down stocks at once. Demand for cargoes firms prices even without a new supply shock.'},
+  {m:'M+4',  phase:'FLARE RISK',         oil:'$96', cpi:'+1.2%',gdp:'−0.5%',desc:'FORWARD. Incident-driven spike toward the model peak. The truce holds, but the tail is fat.'},
+  {m:'M+5',  phase:'MODEL PEAK',         oil:'$102',cpi:'+1.2%',gdp:'−0.7%',desc:'FORWARD. Armed Truce peak Brent $102. Stagflationary tax, not a crisis. Well below the $138 the real war delivered.'},
+  {m:'M+6',  phase:'NEW EQUILIBRIUM',    oil:'$95', cpi:'+1.1%',gdp:'−0.7%',desc:'FORWARD. A permanently more expensive strait becomes the baseline. Iran keeps de facto say over transit; the world prices it in.'},
 ];
 const CONTINENTAL_ROWS = [
   {region:'North America',         gdp:'-0.9%',cpi:'+2.1%',energy:'LOW (net exporter)',   food:'MODERATE', fx:'STRONG (+USD)',  debt:'LOW',      recovery:'12–18M',    signal:'monitor'},
@@ -2293,8 +2318,8 @@ async function fetchEIABrent() {
 
     liveBrentPrice = data.price;
     liveDataDate   = data.date;
-    const ratio    = liveBrentPrice / 78;
-    const base0    = OIL_DATA.baseline[0] / 78;
+    const ratio    = liveBrentPrice / 70;   // v3.1: $70 = MEASURED pre-war Brent (was $78, matched no period)
+    const base0    = OIL_DATA.baseline[0] / 70;
     OIL_DATA.baseline    = OIL_DATA.baseline.map((v,i)    => i===0 ? liveBrentPrice : Math.round(v*(ratio/base0)));
     OIL_DATA.optimistic  = OIL_DATA.optimistic.map((v,i)  => i===0 ? Math.round(liveBrentPrice*0.76) : v);
     OIL_DATA.pessimistic = OIL_DATA.pessimistic.map((v,i) => i===0 ? Math.round(liveBrentPrice*1.04) : v);
@@ -2306,9 +2331,9 @@ async function fetchEIABrent() {
     const oilCard  = oilKPI && oilKPI.closest('.kpi-card');
     const oilDelta = oilCard && oilCard.querySelector('.kpi-delta');
     if (oilDelta) {
-      const premium = ((liveBrentPrice / 78 - 1) * 100).toFixed(1);
+      const premium = ((liveBrentPrice / 70 - 1) * 100).toFixed(1);
       const sign    = premium >= 0 ? '+' : '';
-      oilDelta.innerHTML = `WTI Spot: $${liveBrentPrice.toFixed(2)} · <span>${sign}${premium}% vs pre-conflict</span>`;
+      oilDelta.innerHTML = `Brent Spot: $${liveBrentPrice.toFixed(2)} · <span>${sign}${premium}% vs pre-war $70</span>`;
     }
     // Flip badge to LIVE MODEL when EIA succeeds
     const liveBadge    = document.querySelector('.live-badge');
@@ -2363,8 +2388,18 @@ function showToast(msg, isError=false) {
    ═════════════════════════════════════════ */
 function setScenario(s) {
   scenario = s; customScenarioActive = false;
-  document.getElementById('scenarioLabel').textContent = s.charAt(0).toUpperCase()+s.slice(1);
-  document.getElementById('portfolioScenarioLabel').textContent = s.charAt(0).toUpperCase()+s.slice(1);
+  const _lbl = SCENARIO_LABELS[s] || s;
+  document.getElementById('scenarioLabel').textContent = _lbl;
+  document.getElementById('portfolioScenarioLabel').textContent = _lbl;
+  ['narrativeScenarioTag','eqAiScenarioTag','eqSideScenario'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.textContent = _lbl;
+  });
+  const _sd = document.getElementById('eqSideScenarioDesc');
+  if (_sd) _sd.textContent = {
+    baseline:    'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
+    optimistic:  'MOU holds · mines cleared · premiums decay · Brent settles $70–78',
+    pessimistic: 'Truce collapses · second closure from a worse base · Brent $150–180',
+  }[s] || '';
   ['baseline','optimistic','pessimistic'].forEach(k=>{
     const b = document.getElementById('btn-'+k);
     if(!b) return;
@@ -2503,12 +2538,12 @@ function onSliderChange() {
   const cpiMult  = 1 + (hormuz/180)*0.5 + (expansion/100)*0.15;
   const gdpMult  = 1 + (hormuz/180)*0.4 + (duration/84-0.29)*0.3;
   const shipMult = 1 + (hormuz/180)*1.2 + (expansion/100)*0.2;
-  const durMult  = duration / 24;
+  const durMult  = duration / 18;
 
-  const estOil  = Math.round(148 * oilMult);
-  const estCPI  = (3.8 * cpiMult).toFixed(1);
-  const estGDP  = (-1.9 * gdpMult).toFixed(1);
-  const estShip = Math.round(310 * shipMult);
+  const estOil  = Math.round(102 * oilMult);   // v3.1 Armed Truce peak Brent
+  const estCPI  = (1.2 * cpiMult).toFixed(1);
+  const estGDP  = (-0.7 * gdpMult).toFixed(1);
+  const estShip = Math.round(120 * shipMult);
 
   document.getElementById('sbOil').textContent  = `$${estOil}/bbl`;
   document.getElementById('sbCPI').textContent  = `+${estCPI}%`;
@@ -3276,7 +3311,7 @@ async function autoGenerateNewsSummary(articles) {
         type:      'newssummary',
         headlines,
         scenario,
-        oilPrice:  liveBrentPrice || parseFloat((kpi.oil||'$148').replace('$','')) || 121,
+        oilPrice:  liveBrentPrice || parseFloat((kpi.oil||'$102').replace('$','')) || 102,
       }),
     });
 
@@ -3471,7 +3506,7 @@ function getLongTermData(sc) {
   const y3 = Math.round((d[16]+d[17]+d[18]+d[19])/4);
   const y4 = d[20], y5 = d[21];
   // Y6–Y11: gradual normalization toward structural equilibrium
-  const eq = sc==='pessimistic' ? 86 : sc==='optimistic' ? 79 : 82;
+  const eq = sc==='pessimistic' ? 84 : sc==='optimistic' ? 77 : 79;
   const ease = (from, to, t) => Math.round(from + (to-from)*t);
   return [y2, y3, y4, y5,
     ease(y5,eq,.22), ease(y5,eq,.42), ease(y5,eq,.60),
@@ -3502,8 +3537,10 @@ function initOilChartNear() {
     series.push(buildSeries('Pessimistic', OIL_DATA.pessimistic, col.pessimistic, 'rgba(255,61,74,.18)'));
     series.push(buildSeries('Baseline (ref)', OIL_DATA.baseline, col.baseline, '', true));
   }
-  series.push({name:'Pre-Conflict $78',type:'line',smooth:false,symbol:'none',
-    lineStyle:{color:'#3d5270',width:1,type:'dotted'},data:Array(12).fill(78)});
+  series.push({name:'Pre-War $70',type:'line',smooth:false,symbol:'none',
+    lineStyle:{color:'#3d5270',width:1,type:'dotted'},data:Array(12).fill(70)});
+  series.push({name:'2026 War Peak $138',type:'line',smooth:false,symbol:'none',
+    lineStyle:{color:'#ff3d4a',width:1,type:'dashed'},data:Array(12).fill(138)});
   if (liveBrentPrice) {
     series.push({name:`Live EIA $${Math.round(liveBrentPrice)}`,type:'line',smooth:false,symbol:'none',
       lineStyle:{color:col.amber,width:1.5,type:'dashed'},data:Array(12).fill(Math.round(liveBrentPrice))});
@@ -3847,7 +3884,7 @@ async function fetchHeatmapNarrative() {
       body: JSON.stringify({
         type:     'heatmap',
         scenario: scenario,
-        oilPrice: liveBrentPrice || parseFloat((kpi.oil || '$148').replace('$','')) || 121,
+        oilPrice: liveBrentPrice || parseFloat((kpi.oil || '$102').replace('$','')) || 102,
         cpi:      kpi.cpi  || '+3.8%',
         gdp:      kpi.gdp  || '−1.9%',
         liveDate: liveDataDate || new Date().toISOString().slice(0,10),
@@ -3939,7 +3976,7 @@ async function showKPINarrative(kpiId, kpiLabel, kpiValue) {
         kpiLabel: kpiLabel,
         kpiValue: kpiValue,
         scenario: scenario,
-        oilPrice: liveBrentPrice || parseFloat((kpi.oil || '$148').replace('$','')) || 121,
+        oilPrice: liveBrentPrice || parseFloat((kpi.oil || '$102').replace('$','')) || 102,
         cpi:      kpi.cpi || '+3.8%',
         gdp:      kpi.gdp || '−1.9%',
         liveDate: liveDataDate || new Date().toISOString().slice(0,10),
@@ -4978,14 +5015,14 @@ function eqRenderProjections(data) {
   const siLabel = document.getElementById('eqAiScenarioTag');
   const sideSc  = document.getElementById('eqSideScenario');
   const sideDesc= document.getElementById('eqSideScenarioDesc');
-  const scName  = sc.charAt(0).toUpperCase() + sc.slice(1);
+  const scName  = SCENARIO_LABELS[sc] || sc;
   if (scLabel) scLabel.textContent = `Active: ${scName}`;
   if (siLabel) siLabel.textContent = scName;
   if (sideSc)  sideSc.textContent  = scName;
   const desc = {
-    baseline:   '24-month conflict · Partial Hormuz disruption · WTI at model peak',
-    optimistic: 'Ceasefire by Month 10 · Hormuz reopens · Recovery trajectory',
-    pessimistic:'Full Hormuz closure 6+ months · Regional expansion · Demand shock',
+    baseline:   'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
+    optimistic: 'MOU holds · mines cleared · premiums decay · Brent settles $70–78',
+    pessimistic:'Truce collapses · second closure from a worse base · Brent $150–180',
   };
   if (sideDesc) sideDesc.textContent = desc[sc] || '';
 }
