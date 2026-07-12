@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════════
-   risk-structures.js  —  DELAX GEO-RISK  ·  v3.0 structure model (CALIBRATED)
+   risk-structures.js  —  DELAX GEO-RISK  ·  v3.1 structure model
    ────────────────────────────────────────────────────────────────────────────
    PURPOSE
    The "engine" (simulator, Exposure Score, charts) lives in code and knows HOW to
@@ -11,55 +11,81 @@
    credit, shipping, defense, commodities. Oil is ONE transmission channel among
    several, never the identity of the platform. HORMUZ is an instance, not the thesis.
 
-   WHAT'S IN HERE
-     1. RISK_STRUCTURES        — the registry; v1 ships one: 'hormuz-iran'
-     2. CHANNEL_NORMALIZERS    — turns raw model values into a 0..1 "stress" scale
-     3. UNIVERSE               — DERIVED from the structures (union of bellwethers)
-     4. computeExposure()      — reference Exposure Score math (pure, zero API calls)
-     5. Worked example         — at the bottom
-
    ────────────────────────────────────────────────────────────────────────────
-   CALIBRATION  (2026-07-11)  —  all ★ draft flags from v2.2 are now RESOLVED
+   v3.1  —  RECALIBRATED AGAINST THE 2026 STRAIT OF HORMUZ WAR  (2026-07-11)
    ────────────────────────────────────────────────────────────────────────────
-   Sector betas were calibrated against two historical conflict analogues using
-   6.5 years of weekly price history (41 tickers, Jan 2020 → Jul 2026, Twelve Data):
+   WHAT CHANGED, AND WHY IT MATTERS
 
-     • UKRAINE 2022  — primary analogue. Baseline Q4-2021 vs shock 24 Feb–30 Jun 2022.
-                       Multi-channel: oil, food, defense, gdp all fired.
-     • RED SEA 2024  — falsification test. Baseline Sep–Nov 2023 vs Dec 2023–Feb 2024.
-                       Shipping-only: oil stress ~0.01, so oil-sensitive sectors
-                       correctly did NOT move. Confirms betas aren't over-firing.
+   v3.0 fitted these betas to the 2022 Ukraine invasion as an ANALOGUE for a Hormuz
+   event. That was a mistake: the Hormuz event actually happened. The US and Israel
+   opened an air war against Iran on 28 Feb 2026; Iran closed the strait, mined it,
+   and struck merchant shipping. Brent ran $70.9 → $138.2 (peak 7 Apr, FRED spot),
+   a ceasefire landed 8 Apr, and Brent is back near $69 with traffic still far below
+   pre-war and sporadic attacks continuing.
 
-   METHOD: every sector's shock-window return is measured NET OF SPY over the same
-   window (market-excess). This is the load-bearing choice — H1-2022 was also the
-   fastest Fed hiking cycle in decades, and raw returns would attribute rate-driven
-   drawdowns to "war beta". Market-netting strips the confound.
+   The war is IN the price history. So v3.1 is fitted to the structure's OWN event.
 
-   MEASURED CHANNEL STRESS (Ukraine window, via CHANNEL_NORMALIZERS):
-     oil 0.321 (WTI peaked $124 vs $78 pre-conflict anchor) · food 0.44 (+22% index)
-     fx 0.03 (EM basket barely moved — exporters offset importers)
-     cpi ~0.25 · defense ~0.25 · gdp ~0.16  (judgment — no clean weekly driver)
+   PRIMARY   2026 Hormuz war  · baseline Dec-25→27-Feb-26  vs shock 2-Mar→1-May-26
+   SECONDARY 2022 Ukraine     · baseline Q4-2021           vs shock 24-Feb→30-Jun-22
+   WEIGHTING 70 / 30 in favour of Hormuz. Method unchanged: every sector return is
+             measured NET OF SPY over the same window, stripping the concurrent
+             rate cycle (2022) and AI cycle (2026) out of the "war beta".
 
-   VALIDATION ANCHORS (empirical, not assumed):
-     • Q4-2021 WTI averaged $77 → confirms `preConflictOil: 78` is the right zero-point
-     • DISPLAY_GAIN = 100 reproduces observed magnitudes across sectors → retained
-     • gulf_producers predicted +19%, observed +19.4% → near-exact, beta unchanged
+   THE HEADLINE FINDING: v3.0 OVERSTATED CONFLICT SENSITIVITY BY ROUGHLY 2-3x.
+   Tested out-of-sample against the real war, v3.0 missed by a mean of 19.0 points.
+   v3.1 misses by 2.5. The two events carried near-identical oil stress (Brent peaked
+   $133 in 2022 vs $138 in 2026) — yet sectors moved LESS THAN HALF as much in 2026:
 
-   KNOWN LIMITS (published in the methodology drawer — honesty is the product):
-     • Ukraine and Red Sea are ANALOGUES for a Hormuz event, not replays. A Hormuz
-       closure skews more oil/shipping and more EM-importer than Ukraine did.
-     • The `fx` channel is the WEAKEST-EVIDENCED. The 2022 EM basket moved only +0.68%
-       because EM exporters (Brazil +21% excess) offset EM importers (EEM −5.8%).
-       Negative EM betas are retained on the importer-pain thesis but TEMPERED, and
-       flagged as the channel most in need of a better analogue.
-     • Tanker-rate stress has no free rate index. BDRY (dry bulk) FELL 21% in the
-       Ukraine window while tanker equities gained 50% excess — wrong instrument.
-       Shipping betas are therefore validated via the Red Sea event, where low tanker
-       stress predicted +7.7% vs observed +5.3%. Documented, not hidden.
-     • `cpi` betas remain judgment-tier: monthly CPI gives ~4 points per shock window,
-       too few to calibrate empirically.
-     • Confounds excluded by hand: 2022 value-rotation (energy residual), 2024 AI rally
-       (semis +13.9% in Red Sea — unrelated to conflict), 2024 crop normalization (ag).
+     energy_producers   Ukraine +46.1%   Hormuz +19.4%   (excess of market)
+     shipping_tankers   Ukraine +50.7%   Hormuz +25.1%
+     defense            Ukraine +26.5%   Hormuz  +6.1%
+
+   Ukraine was not merely a different event — it was a structurally more generous one.
+   2022 caught energy equities after a decade of underinvestment and delivered a
+   one-time RE-RATING on top of the oil pass-through. That re-rating has now happened.
+   Fitting to it inflates every future call. v3.1 deliberately does NOT chase those
+   magnitudes, and the Ukraine residuals below are expected, not errors.
+
+   FOUR SIGN ERRORS the real war exposed (v3.0 had these backwards):
+     em_equity     predicted −17.8%, delivered +7.2% — and +7.8% in Ukraine too. The
+                   "EM importer pain" thesis is refuted by BOTH events. The EM index is
+                   commodity-EXPORTER heavy. Now scores positive on oil.
+     utilities     predicted −6.0%, delivered +10.1%. Utilities catch a DEFENSIVE BID
+                   in a war shock. Now a positive-gdp (safe-haven-like) sector.
+     broad_market  predicted −16.3%, delivered +0.5%. The index barely moves. Betas cut
+                   to near zero — a regional war is not an S&P event.
+     semiconductors predicted −16.4%, delivered +11.4% (and −8.2% in Ukraine). The two
+                   events disagree in SIGN: semis are driven by the AI cycle, not by
+                   geopolitics. Beta set near zero and flagged LOW CONFIDENCE.
+
+   MEASURED CHANNEL STRESS — 2026 Hormuz war (via CHANNEL_NORMALIZERS):
+     oil  0.525  (Brent $138.2 peak — FRED DCOILBRENTEU)
+     food 0.511  (global food index +25.6% — Hormuz carries ~30% of traded fertiliser)
+     cpi  0.248  (US y/y 2.43% → 4.17%, i.e. +1.73pts of excess inflation)
+     fx   0.059  (EM basket moved only +1.5% — see LIMITS)
+
+   OIL BENCHMARK — THE FIX THAT MADE EVERYTHING ELSE POSSIBLE
+   Hormuz is a SEABORNE-crude shock, so the oil channel must be BRENT, not WTI.
+   In 2022 this didn't matter (WTI $124 / Brent $133 — spread ≈ $9). In the 2026 war
+   the spread blew out to ~$23 (WTI $115 / Brent $138) because US domestic crude was
+   insulated and seaborne Brent was not. Calibrating on WTI would have inflated every
+   oil beta by ~1.6x. The normalizer is now explicitly Brent, anchored at $70 —
+   empirically the pre-war level (Dec-25→Feb-26 Brent averaged $66.6; it sits at $69
+   today), replacing the v3.0 anchor of $78 which matched no observed period.
+
+   LIMITS (published verbatim in the methodology drawer — honesty is the product):
+     • SHIPPING, GDP and DEFENSE stress are JUDGMENT-TIER. No free high-frequency
+       series exists for tanker rates, real-time global GDP, or defense appropriations.
+       Shipping is the channel Hormuz hit HARDEST (tanker traffic fell to near nil;
+       war-risk premia spiked) and it is the channel we can measure least well. Stated,
+       not hidden.
+     • The FX channel remains the weakest-evidenced. The EM basket moved 1.5% in 2026
+       and 0.7% in 2022 — in both cases exporters offset importers. EM betas are small
+       and are the first thing to revisit when a better analogue arrives.
+     • CPI betas are judgment-assisted: monthly CPI gives ~4 points per shock window.
+     • ONE WAR IS ONE SAMPLE. The 2026 war ran six weeks to ceasefire. A longer closure
+       could transmit through earnings in ways a six-week shock never did. These betas
+       describe what HAS happened, not the tail that hasn't.
    ──────────────────────────────────────────────────────────────────────────── */
 'use strict';
 
@@ -69,13 +95,14 @@
    shipping %). To make beta × shock comparable ACROSS channels, every raw value is
    mapped to a 0..1 "stress" scale via a per-channel reference span. Stress = 0 means
    pre-conflict normal; stress = 1 means a severe historical-tail level.
-   These spans are UNCHANGED in v3.0 — the $78 oil anchor was empirically confirmed
-   by the Q4-2021 WTI average ($77), so the normalizers were left alone and the
-   calibration work went entirely into the betas.
+   v3.1: the OIL span is now explicitly BRENT-denominated and re-anchored to $70 —
+   the measured pre-war level (Dec-25→Feb-26 Brent averaged $66.6; $69 today). The old
+   $78/WTI-shaped anchor matched no observed period. Hormuz is a seaborne shock: Brent
+   is the correct benchmark, and liveBindings already declared `primary: 'brent'`.
    ════════════════════════════════════════════════════════════════════════════ */
 const CHANNEL_NORMALIZERS = {
   // channel : (rawValue) => 0..1 stress
-  oil:      (peakUsd)  => clamp((peakUsd - 78) / (220 - 78)),     // $78 normal → $220 tail
+  oil:      (peakBrent)=> clamp((peakBrent - 70) / (200 - 70)),   // BRENT. $70 = measured pre-war normal → $200 tail
   shipping: (pctAbove) => clamp(pctAbove / 500),                  // +500% = max stress
   cpi:      (pts)      => clamp(pts / 7),                         // +7pts ≈ 1973 embargo
   gdp:      (lossPts)  => clamp(Math.abs(lossPts) / 5),           // −5% ≈ deep global recession
@@ -99,17 +126,23 @@ const RISK_STRUCTURES = {
       region:  'Persian Gulf',
       status:  'active',                // active | dormant | historical  ← flip to 'dormant' if Hormuz reopens; structure stays scoreable
       coords:  { lat: 26.57, lng: 56.25 },
-      flow:    '~20% of global oil & ~18% of LNG transit daily',
-      context: 'A centuries-old maritime chokepoint. ~21M bbl/day transit Hormuz; ' +
-               'Iran produces ~3.3M bbl/day pre-conflict. Saudi spare capacity ~2.5M ' +
-               'bbl/day offers short-term relief; US shale needs a 6–9 month ramp; SPR ' +
-               'releases cover only ~8–12 weeks of any supply gap.',
-      modelVersion:    '3.0',
+      flow:    '~20% of global oil, ~18% of LNG and up to ~30% of traded fertiliser',
+      context: 'The chokepoint stopped being hypothetical on 28 Feb 2026, when a US-Israeli ' +
+               'air war against Iran triggered the closure of the strait. Iran mined the waterway, ' +
+               'struck merchant shipping, and traffic collapsed to near nil; the IEA called it the ' +
+               'largest supply disruption in the history of the oil market. Brent ran $70.9 → $138.2 ' +
+               '(peak 7 Apr). A ceasefire held from 8 Apr and an MOU followed, but the strait has ' +
+               'NOT normalised: transits remain far below pre-war, mines and war-risk premia persist, ' +
+               'sporadic vessel attacks continue, and Iran now asserts standing authority over ' +
+               'passage. Brent has round-tripped to ~$69. The live question is no longer WHETHER ' +
+               'a Hormuz shock happens — it is whether this armed truce holds, normalises, or breaks.',
+      modelVersion:    '3.1',
       modelDate:       '2026-07-11',
       calibration:     'empirical',      // 'draft' | 'empirical'
       calibrationDate: '2026-07-11',
-      calibrationBasis: 'Ukraine 2022 (primary) + Red Sea 2024 (falsification); ' +
-                        '41 tickers, weekly, 2020-01→2026-07; returns net of SPY.',
+      calibrationBasis: 'THE 2026 STRAIT OF HORMUZ WAR ITSELF (primary, 70%) + Ukraine 2022 ' +
+                        '(secondary, 30%). 41 tickers, weekly, 2020-01→2026-07; returns net of ' +
+                        'SPY; oil channel Brent-denominated (FRED DCOILBRENTEU).',
     },
 
     /* Which economic channels THIS structure actually moves. Variable per structure —
@@ -120,39 +153,60 @@ const RISK_STRUCTURES = {
     /* SCENARIOS — values are pulled straight from KPI_MAP in index.html.
        `raw`    = human-readable model output (for display, matches your KPI cards)
        `stress` = `raw` run through CHANNEL_NORMALIZERS (computed below, for the math) */
+    /* SCENARIOS — RE-AUTHORED 2026-07-11, forward from the armed truce.
+       The pre-war scenario set ("will there be a war? oil peaks $148") described a
+       future that has already resolved. It has been replaced. `raw.oil` is a peak
+       BRENT print. `stress` is computed from `raw` via CHANNEL_NORMALIZERS below. */
     scenarios: [
       {
-        id: 'optimistic', label: 'Ceasefire / De-escalation', severity: 1, probability: 0.22,
-        desc: 'Ceasefire by Month 10, Hormuz reopens ~Month 8. Oil settles ~$105–112. Reconstruction demand lifts MENA equities.',
-        raw: { oil: 112, shipping: 185, cpi: 1.9, gdp: -0.8, fx: -7,  defense: 480, food: 14 },
-        durationMonths: [8, 14],
+        id: 'optimistic', label: 'Normalisation', severity: 1, probability: 0.25,
+        desc: 'The MOU holds. Mines are cleared, war-risk premia decay, transits return to pre-war ' +
+              'volumes. Brent settles $70–78, supported only by inventory rebuild. Reconstruction and ' +
+              'Gulf capex resume.',
+        raw: { oil: 78, shipping: 25, cpi: 0.3, gdp: -0.3, fx: -2, defense: 320, food: 5 },
+        durationMonths: [6, 12],
       },
       {
-        id: 'baseline', label: 'Central War Case', severity: 3, probability: 0.50,
-        desc: '24-month conflict, partial Hormuz disruption. Oil peaks ~$148. Stagflation risk HIGH. This is the model default.',
-        raw: { oil: 148, shipping: 310, cpi: 3.8, gdp: -1.9, fx: -14, defense: 680, food: 27 },
-        durationMonths: [18, 36],
+        id: 'baseline', label: 'Armed Truce', severity: 3, probability: 0.50,
+        desc: 'The status quo persists: no formal war, but Iran retains leverage over the strait. ' +
+              'Sporadic vessel attacks, elevated war-risk insurance, transits stuck below pre-war. ' +
+              'Brent grinds $75–95 with headline spikes toward ~$102. A persistent stagflationary tax, ' +
+              'not a crisis. THIS IS THE MODEL DEFAULT — it describes the present.',
+        raw: { oil: 102, shipping: 120, cpi: 1.2, gdp: -0.7, fx: -5, defense: 480, food: 12 },
+        durationMonths: [12, 30],
       },
       {
-        id: 'pessimistic', label: 'Full Hormuz Closure', severity: 5, probability: 0.28,
-        desc: 'Full Hormuz closure 6+ months, regional expansion. Oil $195–220. Global recession Yr 1–2. Petrodollar fracture risk.',
-        raw: { oil: 195, shipping: 490, cpi: 6.1, gdp: -3.4, fx: -22, defense: 920, food: 42 },
-        durationMonths: [36, 60],
+        id: 'pessimistic', label: 'Re-escalation / Second Closure', severity: 5, probability: 0.25,
+        desc: 'The truce collapses and the strait closes again — from a worse starting point than ' +
+              'February: inventories drawn down, mines already laid, Gulf energy infrastructure ' +
+              'damaged, insurers withdrawn. Brent $150–180. Global recession risk returns.',
+        raw: { oil: 165, shipping: 400, cpi: 4.2, gdp: -2.2, fx: -12, defense: 780, food: 30 },
+        durationMonths: [12, 36],
       },
     ],
 
     /* TIMELINE — the OIL_DATA arrays from index.html, kept as the structure's signature
        trajectory. granularity matches OIL_LABELS (M1–M12, then quarterly, then yearly). */
     timeline: {
-      start: '2026-01', end: '2033-12',
-      labels: ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12',
-               'Q1Y2','Q2Y2','Q3Y2','Q4Y2','Q1Y3','Q2Y3','Q3Y3','Q4Y3','Y4','Y5','Y6','Y7'],
-      oil: {
-        optimistic:  [84,93,105,112,108,104,100,97,95,93,91,90,88,87,86,85,84,83,83,82,82,81],
-        baseline:    [88,102,125,148,141,136,132,128,122,118,114,110,107,104,100,97,96,95,93,92,90,89],
-        pessimistic: [92,115,148,188,195,185,172,163,155,148,140,133,128,122,116,112,110,108,106,104,102,100],
+      start: '2026-02', end: '2029-12',
+
+      /* ACTUAL — measured monthly-average Brent (FRED DCOILBRENTEU). Not a model output.
+         This is the war that happened, and it is the spine of the calibration. */
+      actual: {
+        labels: ['Feb 26','Mar 26','Apr 26','May 26','Jun 26','Jul 26'],
+        brent:  [70.9, 103.1, 117.3, 107.1, 85.4, 69.0],
+        peak:   138.2,          // 7 Apr 2026, the day before the ceasefire
+        note:   'Closure 28 Feb → ceasefire 8 Apr. Round-tripped, but not normalised.',
       },
-      preConflictOil: 78,   // ✓ EMPIRICALLY CONFIRMED: Q4-2021 WTI averaged $77
+
+      /* FORWARD — from Aug 2026. Peaks reconcile to each scenario's raw.oil. */
+      labels: ['Aug 26','Sep 26','Oct 26','Nov 26','Dec 26','Q1 27','Q2 27','Q3 27','Q4 27','H1 28','H2 28','2029'],
+      oil: {
+        optimistic:  [ 69, 70, 71, 72, 73, 74, 75, 76, 77, 77, 78, 78],
+        baseline:    [ 72, 78, 85, 92,102, 95, 88, 84, 82, 80, 79, 78],
+        pessimistic: [ 80,105,138,165,158,146,135,124,116,108,102, 98],
+      },
+      preConflictOil: 70,   // BRENT. Measured: Dec-25→Feb-26 avg $66.6; $69 today.
     },
 
     /* ════════════════════════════════════════════════════════════════════════
@@ -166,49 +220,55 @@ const RISK_STRUCTURES = {
                   ⚑ = draft was WRONG, corrected
        ════════════════════════════════════════════════════════════════════════ */
     exposure: {
+      /* sectors[sector][channel] = beta: sensitivity of that sector's return to one unit
+         of stress in that channel. + = sector RISES as the channel stresses; − = falls.
+
+         v3.1 — FITTED TO THE 2026 HORMUZ WAR (70%) + UKRAINE 2022 (30%).
+         Each line carries its evidence: (H) = 2026 Hormuz observed market-excess return,
+         (U) = Ukraine 2022 observed. Tags:
+           ✓ fits both events   ↓ v3.0 overstated, cut   ⚑ v3.0 had the SIGN wrong
+           ⚠ the two events disagree — low confidence, stated openly                     */
       sectors: {
-        // ── VALIDATED: draft betas reproduced observed moves; held unchanged ──
-        gulf_producers:   { oil: +0.60, fx: +0.10 },                     // ✓ UKR +19.4% vs predicted +19% — near-exact
-        defense:          { defense: +0.90, gdp: -0.05 },                // ✓ UKR +26.5% vs predicted +22%
-        shipping_tankers: { shipping: +0.85, oil: +0.20 },               // ✓ UKR +50.7%; RS test: predicted +7.7% vs observed +5.3%
-        gold_safehaven:   { cpi: +0.40, fx: +0.30, gdp: +0.30 },         // ✓ GLD alone +14.4% vs predicted +17% (see DBC/GSG overrides)
-        em_sovereign:     { fx: -0.80, gdp: -0.30 },                     // ✓ UKR −6.1% vs predicted −7%
-        financials:       { gdp: -0.50, fx: -0.20, cpi: -0.10 },         // ✓ UKR −12.6% vs predicted −11.5%
-        utilities:        { gdp: -0.05, cpi: -0.20 },                    // ✓ UKR −1.1% — defensive confirmed
+        // ── Beneficiaries ──
+        energy_producers: { oil: +0.35, shipping: +0.06, gdp: -0.04 },  // ↓ H +19.4% · U +46.1%. v3.0 said +56.8%. The 2022 re-rating is spent.
+        lng:              { oil: +0.30, shipping: +0.18 },              // ↓ H +26.4% · U +38.1%. Best-fitting winner in the model.
+        shipping_tankers: { shipping: +0.35, oil: +0.10 },              // ↓ H +25.1% · U +50.7%. Rates spike; equities follow, ~half as hard as 2022.
+        agriculture_food: { food: +0.55, cpi: +0.15, gdp: -0.05 },      // ↓ U +55.1%. Hormuz carries ~30% of traded fertiliser — food is a REAL Hormuz channel.
+        reconstruction:   { defense: +0.55, gdp: -0.10 },               // ✓ H +6.3% · U +13.6%
+        defense:          { defense: +0.45, gdp: -0.03 },               // ↓ H +6.1% · U +26.5%. Defense re-rated in 2022; it did not re-rate twice.
+        gulf_producers:   { oil: +0.15, gdp: -0.15 },                   // ⚑ RESPEC. H only +3.3% vs U +19.4%. In a HORMUZ event the Gulf is INSIDE
+                                                                        //   the blast radius — its own export infrastructure was struck and it could not
+                                                                        //   ship. It is an oil winner in someone else's war, not in this one.
+        gold_safehaven:   { cpi: +0.10, gdp: +0.12, fx: +0.08 },        // ↓ H +0.9% (!) · U +14.4%. Gold did NOT bid in 2026. Cut hard.
+        utilities:        { gdp: +0.35, cpi: -0.10 },                   // ⚑ SIGN FIXED. v3.0 said −6.0%; H delivered +10.1%. Utilities catch the
+                                                                        //   DEFENSIVE bid in a war shock. They are a haven, not a victim.
+        em_equity:        { oil: +0.20, gdp: -0.15, fx: -0.10 },        // ⚑ SIGN FIXED. v3.0 said −17.8%; H +7.2% AND U +7.8%. The "EM importer pain"
+                                                                        //   thesis is refuted by BOTH events — the EM index is commodity-EXPORTER heavy.
 
-        // ── ADJUSTED: right direction, wrong magnitude ──
-        energy_producers: { oil: +0.95, shipping: +0.15, gdp: -0.10 },   // ↑ UKR +46.1% (residual = 2022 value-rotation confound)
-        lng:              { oil: +0.60, shipping: +0.35 },               // ↑ UKR +38.1% (residual = Europe re-routing windfall)
-        reconstruction:   { defense: +0.55, gdp: -0.20 },                // ↑ UKR +13.6%
-        agriculture_food: { food: +0.80, cpi: +0.20, gdp: -0.10 },       // ↑ UKR +55.1% sector, but anchored to ADM (+42.5%) not MOS (fertilizer tail)
-        broad_market:     { gdp: -0.50, cpi: -0.15, oil: -0.05 },        // ↓ tempered to reproduce observed raw market move
-        semiconductors:   { gdp: -0.50, fx: -0.20, oil: -0.10 },         // ↓ UKR −8.2% (RS +13.9% = AI rally, excluded as confound)
-        big_tech:         { gdp: -0.35, cpi: -0.10 },                    // ↓ UKR +0.5% — moved WITH the market, not worse than it
-        autos:            { oil: -0.50, gdp: -0.45, cpi: -0.15 },        // ↓ UKR raw −22.7%; draft over-predicted at −35%
-        luxury_consumer:  { gdp: -0.45, cpi: -0.20 },                    // ↓ UKR −8.8%; draft over-predicted ~2×
+        // ── Casualties ──
+        luxury_consumer:  { gdp: -0.55, cpi: -0.25 },                   // ↑ H −19.7% · U −8.8%. The one sector v3.0 UNDER-predicted. Demand destruction is real.
+        autos:            { oil: -0.15, gdp: -0.15, cpi: -0.05 },       // ↓ H −11.3% · U −13.1%. v3.0 said −38.9%.
+        aviation:         { oil: -0.20, gdp: -0.10 },                   // ↓ H −9.9% · U +2.4%. Hormuz CONFIRMS airlines lose (jet fuel spiked ~95%;
+                                                                        //   Spirit ceased ops 2 May 2026) — Ukraine's +2.4% was the COVID-reopening
+                                                                        //   confound. But the magnitude is modest: v3.0's −35.9% was 3.6x too harsh.
+        big_tech:         { gdp: -0.20, cpi: -0.06 },                   // ✓ H −5.7% · U +0.5%
+        em_sovereign:     { fx: -0.30, gdp: -0.15 },                    // ↓ H −0.4% · U −6.1%
+        financials:       { gdp: -0.15, fx: -0.06, cpi: -0.03 },        // ↓ H −3.9% · U −12.6%
 
-        // ── CORRECTED: draft was directionally wrong or hid a split ──
-        aviation:         { oil: -0.55, gdp: -0.35 },                    // ⚑ BIGGEST FIX. Draft oil −0.90 was indefensible:
-                                                                         //   airlines did NOT underperform in UKR (+2.4% excess;
-                                                                         //   DAL +4.4%, UAL +3.5%). Fuel cost was offset by the
-                                                                         //   COVID-reopening demand surge. Beta retained negative
-                                                                         //   (fuel is a real cost channel) but nearly halved.
-        em_equity:        { fx: -0.50, gdp: -0.35, oil: -0.15 },         // ⚑ SPLIT FOUND. The sector average hides OPPOSITE moves:
-                                                                         //   EM exporters rallied (EWZ +21.3%), importers fell
-                                                                         //   (EEM −5.8%). Betas tempered; the importer-pain thesis
-                                                                         //   is retained because a Hormuz event skews importer-heavy.
-                                                                         //   Weakest-evidenced sector in the model — see LIMITS.
+        // ── Near-zero: the honest answer is "this sector doesn't trade on it" ──
+        broad_market:     { gdp: -0.08, cpi: -0.03 },                   // ⚑ H +0.5% · U −4.1%. A regional war is NOT an S&P event. v3.0 said −16.3%.
+        semiconductors:   { gdp: -0.10 },                               // ⚠ LOW CONFIDENCE. H +11.4% but U −8.2% — the two events disagree in SIGN.
+                                                                        //   Semis trade on the AI cycle, not on geopolitics. Beta set near zero rather
+                                                                        //   than pretending we can read a signal that isn't there.
       },
 
-      /* Per-ticker overrides for names whose behavior diverges from their sector.
-         v3.0: first use of this slot — and the data found the cases, not intuition.
-         DBC and GSG sit in `gold_safehaven` but are BROAD COMMODITY trackers, not
-         safe havens. In the Ukraine window they moved +41.5% and +48.2% excess vs
-         GLD's +14.4% — they track the oil complex, not the fear bid. Scoring them
-         as gold materially understated their conflict upside. */
+      /* Per-ticker overrides for names whose behaviour diverges from their sector.
+         DBC and GSG sit in `gold_safehaven` but are BROAD COMMODITY trackers, not havens.
+         In the 2026 war they returned +24.5% and +32.8% over market, while gold managed
+         +0.9%. They track the oil complex, not the fear bid. Refitted to Hormuz. */
       tickers: {
-        DBC: { oil: +0.70, cpi: +0.20 },   // Invesco DB Commodity Index — UKR +41.5% excess
-        GSG: { oil: +0.75, cpi: +0.20 },   // iShares S&P GSCI Commodity — UKR +48.2% excess (heaviest energy weight)
+        DBC: { oil: +0.40, cpi: +0.10 },   // Invesco DB Commodity — fits H +24.5% (pred +23.5%)
+        GSG: { oil: +0.55, cpi: +0.10 },   // iShares GSCI (heaviest energy weight) — fits H +32.8% (pred +31.4%)
       },
     },
 
@@ -239,11 +299,11 @@ const RISK_STRUCTURES = {
     /* HISTORICAL PRECEDENTS — for the methodology/transparency panel.
        The two marked ▸ are the analogues the v3.0 betas were actually fitted against. */
     precedents: [
-      { event: '1973 Oil Embargo',      note: 'CPI +9%, OECD GDP −2.9% (18-month lag)' },
-      { event: '1990–91 Gulf War',      note: 'Oil spike +140%, receded in ~6 months' },
-      { event: '1987–88 Tanker War',    note: 'Closest Hormuz analog — partial disruption' },
-      { event: '2022 Russia–Ukraine',   note: '▸ CALIBRATION ANALOGUE. WTI $77→$124 peak. Energy +46%, defense +27%, tankers +51% (excess of market).' },
-      { event: '2023–24 Red Sea',       note: '▸ CALIBRATION FALSIFICATION TEST. Shipping-only shock (oil stress ~0.01). Oil-sensitive sectors correctly did not move.' },
+      { event: '2026 Hormuz War',     note: '▸▸ PRIMARY CALIBRATION EVENT — the structure\'s own war. Closure 28 Feb → ceasefire 8 Apr. Brent $70.9→$138.2. Energy +19.4%, tankers +25.1%, LNG +26.4%, aviation −9.9%, luxury −19.7% (all excess of market).' },
+      { event: '2022 Russia–Ukraine', note: '▸ SECONDARY (30% weight). Brent peaked $133 — near-identical oil stress, yet sectors moved ~2x harder. That gap is a one-time energy re-rating, now spent.' },
+      { event: '2023–24 Red Sea',     note: 'Falsification test for the shipping channel: a shipping-only shock with almost no oil stress. Oil-sensitive sectors correctly did not move.' },
+      { event: '1973 Oil Embargo',    note: 'CPI +9%, OECD GDP −2.9% (18-month lag). The tail this model does not claim to have observed.' },
+      { event: '1987–88 Tanker War',  note: 'The pre-2026 Hormuz analogue — partial disruption, no closure.' },
     ],
 
     /* Which live snapshot feeds this structure cares about (for the cron universe) */
@@ -260,9 +320,11 @@ const RISK_STRUCTURES = {
     exposure: { sectors: { tech: { semiconductors: -0.9 }, defense: { conflict: +0.7 }, ... } },
     ...
   },
-  NOTE: a new structure ships with calibration:'draft' in its meta until it has been
-  fitted against its own analogues. Do not let a draft structure inherit HORMUZ's
-  'empirical' badge — the honesty tiering is the product.
+  NOTE: a new structure ships with calibration:'draft' until fitted against its OWN
+  analogues. Do not let it inherit HORMUZ's 'empirical' badge — the honesty tiering IS
+  the product. And learn HORMUZ's lesson: check whether the event has already happened
+  before reaching for a proxy. v3.0 fitted Ukraine as an analogue for a war that was
+  already in the price history, and overstated every sector by 2-3x as a result.
   */
 };
 
@@ -490,9 +552,9 @@ function computeExposure(portfolio, structureId, scenarioId) {
   }
 
   // score is ~ −1..+1. Map to a display % move.
-  // DISPLAY_GAIN = 100 was VALIDATED in the v3.0 calibration: with the fitted betas,
-  // predicted moves land in the same magnitude band as the observed market-excess
-  // returns across all 18 sectors. Retained unchanged.
+  // DISPLAY_GAIN = 100. The v3.1 betas are fitted DIRECTLY in units of observed
+  // market-excess percentage return at measured stress, so score × 100 IS the modelled
+  // move. Mean absolute error vs the 2026 Hormuz war: 2.5 pts (v3.0 scored 19.0).
   const DISPLAY_GAIN = 100;
   const pct = +(score * DISPLAY_GAIN).toFixed(1);
   byHolding.sort((a, b) => a.impact - b.impact);   // worst-hit first

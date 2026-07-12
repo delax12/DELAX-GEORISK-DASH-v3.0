@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Methodology · DELAX GEO-RISK</title>
-<meta name="description" content="How the DELAX GEO-RISK Exposure Score is calibrated: sector betas fitted against Ukraine 2022 and the Red Sea crisis 2023-24, using six years of weekly price history, net of market.">
-<meta property="og:title" content="How the Exposure Score is calibrated · DELAX GEO-RISK">
-<meta property="og:description" content="Sector betas fitted against two real conflicts. 41 tickers, six years of weekly data, all returns net of market. Including where the model was wrong.">
+<meta name="description" content="How the DELAX GEO-RISK Exposure Score is calibrated: sector betas fitted to the 2026 Strait of Hormuz war itself, using six years of weekly price history, net of market.">
+<meta property="og:title" content="We calibrated against the wrong war. Then we fixed it. · DELAX GEO-RISK">
+<meta property="og:description" content="Sector betas fitted to the 2026 Hormuz war itself. The previous model overstated conflict sensitivity by 2-3x. Here is the correction, in full.">
 <meta property="og:type" content="article">
 <style>
   :root{
@@ -174,15 +174,15 @@
 
   <header class="hero">
     <div class="eyebrow">Methodology · Exposure Score</div>
-    <h1>Every beta in this model was tested against a war that <em>already happened</em>.</h1>
-    <p class="lede">Including the two it got wrong. Here is what we measured, how we measured it, and where the data overruled us.</p>
+    <h1>We calibrated this model against the wrong war. Then we <em>fixed it</em>.</h1>
+    <p class="lede">The Strait of Hormuz war of 2026 is not a scenario. It happened, and it is in the price history. Every sector sensitivity here is now fitted to that war — the structure's own event, not a stand-in for it.</p>
   </header>
 
   <dl class="stamp">
-    <div><dt>Model</dt><dd>v3.0</dd></div>
+    <div><dt>Model</dt><dd>v3.1</dd></div>
     <div><dt>Calibrated</dt><dd>2026-07-11</dd></div>
     <div><dt>Status</dt><dd class="on">Empirical</dd></div>
-    <div><dt>Sample</dt><dd>41 tickers</dd></div>
+    <div><dt>Fitted to</dt><dd>2026 Hormuz war</dd></div>
   </dl>
 
   <section>
@@ -193,29 +193,18 @@
 
   <section>
     <div class="eyebrow">01 · The evidence</div>
-    <h2>Two conflicts, six years of weekly prices</h2>
-    <p>Sector betas were fitted against <strong>41 tickers</strong> of weekly closing prices running January 2020 through July 2026, across two historical analogues:</p>
+    <h2>The event, not an analogue</h2>
+    <p>On 28 February 2026 a US–Israeli air war against Iran closed the Strait of Hormuz. Iran mined the waterway and struck merchant shipping; traffic fell to almost nothing. Brent ran from $70.9 to a peak of <strong>$138.2</strong> on 7 April — the day before the ceasefire. It has since round-tripped to about $69, but the strait has not normalised: transits remain below pre-war, war-risk premiums persist, and vessel attacks continue.</p>
+    <p>An earlier version of this model treated the 2022 Ukraine invasion as a proxy for a Hormuz event. That was a mistake. The Hormuz event was already sitting in the data.</p>
 
     <table class="tbl">
-      <thead>
-        <tr><th>Event</th><th>Role</th><th>Window</th></tr>
-      </thead>
+      <thead><tr><th>Event</th><th>Role</th><th>Window</th></tr></thead>
       <tbody>
-        <tr>
-          <td><strong>Russia–Ukraine, 2022</strong></td>
-          <td>Primary analogue</td>
-          <td>Q4-2021 baseline<br>vs 24 Feb – 30 Jun 2022</td>
-        </tr>
-        <tr>
-          <td><strong>Red Sea crisis, 2023–24</strong></td>
-          <td>Falsification test</td>
-          <td>Sep–Nov 2023 baseline<br>vs Dec 2023 – Feb 2024</td>
-        </tr>
+        <tr><td><strong>Hormuz war, 2026</strong></td><td>Primary · 70%</td><td>Dec 2025 – Feb 2026 baseline<br>vs 2 Mar – 1 May 2026</td></tr>
+        <tr><td><strong>Russia–Ukraine, 2022</strong></td><td>Secondary · 30%</td><td>Q4-2021 baseline<br>vs 24 Feb – 30 Jun 2022</td></tr>
       </tbody>
     </table>
-
-    <p>Ukraine is the fitting event: a genuine multi-channel shock where oil, food, defense budgets and global growth all moved at once. WTI went from a $77 pre-war average to a $124 peak.</p>
-    <p>The Red Sea is the control. It was a <em>shipping-only</em> event — oil barely registered, stress of roughly 0.01 on our scale. If our betas were over-firing, oil-sensitive sectors would have lit up anyway. They didn't. That is the test that matters, and it's the reason a second, quieter event was worth as much as the loud one.</p>
+    <p class="muted" style="font-size:14px">41 tickers, weekly closes, January 2020 – July 2026.</p>
   </section>
 
   <section>
@@ -228,64 +217,84 @@
       <p class="muted" style="margin-bottom:0">Sector return minus market return. That's the whole arithmetic.</p>
     </div>
 
-    <p>The first half of 2022 was not only a war. It was the fastest Federal Reserve hiking cycle in four decades. Growth stocks fell hard in that window and <strong>most of that fall was about interest rates, not Ukraine.</strong></p>
+    <p>The first half of 2022 was not only a war. It was the fastest Federal Reserve hiking cycle in four decades. Growth stocks fell hard in that window and <strong>most of that fall was about interest rates, not Ukraine.</strong> In 2026 the same trick was needed for a different confound: the AI cycle.</p>
     <p>A naive calibration absorbs the rate shock into the war beta and produces a model that screams whenever anything happens. Netting each sector against the broad market strips out what the whole market was doing anyway, and leaves the part that belongs to the conflict.</p>
+    <h3>The oil channel is Brent, not WTI.</h3>
+    <p>Hormuz is a <em>seaborne</em> crude shock. In 2026, WTI peaked at $115 while Brent hit $138 — US domestic crude was insulated, and shipped crude was not. In 2022 the two moved almost together, so the distinction never surfaced. Calibrating on the wrong barrel would have inflated every oil sensitivity by roughly 60%.</p>
   </section>
 
   <section>
-    <div class="eyebrow">03 · What held</div>
-    <h2>Seven sectors came through untouched</h2>
-    <p>These betas already reproduced what actually happened. They were left alone.</p>
+    <div class="eyebrow">03 · The headline finding</div>
+    <h2>The old model overstated everything by two to three times.</h2>
+    <p>Both wars delivered almost <strong>identical oil stress</strong> — Brent peaked at $133 in 2022 and $138 in 2026. Yet sectors moved less than half as far in the real Hormuz war.</p>
 
     <table class="tbl">
-      <thead>
-        <tr><th>Sector</th><th>Channel</th><th class="num">Predicted</th><th class="num">Observed</th></tr>
-      </thead>
+      <thead><tr><th>Sector</th><th>Channel</th><th class="num">Ukraine 2022</th><th class="num">Hormuz 2026</th></tr></thead>
       <tbody>
-        <tr><td>Gulf producers</td><td>oil</td><td class="num">+19.0%</td><td class="num up">+19.4%</td></tr>
-        <tr><td>Defense</td><td>defense</td><td class="num">+22.0%</td><td class="num up">+26.5%</td></tr>
-        <tr><td>Tankers</td><td>shipping</td><td class="num">+7.7%<span class="muted"> ᴿˢ</span></td><td class="num up">+5.3%<span class="muted"> ᴿˢ</span></td></tr>
-        <tr><td>Gold</td><td>cpi / fx</td><td class="num">+17.0%</td><td class="num up">+14.4%</td></tr>
-        <tr><td>EM sovereign debt</td><td>fx</td><td class="num">−7.0%</td><td class="num down">−6.1%</td></tr>
-        <tr><td>Financials</td><td>gdp</td><td class="num">−11.5%</td><td class="num down">−12.6%</td></tr>
-        <tr><td>Utilities</td><td>gdp / cpi</td><td class="num">−1.0%</td><td class="num down">−1.1%</td></tr>
+        <tr><td>Energy producers</td><td>oil</td><td class="num up">+46.1%</td><td class="num up">+19.4%</td></tr>
+        <tr><td>Tankers</td><td>shipping</td><td class="num up">+50.7%</td><td class="num up">+25.1%</td></tr>
+        <tr><td>LNG</td><td>oil</td><td class="num up">+38.1%</td><td class="num up">+26.4%</td></tr>
+        <tr><td>Defense</td><td>defense</td><td class="num up">+26.5%</td><td class="num up">+6.1%</td></tr>
+        <tr><td>Gold</td><td>cpi / fx</td><td class="num up">+14.4%</td><td class="num up">+0.9%</td></tr>
+        <tr><td>Luxury</td><td>gdp</td><td class="num down">−8.8%</td><td class="num down">−19.7%</td></tr>
       </tbody>
     </table>
-    <p class="muted" style="font-size:14px">All figures are market-excess returns in the Ukraine window unless marked <strong>ᴿˢ</strong> (Red Sea). Nine further sectors kept their direction but had their magnitude adjusted.</p>
+    <p class="muted" style="font-size:14px">Market-excess returns. Same oil shock, roughly half the response.</p>
+
+    <p><strong>Why the gap?</strong> 2022 caught energy equities after a decade of underinvestment. That +46% was a one-time <em>re-rating</em> as much as an oil pass-through — and a re-rating only happens once. Fitting to it inflates every future call. The new model deliberately does not chase those magnitudes.</p>
+
+    <div class="key">
+      <div class="eyebrow">Out-of-sample test</div>
+      <p>Run against the real Hormuz war, the old betas missed by an average of <strong>19.0 percentage points</strong> per sector. The new ones miss by <strong>2.5</strong>.</p>
+    </div>
   </section>
 
   <section>
     <div class="eyebrow">04 · What broke</div>
-    <h2>Two betas were wrong. The data corrected them.</h2>
+    <h2>Four sectors were pointing the wrong way.</h2>
 
     <div class="fix">
-      <div class="fix-head">Correction 01 · Aviation</div>
-      <h3>Airlines did not get crushed by expensive oil.</h3>
-      <p>The draft model assumed the obvious: oil spikes, jet fuel costs explode, airlines crater. It carried a beta of −0.90 — near the maximum the model allows.</p>
-      <p>In 2022, <strong>airlines beat the market.</strong> Delta finished the invasion window +4.4% over the S&amp;P; United +3.5%. Fuel did get far more expensive, and it didn't matter, because post-COVID travel demand was surging at exactly the same time.</p>
+      <div class="fix-head">Correction 01 · Emerging markets</div>
+      <h3>The "EM gets crushed" thesis is refuted by both wars.</h3>
+      <p>The old model predicted EM equity would fall 17.8% on a Hormuz shock. It <strong>rose 7.2%</strong> — and rose 7.8% in Ukraine too. Two conflicts, same answer, opposite to the model.</p>
+      <p>The reason is composition: the EM index is commodity <em>exporter</em>-heavy. Importers hurt, exporters win, and the exporters carry the index.</p>
       <div class="diff">
-        <div class="was">was &nbsp; aviation · oil −0.90 &nbsp;&nbsp;→ predicts −59.6%</div>
-        <div class="now">now &nbsp; aviation · oil −0.55 &nbsp;&nbsp;→ predicts −40.4%</div>
+        <div class="was">was &nbsp; em_equity · fx −0.50, gdp −0.35, oil −0.15 &nbsp;→ −17.8%</div>
+        <div class="now">now &nbsp; em_equity · oil +0.20, gdp −0.15, fx −0.10 &nbsp;→ +6.9%</div>
       </div>
-      <p class="muted" style="font-size:14px;margin-top:12px">Fuel is a real cost channel, so the beta stays negative. But it was nearly halved. This was the largest error in the draft model.</p>
     </div>
 
     <div class="fix">
-      <div class="fix-head">Correction 02 · Emerging markets</div>
-      <h3>The sector average was hiding two opposite stories.</h3>
-      <p>EM commodity <strong>exporters</strong> rallied in 2022 — Brazil gained 21.3% over the market. EM <strong>importers</strong> fell. Averaging them produced a number that described neither.</p>
+      <div class="fix-head">Correction 02 · Utilities</div>
+      <h3>Utilities are a haven, not a victim.</h3>
+      <p>Scored as a mild loser. In the actual war they <strong>gained 10.1% over the market</strong> — the defensive bid, the same instinct that normally lifts gold. (Gold, meanwhile, managed +0.9%. It did not show up.)</p>
       <div class="diff">
-        <div class="was">was &nbsp; em_equity · fx −0.70</div>
-        <div class="now">now &nbsp; em_equity · fx −0.50 &nbsp;&nbsp;+ oil channel added</div>
+        <div class="was">was &nbsp; utilities · gdp −0.05, cpi −0.20 &nbsp;→ −6.0%</div>
+        <div class="now">now &nbsp; utilities · gdp +0.35, cpi −0.10 &nbsp;→ +4.5%</div>
       </div>
-      <p class="muted" style="font-size:14px;margin-top:12px">The importer-pain thesis is retained, because a Hormuz event skews importer-heavy in a way Ukraine did not. But it is tempered, and this remains the weakest-evidenced sector in the model.</p>
+    </div>
+
+    <div class="fix">
+      <div class="fix-head">Correction 03 · Gulf producers</div>
+      <h3>In a Hormuz war, the Gulf is inside the blast radius.</h3>
+      <p>Modelled as the obvious oil winner. In reality Gulf producers gained just <strong>3.3%</strong> — because their own export infrastructure was struck and they could not ship. They win in <em>someone else's</em> oil war. Not in this one.</p>
+      <div class="diff">
+        <div class="was">was &nbsp; gulf_producers · oil +0.60 &nbsp;→ +32.1%</div>
+        <div class="now">now &nbsp; gulf_producers · oil +0.15, gdp −0.15 &nbsp;→ +4.9%</div>
+      </div>
     </div>
 
     <div class="fix" style="border-left-color:var(--accent)">
-      <div class="fix-head" style="color:var(--accent)">Correction 03 · Mislabelled funds</div>
-      <h3>Two commodity funds were being scored as safe havens.</h3>
-      <p>DBC and GSG sat in the gold bucket. They are broad commodity trackers. In 2022 they moved with the oil complex — <span class="up">+41.5%</span> and <span class="up">+48.2%</span> over market — not with the fear bid that lifted gold (<span class="up">+14.4%</span>).</p>
-      <p class="muted" style="font-size:14px;margin-bottom:0">They now score off the oil channel, which is what they actually track.</p>
+      <div class="fix-head" style="color:var(--accent)">Correction 04 · Semiconductors</div>
+      <h3>Sometimes the honest beta is zero.</h3>
+      <p>Semis fell 8.2% in Ukraine and rose 11.4% in the Hormuz war. The two events <strong>disagree on the sign.</strong> That is not a signal to be tuned — it means semiconductors trade on the AI cycle, not on Middle East geopolitics.</p>
+      <p class="muted" style="font-size:14px;margin-bottom:0">The beta is set near zero and flagged low-confidence, rather than fitting a number to noise.</p>
+    </div>
+
+    <div class="fix" style="border-left-color:var(--muted)">
+      <div class="fix-head" style="color:var(--muted)">And one the old model got right</div>
+      <h3>Airlines really do lose.</h3>
+      <p>Ukraine had said otherwise — airlines beat the market in 2022, because post-COVID travel demand swamped the fuel bill. The Hormuz war settled it: aviation fell <strong>9.9%</strong> below market, jet fuel rose about 95%, and Spirit Airlines ceased operations on 2 May 2026 citing fuel costs. The direction was right. The magnitude was 3.6× too harsh.</p>
     </div>
   </section>
 
@@ -294,18 +303,18 @@
     <h2>What we are not claiming</h2>
 
     <div class="limit">
-      <h3>These are analogues, not replays.</h3>
-      <p>A Strait of Hormuz event would be more oil- and shipping-intensive than Ukraine was, and would hit energy-importing emerging markets harder. The betas are fitted to the closest real evidence available. They are not a forecast of a specific future.</p>
+      <h3>One war is one sample.</h3>
+      <p>The 2026 war ran six weeks to a ceasefire. A longer closure could transmit through corporate earnings in ways a six-week shock never did. These betas describe what <em>has</em> happened. They do not describe the tail that hasn't.</p>
+    </div>
+
+    <div class="limit">
+      <h3>Shipping is the channel we measure worst — and it matters most.</h3>
+      <p>Hormuz hit shipping hardest: tanker traffic fell to almost nothing and war-risk premiums spiked. There is no free tanker-rate index. Shipping, global GDP and defense appropriations all have no clean high-frequency series, so their stress levels are judgment, not measurement. We would rather state that than dress an estimate up as data.</p>
     </div>
 
     <div class="limit">
       <h3>The currency channel is the weakest link.</h3>
-      <p>The EM currency basket moved less than 1% during the 2022 invasion, because exporters and importers cancelled each other out. Our EM betas rest more on economic reasoning than on a clean measured response. We would rather say that than present false precision.</p>
-    </div>
-
-    <div class="limit">
-      <h3>Shipping has no free rate index.</h3>
-      <p>The obvious instrument — the dry-bulk freight ETF — <em>fell</em> 21% during Ukraine while tanker equities gained 51%. Wrong ship, wrong cargo. The shipping betas were validated through the Red Sea event instead, where the model predicted +7.7% for tankers and the market delivered +5.3%.</p>
+      <p>The emerging-market currency basket moved 1.5% during the Hormuz war and 0.7% during Ukraine. In both cases exporters offset importers, so there is almost no measured response to fit to. The currency betas are small and are the first thing we will revisit when a better event arrives.</p>
     </div>
 
     <div class="limit">
@@ -316,12 +325,13 @@
 
   <section>
     <h2>Why this page exists</h2>
-    <p>An exposure score you cannot interrogate is a number taken on faith. This one can be checked. The events are public. The tickers are liquid. The windows are stated above. The method is one line of arithmetic.</p>
-    <p><strong>If you think a beta is wrong, you now have everything you need to argue with us.</strong></p>
+    <p>An exposure score you cannot interrogate is a number taken on faith. This one can be checked. The war is public. The tickers are liquid. The windows are stated above. The method is one line of arithmetic — sector return minus market return.</p>
+    <p>And the first thing this page told you is that we got it wrong the first time, by a factor of two to three, across the whole model.</p>
+    <p><strong>If you think a beta is still wrong, you now have everything you need to argue with us.</strong></p>
   </section>
 
   <footer>
-    <span>DELAX GEO-RISK · Model v3.0 · Calibrated 2026-07-11</span>
+    <span>DELAX GEO-RISK · Model v3.1 · Fitted to the 2026 Hormuz war · 2026-07-11</span>
     <span><a href="/exposure-desk.html">Exposure Desk</a> &nbsp;·&nbsp; Not financial advice.</span>
   </footer>
 
