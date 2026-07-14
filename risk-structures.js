@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════════════
-   risk-structures.js  —  DELAX GEO-RISK  ·  v3.1 structure model
+   risk-structures.js  —  DELAX GEO-RISK  ·  v4.0  ·  TWO STRUCTURES
    ────────────────────────────────────────────────────────────────────────────
    PURPOSE
    The "engine" (simulator, Exposure Score, charts) lives in code and knows HOW to
@@ -10,6 +10,26 @@
    DELAX GEO-RISK models geopolitical risk as a CROSS-ASSET layer — equities, FX,
    credit, shipping, defense, commodities. Oil is ONE transmission channel among
    several, never the identity of the platform. HORMUZ is an instance, not the thesis.
+
+   v4.0 PROVES THAT. The second structure — TAIWAN — declares NO OIL CHANNEL AT ALL.
+   Same engine, same Exposure Desk, same score. Its channels are advanced-chip supply,
+   the electronics supply chain, container shipping, growth, Asian FX and defense.
+   If the platform still works with the oil channel removed entirely, the cross-asset
+   claim is structural rather than rhetorical.
+
+   ────────────────────────────────────────────────────────────────────────────
+   HONESTY TIERS  (meta.calibration) — the tier is a first-class product feature
+   ────────────────────────────────────────────────────────────────────────────
+     'empirical'  Betas FITTED to the structure's own event, which actually happened.
+                  Only HORMUZ has earned this.
+     'spliced'    Betas fitted from proxy events for the same mechanism. (Unused.)
+     'unpriced'   Betas are ANALYTICAL — derived from revenue exposure and supply-share
+                  reasoning, NOT fitted to any market response, BECAUSE THE MARKET HAS
+                  NEVER PRICED THE EVENT. TAIWAN is here, and the reason is evidence,
+                  not laziness. See TAIWAN.pricingEvidence.
+     'draft'      Unexamined first-pass betas. Nothing ships at this tier.
+
+   A structure NEVER inherits another's tier. The tier must be visible in the UI.
 
    ────────────────────────────────────────────────────────────────────────────
    v3.1  —  RECALIBRATED AGAINST THE 2026 STRAIT OF HORMUZ WAR  (2026-07-11)
@@ -109,6 +129,44 @@ const CHANNEL_NORMALIZERS = {
   fx:       (emDepPts) => clamp(Math.abs(emDepPts) / 25),         // −25% EM basket = max
   defense:  (extraB)   => clamp(extraB / 1000),                   // +$1T extra = max
   food:     (pctRise)  => clamp(pctRise / 50),                    // +50% FAO = max
+
+  /* ── TAIWAN channels (v4.0). No oil anywhere in this block — by design. ── */
+  // Share of the world's ADVANCED (≤7nm) wafer capacity taken offline. Taiwan holds
+  // ~90% of it; 100 = the leading edge globally, including regional spillover.
+  semiconductors: (pctAdvLost) => clamp(pctAdvLost / 100),
+  // Lagging-edge / component shortfall. Span 70 covers Bloomberg's 62% war-case estimate.
+  tech_supply:    (pctShort)   => clamp(pctShort / 70),
+};
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PER-STRUCTURE NORMALIZER OVERRIDES  (v4.0)
+   ────────────────────────────────────────────────────────────────────────────
+   A single global span cannot serve every structure. HORMUZ's central case is
+   −0.7pts of global GDP; a Taiwan invasion is −9.6pts (Bloomberg Economics), with
+   a −14% tail. Against the default gdp span of 5, EVERY Taiwan scenario past a
+   blockade clamps to stress 1.0 — the model literally cannot tell a blockade from
+   an invasion.
+
+   Widening the span GLOBALLY was the obvious fix and it is the wrong one: it would
+   force a rescale of HORMUZ's betas, and those are the only betas on this platform
+   that were actually MEASURED. Rescaling a measurement to accommodate an estimate is
+   backwards. So spans are declared PER STRUCTURE, and HORMUZ is left untouched.
+
+   This is also the more honest model. "Stress 1.0" means "a severe tail FOR THIS
+   STRUCTURE". A −5% global GDP hit IS the tail of an oil war. It is the MIDDLE of a
+   Taiwan war. Betas were never comparable across structures; now the scales aren't
+   pretending to be either.
+   ════════════════════════════════════════════════════════════════════════════ */
+const STRUCTURE_NORMALIZERS = {
+  'taiwan-strait': {
+    // Bloomberg Economics: blockade −5.0% world GDP; war −9.6% (2026) / −10.2% (2024);
+    // −14% if Taiwanese chips prove wholly unreplaceable. Span 15 keeps headroom above
+    // the worst published estimate instead of clamping at it.
+    gdp: (lossPts) => clamp(Math.abs(lossPts) / 15),
+    // TWD/regional Asian FX. A wider span than HORMUZ's EM basket: Bloomberg has Korea
+    // at −23.3% and Japan −13.5% of GDP in the war case — this is not an EM wobble.
+    fx:  (depPts)  => clamp(Math.abs(depPts) / 40),
+  },
 };
 function clamp(x, lo = 0, hi = 1) { return Math.max(lo, Math.min(hi, x)); }
 
@@ -310,6 +368,301 @@ const RISK_STRUCTURES = {
     liveBindings: { primary: 'brent', secondary: ['wti', 'bdi'] },
   },
 
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     STRUCTURE 2 — TAIWAN STRAIT
+     Authored 2026-07-11. calibration: 'unpriced'.
+     NOTE: declares NO OIL CHANNEL. Same engine, same score. That is the point.
+     ══════════════════════════════════════════════════════════════════════════ */
+  'taiwan-strait': {
+    id: 'taiwan-strait',
+    meta: {
+      name:    'Taiwan Strait / Semiconductor Chokepoint',
+      short:   'Taiwan',
+      type:    'chokepoint',
+      region:  'East Asia',
+      status:  'active',
+      coords:  { lat: 24.00, lng: 119.50 },
+      flow:    '~90% of the world\'s advanced (≤7nm) chip capacity; a major container artery',
+      context: 'Taiwan manufactures the overwhelming majority of the world\'s leading-edge ' +
+               'silicon. TSMC alone reported 74% of Q1-2026 wafer revenue from 7nm and below, ' +
+               'and guided to 2026 revenue growth above 30%. Nothing substitutes for it inside ' +
+               'a five-year horizon. Coercion is already running: PLA median-line crossings, ' +
+               'China Coast Guard patrols around Kinmen and Pratas, and on 29-30 Dec 2025 the ' +
+               'sharpest episode in decades — 100+ aircraft, 90 crossing the median line, and ' +
+               'rockets fired from Fujian landing inside Taiwan\'s 24nm contiguous zone. No ' +
+               'blockade or quarantine has occurred. Chip supply has never been geopolitically ' +
+               'interrupted. That is precisely the problem below.',
+
+      modelVersion:    '1.0',
+      modelDate:       '2026-07-11',
+      calibration:     'unpriced',        // ← NOT 'empirical'. Read pricingEvidence.
+      calibrationDate:  null,
+      calibrationBasis: 'NONE. Betas are ANALYTICAL — derived from revenue exposure and ' +
+                        'supply-share reasoning, not fitted to any observed market response. ' +
+                        'Five candidate analogues were tested and ALL FAILED to yield a usable ' +
+                        'signal. See pricingEvidence.',
+    },
+
+    /* ════════════════════════════════════════════════════════════════════════
+       PRICING EVIDENCE — why this structure is 'unpriced', with receipts.
+       This is not a caveat. It is the structure's central claim.
+       ════════════════════════════════════════════════════════════════════════ */
+    pricingEvidence: {
+      headline: 'The market has never priced a Taiwan supply cut. The most severe military ' +
+                'escalation in decades sent TSMC UP 20% against the market.',
+      finding:  'Five analogues were tested for a Taiwan risk premium. Four produced no signal ' +
+                'or the WRONG signal. The AI cycle dominates semiconductor pricing so completely ' +
+                'that geopolitical escalation is not merely muted — it is inverted.',
+      tests: [
+        { event: 'PLA escalation, 29 Dec 2025 – 20 Feb 2026',
+          expected: 'Foundry and Taiwan equity should fall on a severe escalation.',
+          observed: 'Foundry +20.6% vs market (+8.5% vs its OWN sector, SMH). Semi equipment ' +
+                    '+31.8%. Taiwan equity +5.7%. Every leg went UP.',
+          verdict:  'INVERTED. TSMC was guiding +30% revenue growth; the market priced AI demand ' +
+                    'and ignored the rockets. Window deliberately closed 20 Feb — eight days ' +
+                    'before the Iran war would have contaminated it.' },
+        { event: 'Pelosi visit, Aug 2022',
+          expected: 'A Taiwan-risk repricing.',
+          observed: 'Foundry −8.3%, Taiwan equity −6.5%, China equity −13.5%, container shipping −17.9%.',
+          verdict:  'THE ONLY COHERENT FEAR SIGNAL EVER RECORDED — and it is small. One event, ' +
+                    'single-digit magnitude, from a diplomatic visit. It cannot be extrapolated ' +
+                    'to a blockade without inventing the multiplier.' },
+        { event: 'Hualien earthquake, Apr 2024',
+          expected: 'Physical damage to TSMC fabs should hit foundry.',
+          observed: 'Foundry +1.8% vs market.',
+          verdict:  'NON-EVENT. Fabs recovered in days. Physical disruption at this scale does ' +
+                    'not transmit to price.' },
+        { event: 'Global chip shortage, 2021',
+          expected: 'Real chip scarcity should crush chip-consuming sectors.',
+          observed: 'Autos +23.2% vs market — the reopening rally swamped the shortage entirely.',
+          verdict:  'NO SIGNAL. The only period chips were genuinely scarce, and it is invisible ' +
+                    'in prices.' },
+        { event: 'US export controls, Oct 2022',
+          expected: 'A supply/policy shock to the chip complex.',
+          observed: 'Foundry −1.1%. China equity −10.8%.',
+          verdict:  'HIT CHINA, NOT TAIWAN. A policy shock, not a conflict shock.' },
+      ],
+      driverFailure: 'The semiconductor PPI (FRED PCU334413334413) sat at 30.0–30.2 straight ' +
+                     'through the 2021 shortage. It is hedonically adjusted and registers scarcity ' +
+                     'as nothing. There is no usable price driver for the supply channel.',
+      implication:  'These betas are what a blockade WOULD cost, derived from where revenue ' +
+                    'actually comes from. They are NOT what the market currently thinks it would ' +
+                    'cost — because the market is not thinking about it at all. Treat the gap as ' +
+                    'the thesis, not as an error bar.',
+      anchor:       'The scenario GDP and chip-loss figures are NOT ours. They are Bloomberg ' +
+                    'Economics: blockade −5.0% of world GDP, war −9.6% ($10.6T) in the first year, ' +
+                    'lagging-edge output −35% / −62%, Taiwan −12.2% / −40%, China −8.9% / −16.7%. ' +
+                    'Sector betas are then set so the model reproduces outcomes consistent with ' +
+                    'those figures. So the betas are unfitted — but they are not unmoored.',
+      correction:   'Bloomberg overturned one of our own calls. Container shipping was modelled as ' +
+                    'a WINNER by analogy to the Red Sea, where rerouting spiked rates. Bloomberg has ' +
+                    'COSCO revenue down 63-68% and HMM down 38-43%. The difference: in the Red Sea ' +
+                    'the cargo still existed and merely travelled further. In a Taiwan blockade the ' +
+                    'cargo itself disappears. The beta was flipped.',
+    },
+
+    /* NO OIL. The cross-asset claim, made structural. */
+    channels: ['semiconductors', 'tech_supply', 'shipping', 'gdp', 'fx', 'defense'],
+
+    /* SCENARIOS — GDP and chip-loss figures ANCHORED TO BLOOMBERG ECONOMICS
+       ("The $10 Trillion Fight", Feb 2026; and the Jan 2024 two-scenario study).
+       Probabilities are DELAX judgment. Everything else below is cited. */
+    scenarios: [
+      {
+        id: 'optimistic', label: 'Gray-Zone Pressure', severity: 1, probability: 0.60,
+        desc: 'The status quo, and the base case: ADIZ incursions, Coast Guard patrols, periodic ' +
+              'live-fire. Coercion without interruption. PLA sorties have actually DECLINED since ' +
+              'the start of 2026 from their post-2024 peak. Chips keep shipping. Nothing breaks.',
+        raw: { semiconductors: 2, tech_supply: 2, shipping: 8, gdp: -0.1, fx: -2, defense: 180 },
+        durationMonths: [12, 60],
+      },
+      {
+        id: 'baseline', label: 'Quarantine / Blockade', severity: 4, probability: 0.28,
+        desc: 'A year-long PLA blockade or "customs inspection" regime. Bloomberg Economics models ' +
+              'this at −5.0% of WORLD GDP in the first year (Taiwan −12.2%, China −8.9%, US −3.3%). ' +
+              'Critically, the world loses access to ALL of Taiwan\'s chips — the smaller hit vs. war ' +
+              'comes from the OTHER shocks being scaled down, not from the chips coming through. ' +
+              'Lagging-edge sectors (autos, electronics) lose ~35% of output.',
+        raw: { semiconductors: 90, tech_supply: 35, shipping: 220, gdp: -5.0, fx: -12, defense: 600 },
+        durationMonths: [6, 24],
+      },
+      {
+        id: 'pessimistic', label: 'Invasion / Fab Denial', severity: 5, probability: 0.12,
+        desc: 'Kinetic conflict drawing in the US. Bloomberg Economics: −9.6% of world GDP ($10.6T) in ' +
+              'the FIRST YEAR — Taiwan −40%, China −16.7%, Korea −23.3%, Japan −13.5%, US −6.7%. ' +
+              'Lagging-edge output falls ~62% as Chinese, Japanese and Korean supply is lost too. If ' +
+              'Taiwanese chips prove wholly unreplaceable, the global hit rises to −14%.',
+        raw: { semiconductors: 100, tech_supply: 62, shipping: 420, gdp: -9.6, fx: -30, defense: 1000 },
+        durationMonths: [12, 120],
+      },
+    ],
+
+    timeline: {
+      start: '2026-07', end: '2031-12',
+      labels: ['Q3 26','Q4 26','Q1 27','Q2 27','Q3 27','Q4 27','H1 28','H2 28','H1 29','H2 29','2030','2031'],
+      /* Advanced (≤7nm) wafer capacity OFFLINE, % of world total. This is the Taiwan
+         structure's signature series — the analogue of HORMUZ's oil path, and it is
+         deliberately NOT a price. Nothing here is measured; it is all scenario logic. */
+      semiCapacityOffline: {
+        optimistic:  [ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+        baseline:    [ 0, 0,90,90,80,68,55,42,32,24,18,14],   // ALL Taiwan capacity, decaying as substitution builds
+        pessimistic: [ 0, 0,100,100,98,95,90,84,76,66,56,46], // + regional spillover; EUV cannot be improvised
+      },
+      preConflictSemi: 2,   // gray-zone friction floor
+    },
+
+    exposure: {
+      /* ══════════════════════════════════════════════════════════════════════
+         ANALYTICAL BETAS — NOT FITTED. Every line states its REASONING, because
+         reasoning is all there is. If you disagree with a number, you are
+         disagreeing with an argument, not with a measurement. That is the honest
+         position and it is on the face of the product.
+         ══════════════════════════════════════════════════════════════════════ */
+      sectors: {
+        /* Anchored so the LINEAR model lands on Bloomberg-consistent outcomes.
+           Shown per line: → blockade% / invasion% (the model's own output).           */
+
+        // ── The epicentre ──
+        foundry:            { semiconductors: -0.65, fx: -0.22, gdp: -0.10 },   // → −68% / −88%
+        // TSM, UMC. A blockade takes the revenue to zero — the asset IS the chokepoint.
+        // Bloomberg: Taiwan GDP −12.2% (blockade) / −40% (war). Equity moves further than GDP.
+
+        fabless:            { semiconductors: -0.60, gdp: -0.15 },              // → −59% / −70%
+        // NVDA, AMD, AVGO, QCOM. THE MOST UNDER-APPRECIATED EXPOSURE IN THE MODEL.
+        // They own no fabs. A cutoff is not a margin hit — they cannot make the product.
+        // Bloomberg puts the combined market cap of TSMC's top 10 customers near $14T.
+
+        semi_equipment:     { semiconductors: -0.45, gdp: -0.20 },              // → −47% / −58%
+        // ASML, LRCX, AMAT, KLAC. TSMC is the anchor customer; a blockade freezes the order
+        // book. Cushioned somewhat by the US/Japan fab buildout that a crisis would accelerate.
+
+        taiwan_equity:      { semiconductors: -0.48, fx: -0.32, gdp: -0.25 },   // → −61% / −88%
+        // EWT. Equity and currency hit at once. Bloomberg: Taiwan GDP −40% in the war case.
+
+        downstream_tech:    { tech_supply: -0.40, gdp: -0.20, semiconductors: -0.12 }, // → −38% / −60%
+        // AAPL, MSFT, DELL. Bloomberg's phrase for Taiwan's high-end chips is the
+        // irreplaceable "golden screw": laptop, tablet and smartphone lines simply stall.
+
+        china_equity:       { gdp: -0.45, fx: -0.25, semiconductors: -0.12 },   // → −33% / −60%
+        // FXI, MCHI. The aggressor is NOT a winner. Bloomberg has China taking a HEAVIER
+        // hit than the US in both scenarios: −8.9% (blockade), −16.7% (war).
+
+        // ── Winners, and why ──
+        memory_idm:         { semiconductors: +0.50, gdp: -0.30 },              // → +35% / +31%
+        // INTC, MU. THE STANDOUT CALL. They own fabs OUTSIDE Taiwan (US, Ireland, Israel,
+        // Japan). If Taiwan's leading edge goes dark, non-Taiwanese capacity is the scarcest
+        // asset on earth. NOTE the shape: invasion scores WORSE than blockade, because the
+        // global demand collapse starts to outrun the scarcity premium. That is the model
+        // working, not a bug.
+
+        defense:            { defense: +0.70, gdp: -0.20 },                     // → +35% / +57%
+        utilities:          { gdp: +0.45 },                                     // → +15% / +29%
+        // The defensive bid. The ONLY Taiwan beta with empirical support: HORMUZ MEASURED
+        // utilities at +10.1% excess in the 2026 war.
+        gold_safehaven:     { gdp: +0.30, fx: +0.15 },                          // → +15% / +31%
+        // Deliberately modest: gold delivered just +0.9% in the actual 2026 Hormuz war.
+        // The haven bid is weaker than folklore, and we have the receipt.
+
+        korea_japan:        { semiconductors: +0.25, gdp: -0.65, fx: -0.22 },   // → −6% / −33%
+        // EWY, EWJ. Samsung and SK Hynix are the only credible substitute capacity — but
+        // Bloomberg has Korea at −23.3% and Japan −13.5% of GDP in the war case. The
+        // substitution bid roughly offsets in a blockade and is buried in a war.
+
+        // ── Casualties via the supply chain ──
+        autos:              { tech_supply: -0.45, gdp: -0.25 },                 // → −31% / −56%
+        // Bloomberg quantifies exactly this: lagging-edge output −35% (blockade) / −62% (war).
+
+        container_shipping: { shipping: +0.25, gdp: -0.60 },                    // → −9% / −17%
+        // ⚑ CORRECTED BY THE SOURCE. This was modelled as a WINNER (+0.60 shipping) on the
+        // Red Sea analogy — rerouting spikes rates. Bloomberg says otherwise: COSCO revenue
+        // −63% to −68%, HMM −38% to −43%. The distinction matters: in the Red Sea the CARGO
+        // still existed and merely travelled further. In a Taiwan blockade THE CARGO ITSELF
+        // DISAPPEARS. Rates cannot save a carrier with nothing to carry.
+
+        broad_market:       { gdp: -0.25, tech_supply: -0.10, semiconductors: -0.22 }, // → −33% / −47%
+        // ⚠ THE SHARPEST CONTRAST WITH HORMUZ, where broad_market was ~zero — a regional war
+        // is not an S&P event. HERE IT IS. Semis and the tech complex ARE the index, and
+        // Bloomberg is explicit that the biggest hit in every scenario comes from the missing
+        // semiconductors. Taiwan is the geopolitical risk that reaches the median portfolio.
+
+        // ── Global catalog sectors: defined so unmapped holdings still score ──
+        semiconductors:     { semiconductors: -0.55, gdp: -0.15 },
+        big_tech:           { tech_supply: -0.40, gdp: -0.20, semiconductors: -0.12 },
+        em_equity:          { gdp: -0.50, fx: -0.30 },
+        em_sovereign:       { fx: -0.30, gdp: -0.35 },
+        financials:         { gdp: -0.45, fx: -0.20 },
+        luxury_consumer:    { gdp: -0.60 },                    // China demand collapse
+        aviation:           { gdp: -0.55 },                    // demand destruction, not fuel
+        energy_producers:   { gdp: -0.25 },                    // NO oil channel in this structure
+        gulf_producers:     { gdp: -0.20 },
+        lng:                { gdp: -0.20 },
+        shipping_tankers:   { shipping: +0.20, gdp: -0.45 },   // same trade-collapse logic as containers
+        reconstruction:     { defense: +0.40, gdp: -0.25 },
+        agriculture_food:   { gdp: -0.20 },
+      },
+
+      /* Structure-specific taxonomy — remaps tickers into TAIWAN's sector names.
+         Without this, TSM would resolve to the global 'semiconductors' tag and score
+         against a near-zero HORMUZ beta instead of being the epicentre. */
+      sectorMap: {
+        TSM:'foundry', UMC:'foundry',
+        NVDA:'fabless', AMD:'fabless', AVGO:'fabless', QCOM:'fabless', TXN:'fabless',
+        ASML:'semi_equipment', LRCX:'semi_equipment', AMAT:'semi_equipment', KLAC:'semi_equipment',
+        INTC:'memory_idm', MU:'memory_idm',
+        EWT:'taiwan_equity',
+        FXI:'china_equity', MCHI:'china_equity',
+        EWY:'korea_japan', EWJ:'korea_japan',
+        AAPL:'downstream_tech', MSFT:'downstream_tech', DELL:'downstream_tech',
+        TM:'autos', GM:'autos', F:'autos', TSLA:'autos',
+        ZIM:'container_shipping',
+        SMH:'semiconductors',
+      },
+
+      tickers: {
+        // NVDA — the purest expression of the fabless argument: no fabs, essentially the
+        // entire leading edge fabricated in Taiwan, and the largest single weight in the
+        // index most retail portfolios actually hold.  → −66% / −78%
+        NVDA: { semiconductors: -0.68, gdp: -0.15 },
+        // INTC — the sharpest contrarian call on the platform. Owns fabs, outside Taiwan.
+        // The much-derided fab strategy becomes a strategic monopoly.  → +46% / +43%
+        INTC: { semiconductors: +0.62, gdp: -0.30 },
+      },
+    },
+
+    narratives: [
+      { tone: 'red', title: 'The Unpriced Risk', points: [
+        'The Dec 2025 escalation sent TSMC UP 20% against the market',
+        'The AI cycle is drowning out geopolitical signal entirely',
+        'No blockade has ever occurred — so no blockade has ever been priced',
+        'The gap between exposure and pricing IS the trade' ] },
+      { tone: 'amber', title: 'No Second Source', points: [
+        'Taiwan holds ~90% of ≤7nm capacity; TSMC took 74% of Q1-26 wafer revenue from it',
+        'Fabless designers (NVDA, AMD, AVGO) own no fabs at all',
+        'US and Japanese fab buildouts are 3–5 years from mattering',
+        'EUV-class capacity cannot be improvised' ] },
+      { tone: 'green', title: 'Who Actually Wins', points: [
+        'Intel and Micron: fabs OUTSIDE Taiwan become a strategic monopoly',
+        'Samsung / SK Hynix: the only credible substitute at the leading edge',
+        'Container shipping: rerouting spikes rates (the tanker trade, different cargo)',
+        'Defense: Indo-Pacific rearmament at scale' ] },
+      { tone: 'amber', title: 'Why This Reaches Your Portfolio', points: [
+        'HORMUZ barely moved the S&P — a regional war is not an index event',
+        'Taiwan IS an index event: semis and big tech ARE the index',
+        'The median retail portfolio is long this risk without knowing it' ] },
+    ],
+
+    precedents: [
+      { event: 'PLA escalation, Dec 2025',   note: '▸ TESTED. Foundry +20.6% vs market. The signal is INVERTED — see pricingEvidence.' },
+      { event: 'Pelosi visit, Aug 2022',     note: '▸ TESTED. Foundry −8.3%, Taiwan −6.5%, China −13.5%. The only coherent fear signal ever recorded, and it is small.' },
+      { event: 'Hualien earthquake, Apr 2024', note: '▸ TESTED. Foundry +1.8%. Physical fab damage was a non-event.' },
+      { event: 'Global chip shortage, 2021', note: '▸ TESTED. The only real chip scarcity on record — invisible in prices.' },
+      { event: '2026 Hormuz War',            note: 'The counter-example: an event that DID happen, and could therefore be calibrated. Taiwan cannot.' },
+    ],
+
+    liveBindings: { primary: 'smh', secondary: ['tsm', 'ewt'] },
+  },
+
   /* ── Future structures slot in here as pure data, e.g.: ──
   'taiwan-strait': {
     id: 'taiwan-strait',
@@ -320,6 +673,10 @@ const RISK_STRUCTURES = {
     exposure: { sectors: { tech: { semiconductors: -0.9 }, defense: { conflict: +0.7 }, ... } },
     ...
   },
+  v4.0 shipped TAIWAN. A THIRD structure (Red Sea/Suez — which, unlike Taiwan, has a real
+  calibratable event) needs only: a new object here, its channels, its normalizers, its
+  sectorMap, and betas for the global catalog sectors. ZERO engine changes.
+
   NOTE: a new structure ships with calibration:'draft' until fitted against its OWN
   analogues. Do not let it inherit HORMUZ's 'empirical' badge — the honesty tiering IS
   the product. And learn HORMUZ's lesson: check whether the event has already happened
@@ -328,12 +685,16 @@ const RISK_STRUCTURES = {
   */
 };
 
-/* Compute each scenario's normalized `stress` vector from its `raw` values. */
-for (const s of RISK_STRUCTURES['hormuz-iran'].scenarios) {
-  s.stress = {};
-  for (const ch of RISK_STRUCTURES['hormuz-iran'].channels) {
-    const norm = CHANNEL_NORMALIZERS[ch];
-    s.stress[ch] = norm ? +norm(s.raw[ch]).toFixed(3) : 0;
+/* Compute each scenario's normalized `stress` vector from its `raw` values.
+   v4.0: loops EVERY structure — adding a third requires no change here. */
+for (const structure of Object.values(RISK_STRUCTURES)) {
+  const overrides = STRUCTURE_NORMALIZERS[structure.id] || {};
+  for (const s of structure.scenarios) {
+    s.stress = {};
+    for (const ch of structure.channels) {
+      const norm = overrides[ch] || CHANNEL_NORMALIZERS[ch];   // structure span wins
+      s.stress[ch] = norm ? +norm(s.raw[ch]).toFixed(3) : 0;
+    }
   }
 }
 
@@ -393,6 +754,33 @@ const UNIVERSE = [
   // these two are scored as COMMODITY trackers, not safe havens)
   { sym: 'DBC',   sector: 'gold_safehaven',    kind: 'etf' },
   { sym: 'GSG',   sector: 'gold_safehaven',    kind: 'etf' },
+
+  /* ══ TAIWAN structure bellwethers (v4.0) ══
+     `sector` here is the GLOBAL catalog tag. The TAIWAN structure remaps these into its
+     own taxonomy via exposure.sectorMap (TSM → foundry, NVDA → fabless, INTC → memory_idm…).
+     Snapshot cost: UNIVERSE goes 34 → 55 quotes/day. Twelve Data free tier is 800/day. */
+  { sym: 'TSM',   sector: 'semiconductors' },
+  { sym: 'UMC',   sector: 'semiconductors' },
+  { sym: 'SMH',   sector: 'semiconductors',    kind: 'etf' },
+  { sym: 'NVDA',  sector: 'semiconductors' },
+  { sym: 'AMD',   sector: 'semiconductors' },
+  { sym: 'AVGO',  sector: 'semiconductors' },
+  { sym: 'QCOM',  sector: 'semiconductors' },
+  { sym: 'TXN',   sector: 'semiconductors' },
+  { sym: 'ASML',  sector: 'semiconductors' },
+  { sym: 'LRCX',  sector: 'semiconductors' },
+  { sym: 'AMAT',  sector: 'semiconductors' },
+  { sym: 'KLAC',  sector: 'semiconductors' },
+  { sym: 'INTC',  sector: 'semiconductors' },
+  { sym: 'MU',    sector: 'semiconductors' },
+  { sym: 'EWT',   sector: 'em_equity',         kind: 'etf' },   // Taiwan
+  { sym: 'FXI',   sector: 'em_equity',         kind: 'etf' },   // China large-cap
+  { sym: 'MCHI',  sector: 'em_equity',         kind: 'etf' },   // China broad
+  { sym: 'EWY',   sector: 'em_equity',         kind: 'etf' },   // Korea
+  { sym: 'EWJ',   sector: 'em_equity',         kind: 'etf' },   // Japan
+  { sym: 'DELL',  sector: 'big_tech' },
+  { sym: 'TM',    sector: 'autos' },
+  { sym: 'ZIM',   sector: 'shipping_tankers' },                 // container, remapped by TAIWAN
 ];
 
 /* Fast lookup: ticker → sector. Out-of-universe holdings get classified once
@@ -506,6 +894,21 @@ const CATALOG = [
   { sym: 'VTI', sector: 'broad_market' },
   { sym: 'KO', sector: 'broad_market' },
   { sym: 'T', sector: 'broad_market' },
+  // ══ added v4.0 for the TAIWAN structure ══
+  { sym: 'UMC', sector: 'semiconductors' },
+  { sym: 'AVGO', sector: 'semiconductors' },
+  { sym: 'QCOM', sector: 'semiconductors' },
+  { sym: 'TXN', sector: 'semiconductors' },
+  { sym: 'LRCX', sector: 'semiconductors' },
+  { sym: 'AMAT', sector: 'semiconductors' },
+  { sym: 'KLAC', sector: 'semiconductors' },
+  { sym: 'EWT', sector: 'em_equity' },
+  { sym: 'MCHI', sector: 'em_equity' },
+  { sym: 'EWY', sector: 'em_equity' },
+  { sym: 'EWJ', sector: 'em_equity' },
+  { sym: 'DELL', sector: 'big_tech' },
+  { sym: 'TM', sector: 'autos' },
+  { sym: 'ZIM', sector: 'shipping_tankers' },
 ];
 
 const SYM_TO_SECTOR = CATALOG.reduce((m, u) => (m[u.sym] = u.sector, m), {});
@@ -535,20 +938,56 @@ function computeExposure(portfolio, structureId, scenarioId) {
 
   for (const h of portfolio) {
     const w = (h.weight || 0) / totalW;
-    const sector = h.sector || SYM_TO_SECTOR[h.sym] || 'broad_market';   // fallback
+    /* v4.0 — PER-STRUCTURE TAXONOMY.
+       A ticker's sector is structure-dependent: TSM is 'semiconductors' under HORMUZ
+       (a growth-cyclical, near-zero beta) but 'foundry' under TAIWAN (the epicentre).
+       Resolution order:
+         1. structure.exposure.sectorMap  — the structure's own taxonomy, wins
+         2. h.sector                      — explicit tag from the UI / custom row
+         3. SYM_TO_SECTOR                 — the global catalog default
+         4. 'broad_market'                — last resort
+       Every structure MUST also define betas for the global catalog sector names, so an
+       unmapped holding still scores instead of silently contributing zero. */
+    const sectorMap = structure.exposure.sectorMap || {};
+    const sector = sectorMap[h.sym] || h.sector || SYM_TO_SECTOR[h.sym] || 'broad_market';
     const betas = tickerOverrides[h.sym] || betasBySector[sector] || {};
 
-    let holdingImpact = 0;
+    let rawImpact = 0;
+    const rawByChannel = {};
     for (const ch of structure.channels) {
       const beta = betas[ch];
       if (!beta) continue;
       const contrib = beta * (scenario.stress[ch] || 0);   // sensitivity × stress
-      holdingImpact += contrib;
-      byChannel[ch] = (byChannel[ch] || 0) + w * contrib;
+      rawImpact += contrib;
+      rawByChannel[ch] = contrib;
     }
-    const weighted = w * holdingImpact;
-    score += weighted;
-    byHolding.push({ sym: h.sym, sector, weight: +w.toFixed(3), impact: +holdingImpact.toFixed(3) });
+
+    /* ── v4.0: LOSS FLOOR, NOT COMPRESSION ─────────────────────────────────
+       An earlier build ran the raw impact through tanh to tame the tail. That was
+       wrong: it silently moved every number away from the value it had been ANCHORED
+       to, and it perturbed HORMUZ's measured betas (+4.4% → +4.3%) for no reason.
+
+       Instead: TAIWAN's betas are anchored so the LINEAR model already lands on
+       Bloomberg-consistent values, and the only guard is the one fact that is not a
+       modelling choice — an equity holding cannot lose more than 100%. The floor sits
+       at −95% and almost never binds. HORMUZ never approaches it, so HORMUZ is exactly,
+       bit-for-bit unchanged.
+
+       What this does NOT do is make the tail precise. A Taiwan blockade is a
+       never-observed event and no model earns three significant figures out there.
+       Read the tier before the number.                                              */
+    const holdingImpact = clamp(rawImpact, -0.95, 2.0);
+    const shrink = rawImpact !== 0 ? holdingImpact / rawImpact : 1;
+    for (const ch in rawByChannel) {
+      byChannel[ch] = (byChannel[ch] || 0) + w * rawByChannel[ch] * shrink;
+    }
+
+    score += w * holdingImpact;
+    byHolding.push({
+      sym: h.sym, sector, weight: +w.toFixed(3),
+      impact: +holdingImpact.toFixed(3),
+      impactRaw: +rawImpact.toFixed(3),   // pre-floor, for transparency
+    });
   }
 
   // score is ~ −1..+1. Map to a display % move.
@@ -590,5 +1029,5 @@ if (typeof window !== 'undefined') {
   window.computeExposure = computeExposure;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { RISK_STRUCTURES, UNIVERSE, CATALOG, SYM_TO_SECTOR, CHANNEL_NORMALIZERS, computeExposure };
+  module.exports = { RISK_STRUCTURES, UNIVERSE, CATALOG, SYM_TO_SECTOR, CHANNEL_NORMALIZERS, STRUCTURE_NORMALIZERS, computeExposure };
 }
