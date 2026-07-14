@@ -20,6 +20,7 @@
 <!-- ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <!-- Live Data Controller — Yahoo Finance prices + RSS geopolitical news feed -->
+<script src="/risk-structures.js"></script>
 <script src="/dashboard-live.js" defer></script>
 <!-- Globe.gl — 3D interactive globe (spinnable, zoomable, country labels) -->
 <!-- globe.gl removed — Fix 2.1 -->
@@ -667,7 +668,7 @@ body.beginner-mode body.beginner-mode
 <header class="header" role="banner">
   <div class="header-brand">
     <div class="logo" aria-label="DELAX GEO-RISK">DELAX | GEO-RISK</div>
-    <div class="subtitle">Iran War · Global Economic Impact · 2026–2036</div>
+    <div class="subtitle" id="structSubtitle">Iran War · Global Economic Impact · 2026–2036</div>
   </div>
   <div class="header-meta">
     <!-- Exposure Desk CTA (Phase 1 — links to standalone page) -->
@@ -698,6 +699,21 @@ body.beginner-mode body.beginner-mode
     <button class="btn" id="settingsBtn" onclick="openSettingsDrawer()" aria-label="Settings">⚙ Settings</button>
   </div>
 </header>
+
+<!-- ═══ STRUCTURE SWITCHER (v4.0) ═══
+     Structures come from window.RISK_STRUCTURES — the single source of truth.
+     The tier badge is NOT decoration: it is the honesty system, on the face of
+     the product, before any number is read. -->
+<div id="structureBar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:8px 24px;background:#0a1322;border-bottom:1px solid var(--border-dim,#152238)">
+  <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--text-dim,#5a7299)">Risk Structure</span>
+  <div id="structureBtns" style="display:flex;gap:6px" role="tablist" aria-label="Risk structure"></div>
+  <span id="tierBadge" style="font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;
+    padding:3px 10px;border-radius:3px;border:1px solid;white-space:nowrap"></span>
+  <a href="/methodology" id="tierLink" style="font-family:var(--mono);font-size:.55rem;
+    color:var(--text-dim,#5a7299);text-decoration:underline">how tiers work</a>
+</div>
 
 <!-- SETTINGS DRAWER — houses controls moved from header (Fix 2.7) -->
 <div class="drawer-overlay" id="settingsOverlay" onclick="closeSettingsDrawer()"></div>
@@ -1930,7 +1946,15 @@ const KPI_MAP = {
   pessimistic: {oil:'$165',cpi:'+4.2%',gdp:'−2.2%',ship:'+400%',def:'+$780B',fao:'+30%',fx:'−12%',dur:'12–36M'},
 };
 /* Display names. Internal ids stay baseline/optimistic/pessimistic so nothing else breaks. */
-const SCENARIO_LABELS = { optimistic:'Normalisation', baseline:'Armed Truce', pessimistic:'Re-escalation' };
+/* v4.0: label lookup follows the ACTIVE structure (falls back to HORMUZ labels). */
+const SCENARIO_LABELS = new Proxy({}, { get: (_, k) => {
+  try {
+    const S = window.RISK_STRUCTURES && RISK_STRUCTURES[window.ACTIVE_STRUCTURE || 'hormuz-iran'];
+    const scn = S && S.scenarios.find(x => x.id === k);
+    if (scn) return scn.label;
+  } catch(e) {}
+  return ({ optimistic:'Normalisation', baseline:'Armed Truce', pessimistic:'Re-escalation' })[k];
+}});
 /* The war that already happened — measured monthly-average Brent (FRED DCOILBRENTEU).
    Not a model output. This is the spine of the v3.1 calibration. */
 const ACTUAL_WAR = {
@@ -2395,22 +2419,37 @@ function setScenario(s) {
     const el = document.getElementById(id); if (el) el.textContent = _lbl;
   });
   const _sd = document.getElementById('eqSideScenarioDesc');
-  if (_sd) _sd.textContent = {
+  const _descMap = (window.ACTIVE_STRUCTURE === 'taiwan-strait') ? {
+    baseline:    'Year-long blockade · world loses ALL Taiwan chips · −5.0% world GDP (Bloomberg)',
+    optimistic:  'Gray-zone pressure · coercion without interruption · chips keep shipping',
+    pessimistic: 'Invasion drawing in the US · −9.6% world GDP, $10.6T (Bloomberg) · tail −14%',
+  } : {
     baseline:    'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
     optimistic:  'MOU holds · mines cleared · premiums decay · Brent settles $70–78',
     pessimistic: 'Truce collapses · second closure from a worse base · Brent $150–180',
-  }[s] || '';
+  };
+  if (_sd) _sd.textContent = _descMap[s] || '';
   ['baseline','optimistic','pessimistic'].forEach(k=>{
     const b = document.getElementById('btn-'+k);
     if(!b) return;
     b.className = 'toggle-btn' + (k===s ? ' active-'+k : '');
     b.setAttribute('aria-pressed', k===s ? 'true' : 'false');
+    // v4.0: button text follows the active structure's scenario labels
+    if (window.RISK_STRUCTURES && window.ACTIVE_STRUCTURE) {
+      const scn = RISK_STRUCTURES[ACTIVE_STRUCTURE].scenarios.find(x=>x.id===k);
+      if (scn) b.textContent = scn.label;
+    }
   });
-  const kpi = KPI_MAP[s];
-  ['Oil','CPI','GDP','Ship','Def','FAO','FX','Dur'].forEach((k,i)=>{
-    const el = document.getElementById('kpi'+k);
-    if(el) el.textContent = Object.values(kpi)[i];
-  });
+  if (window.ACTIVE_STRUCTURE === 'taiwan-strait') {
+    // Taiwan tiles are a different IDENTITY, rebuilt wholesale from the structure object.
+    if (typeof renderTaiwanKPIs === 'function') renderTaiwanKPIs();
+  } else {
+    const kpi = KPI_MAP[s];
+    ['Oil','CPI','GDP','Ship','Def','FAO','FX','Dur'].forEach((k,i)=>{
+      const el = document.getElementById('kpi'+k);
+      if(el) el.textContent = Object.values(kpi)[i];
+    });
+  }
   // (Removed legacy live-spot override of kpiOil — per Hotfix A, the tile shows
   //  the MODEL PROJECTED PEAK for the scenario; live spot lives in the header
   //  pill and the tile subtitle. The override made the tile contradict its
@@ -3515,6 +3554,7 @@ function getLongTermData(sc) {
 
 /* ── NEAR-TERM OIL CHART (Chart 1) ── */
 function initOilChartNear() {
+  if (window.ACTIVE_STRUCTURE === 'taiwan-strait') { renderTaiwanCapacityChart('chartOilNear','near'); return; }
   const c = makeChart('chartOilNear'); if(!c) return;
   const labels = getNearTermLabels();
   const col = getColors();
@@ -3568,6 +3608,7 @@ function initOilChartNear() {
 
 /* ── LONG-TERM OIL CHART (Chart 2) ── */
 function initOilChartLong() {
+  if (window.ACTIVE_STRUCTURE === 'taiwan-strait') { renderTaiwanCapacityChart('chartOilLong','long'); return; }
   const c = makeChart('chartOilLong'); if(!c) return;
   const labels = getLongTermLabels();
   const col = getColors();
@@ -5197,5 +5238,205 @@ function switchTab(id, event) {
   window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
 </script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRUCTURE SWITCHER ENGINE (v4.0)
+   ───────────────────────────────────────────────────────────────────────────
+   ACTIVE_STRUCTURE drives an ASYMMETRIC page — approved design:
+     HORMUZ  : the existing page, untouched. Chronicle of the real war, Brent chart.
+     TAIWAN  : KPI tiles change IDENTITY (capacity offline, not oil); the signature
+               chart changes MEANING (% capacity, not $/bbl); the chronicle is
+               replaced by the PRICING EVIDENCE panel — because no war happened,
+               and we do not fake chronicles.
+   Everything Taiwan displays is DERIVED at runtime from window.RISK_STRUCTURES.
+   There is no second copy of the numbers in this file.
+   ═══════════════════════════════════════════════════════════════════════════ */
+window.ACTIVE_STRUCTURE = 'hormuz-iran';
+let _hormuzKpiHTML = null;        // snapshot for restore
+let _hormuzMonthlyLabel = null;
+
+const TIER_STYLE = {
+  empirical: { color:'#00e676', text:(s)=>'EMPIRICAL · fitted to the 2026 Hormuz war' },
+  unpriced:  { color:'#f5a623', text:(s)=>'UNPRICED · analytical — anchored to Bloomberg Economics. The market has never priced this event.' },
+  spliced:   { color:'#00d4ff', text:(s)=>'SPLICED · fitted from proxy mechanisms' },
+  draft:     { color:'#ff3d4a', text:(s)=>'DRAFT · unexamined' },
+};
+
+function buildStructureBar() {
+  const wrap = document.getElementById('structureBtns');
+  if (!wrap || !window.RISK_STRUCTURES) return;
+  wrap.innerHTML = Object.values(RISK_STRUCTURES).map(S => `
+    <button id="struct-${S.id}" role="tab" onclick="setStructure('${S.id}')"
+      style="font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+      padding:4px 14px;border-radius:3px;cursor:pointer;border:1px solid var(--border-dim,#152238);
+      background:transparent;color:var(--text-dim,#5a7299)">${S.meta.short}</button>`).join('');
+  styleStructureBtns();
+}
+function styleStructureBtns() {
+  Object.values(RISK_STRUCTURES).forEach(S => {
+    const b = document.getElementById('struct-'+S.id); if (!b) return;
+    const on = S.id === ACTIVE_STRUCTURE;
+    b.style.background = on ? 'rgba(0,212,255,.12)' : 'transparent';
+    b.style.color       = on ? 'var(--cyan,#00d4ff)' : 'var(--text-dim,#5a7299)';
+    b.style.borderColor = on ? 'var(--cyan,#00d4ff)' : 'var(--border-dim,#152238)';
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  const S = RISK_STRUCTURES[ACTIVE_STRUCTURE];
+  const t = TIER_STYLE[S.meta.calibration] || TIER_STYLE.draft;
+  const badge = document.getElementById('tierBadge');
+  if (badge) { badge.textContent = t.text(S); badge.style.color = t.color; badge.style.borderColor = t.color; }
+  const sub = document.getElementById('structSubtitle');
+  if (sub) sub.textContent = ACTIVE_STRUCTURE === 'hormuz-iran'
+    ? 'Iran War · Global Economic Impact · 2026–2036'
+    : 'Taiwan Strait · The Unpriced Semiconductor Chokepoint';
+}
+
+function setStructure(id) {
+  if (!RISK_STRUCTURES[id] || id === ACTIVE_STRUCTURE) return;
+  ACTIVE_STRUCTURE = id;
+  styleStructureBtns();
+  if (id === 'taiwan-strait') enterTaiwan(); else restoreHormuz();
+  // Re-render everything scenario-dependent through the existing pipeline:
+  setScenario(scenario);
+}
+
+/* ── TAIWAN MODE ─────────────────────────────────────────────────────────── */
+function enterTaiwan() {
+  const grid = document.querySelector('.kpi-grid');
+  if (grid && _hormuzKpiHTML === null) _hormuzKpiHTML = grid.innerHTML;
+  renderTaiwanKPIs();
+  // Chronicle → Pricing Evidence (no war happened; we do not fake chronicles)
+  const mon = document.getElementById('tab-monthly');
+  if (mon && !document.getElementById('taiwanEvidence')) {
+    _hormuzMonthlyLabel = mon.querySelector('.section-label')?.textContent || '';
+    const ev = document.createElement('div');
+    ev.id = 'taiwanEvidence';
+    mon.appendChild(ev);
+  }
+  toggleTaiwanPanels(true);
+  renderTaiwanEvidence();
+}
+function restoreHormuz() {
+  const grid = document.querySelector('.kpi-grid');
+  if (grid && _hormuzKpiHTML !== null) grid.innerHTML = _hormuzKpiHTML;
+  toggleTaiwanPanels(false);
+}
+function toggleTaiwanPanels(taiwan) {
+  const mon = document.getElementById('tab-monthly');
+  if (mon) {
+    const lbl = mon.querySelector('.section-label');
+    const grid = document.getElementById('monthlyGrid');
+    const exp  = mon.querySelector('.export-row');
+    const ev   = document.getElementById('taiwanEvidence');
+    if (grid) grid.style.display = taiwan ? 'none' : '';
+    if (exp)  exp.style.display  = taiwan ? 'none' : '';
+    if (lbl)  lbl.textContent    = taiwan ? 'Pricing Evidence — Why This Structure Is UNPRICED' : (_hormuzMonthlyLabel || 'Month-by-Month Economic Forecast — Year 1');
+    if (ev)   ev.style.display   = taiwan ? '' : 'none';
+  }
+}
+
+/* Taiwan KPI tiles — identity change, not relabel. All values derived live. */
+function renderTaiwanKPIs() {
+  const grid = document.querySelector('.kpi-grid'); if (!grid) return;
+  const S = RISK_STRUCTURES['taiwan-strait'];
+  const sc = S.scenarios.find(x => x.id === (customScenarioActive ? 'baseline' : scenario)) || S.scenarios[1];
+  const r = sc.raw;
+  const tile = (label, value, plain, delta, tone, prov) => `
+    <div class="kpi-card ${tone}">
+      <div class="kpi-label">${label}
+        <i class="info-icon" data-prov="${prov}">i</i></div>
+      <div class="kpi-value">${value}</div>
+      <div class="kpi-plain">${plain}</div>
+      <div class="kpi-delta">${delta}</div>
+    </div>`;
+  const P = 'Model v1.0 · UNPRICED tier · scenario figures anchored to Bloomberg Economics (Feb 2026)';
+  grid.innerHTML = [
+    tile('Advanced Chip Capacity Offline', r.semiconductors + '%',
+      sc.id==='optimistic' ? 'Gray-zone friction only. Chips keep shipping.' :
+      'Taiwan holds ~90% of ≤7nm capacity. In a blockade the world loses access to ALL of it — fabs intact but unreachable.',
+      'Pre-crisis: ~2% friction · ' + sc.label, r.semiconductors > 10 ? 'down' : 'up', P),
+    tile('Market Pricing Of This Risk', 'NONE',
+      'The Dec 2025 PLA escalation — the sharpest in decades — sent TSMC UP 20.6% vs the market. The AI cycle has drowned the signal entirely.',
+      'Five analogues tested · zero priced', 'down', 'See Pricing Evidence panel — this is the central finding of this structure'),
+    tile('World GDP (Year 1)', r.gdp + '%',
+      sc.id==='baseline' ? 'Bloomberg Economics: a year-long blockade costs −5.0% of world GDP.' :
+      sc.id==='pessimistic' ? 'Bloomberg Economics: war costs −9.6% ($10.6T) in year one — worse than Covid or 2008. Tail: −14%.' :
+      'Status quo. Coercion without interruption.',
+      'Anchor: Bloomberg Economics, Feb 2026', r.gdp < -1 ? 'down' : 'up', P),
+    tile('Lagging-Edge Chip Shortfall', r.tech_supply + '%',
+      'Autos and electronics output loss when mature-node supply is cut. Bloomberg: −35% in blockade, −62% in war.',
+      sc.label, r.tech_supply > 10 ? 'down' : 'up', P),
+    tile('Container Shipping Disruption', '+' + r.shipping + '%',
+      'The Strait carries over a fifth of global seaborne trade. In a blockade THE CARGO ITSELF DISAPPEARS — carriers lose, unlike the Red Sea.',
+      'Bloomberg: COSCO revenue −63–68% in war', 'down', P),
+    tile('TWD / Regional FX', r.fx + '%',
+      'Taiwan dollar and Asian FX under a ' + sc.label.toLowerCase() + '. Korea −23.3% and Japan −13.5% of GDP in the war case.',
+      sc.label, 'down', P),
+    tile('Defense Mobilisation', '+$' + r.defense + 'B',
+      'Indo-Pacific rearmament at scale.', sc.label, 'up', P),
+    tile('Duration', sc.durationMonths[0] + '–' + sc.durationMonths[1] + 'M',
+      sc.desc.split('.')[0] + '.', 'P = ' + Math.round(sc.probability*100) + '%', 'warn', P),
+  ].join('');
+}
+
+/* Pricing Evidence panel — the Taiwan structure's chronicle-replacement */
+function renderTaiwanEvidence() {
+  const el = document.getElementById('taiwanEvidence'); if (!el) return;
+  const E = RISK_STRUCTURES['taiwan-strait'].pricingEvidence;
+  el.innerHTML = `
+    <div style="border:1px solid #f5a62344;background:rgba(245,166,35,.05);padding:1rem 1.2rem;margin-bottom:1rem">
+      <div style="font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;color:#f5a623;margin-bottom:.5rem">THE FINDING</div>
+      <div style="font-size:1.05rem;font-weight:700;line-height:1.5;margin-bottom:.5rem">${E.headline}</div>
+      <div style="font-size:.8rem;color:var(--text-dim,#5a7299);line-height:1.6">${E.finding}</div>
+    </div>
+    ${E.tests.map(t => `
+      <article style="border:1px solid var(--border-dim,#152238);padding:.9rem 1.1rem;margin-bottom:.7rem;background:#0c1526">
+        <div style="font-family:var(--mono);font-size:.72rem;color:var(--cyan,#00d4ff);margin-bottom:.45rem">${t.event}</div>
+        <div style="font-size:.72rem;line-height:1.6;color:var(--text-dim,#5a7299)"><b style="color:var(--text-pri,#e8edf5)">Expected:</b> ${t.expected}</div>
+        <div style="font-size:.72rem;line-height:1.6;color:var(--text-dim,#5a7299)"><b style="color:var(--text-pri,#e8edf5)">Observed:</b> ${t.observed}</div>
+        <div style="font-size:.72rem;line-height:1.6;margin-top:.3rem"><b style="color:#f5a623">Verdict:</b> <span style="color:var(--text-pri,#e8edf5)">${t.verdict}</span></div>
+      </article>`).join('')}
+    <div style="font-size:.72rem;color:var(--text-dim,#5a7299);line-height:1.7;padding:.8rem 1.1rem;border-left:2px solid #f5a623;margin-top:.8rem">
+      ${E.anchor}<br><br>${E.implication}
+    </div>`;
+}
+
+/* Taiwan signature chart — % of advanced capacity offline (not $/bbl) */
+function renderTaiwanCapacityChart(chartId, horizon) {
+  const c = makeChart(chartId); if (!c) return;
+  const T = RISK_STRUCTURES['taiwan-strait'].timeline;
+  const col = getColors();
+  const n = horizon === 'near' ? 8 : T.labels.length;
+  const mk = (name, data, color, area, dash=false) => ({
+    name, type:'line', smooth:true, symbol:'none',
+    lineStyle:{color, width: dash?1.2:2.5, type: dash?'dashed':'solid'},
+    areaStyle: dash ? undefined : {color:{type:'linear',x:0,y:0,x2:0,y2:1,
+      colorStops:[{offset:0,color:area},{offset:1,color:'rgba(0,0,0,0)'}]}},
+    data: T.semiCapacityOffline[name.toLowerCase().split(' ')[0]] ?
+          T.semiCapacityOffline[name.toLowerCase().split(' ')[0]].slice(0,n) : data.slice(0,n),
+  });
+  const series = [];
+  const D = T.semiCapacityOffline;
+  if (scenario==='baseline') series.push(mk('Baseline', D.baseline, col.baseline, 'rgba(0,212,255,.18)'));
+  else if (scenario==='optimistic') { series.push(mk('Optimistic', D.optimistic, col.optimistic, 'rgba(0,230,118,.15)')); series.push(mk('Baseline', D.baseline, col.baseline,'',true)); }
+  else { series.push(mk('Pessimistic', D.pessimistic, col.pessimistic, 'rgba(255,61,74,.18)')); series.push(mk('Baseline', D.baseline, col.baseline,'',true)); }
+  c.setOption({...EC_BASE,
+    tooltip:{trigger:'axis',...TOOLTIP_STYLE,formatter:p=>{
+      let s=`<div style="font-size:10px;color:#5a7299;margin-bottom:4px">${p[0].axisValue}</div>`;
+      p.forEach(pp=>s+=`<div>${pp.marker}<b>${pp.seriesName}:</b> ${pp.value}% offline</div>`);return s;}},
+    legend:{data:series.map(s=>s.name),textStyle:{color:'#7a91b3',fontSize:9},bottom:0},
+    grid:{top:10,left:45,right:20,bottom:40},
+    xAxis:{type:'category',data:T.labels.slice(0,n),axisLine:{lineStyle:{color:'#1e3055'}},axisTick:{show:false},axisLabel:{color:'#3d5270',fontSize:8,rotate:15}},
+    yAxis:{type:'value',name:'% ADV. CAPACITY OFFLINE',max:100,nameTextStyle:{color:'#3d5270',fontSize:8},
+      axisLine:{lineStyle:{color:'#1e3055'}},splitLine:{lineStyle:{color:'#111d33'}},
+      axisLabel:{color:'#3d5270',fontSize:9,formatter:v=>v+'%'}},
+    series});
+  const descEl = document.getElementById(horizon==='near' ? 'oilNearTermDesc' : null);
+  if (descEl) descEl.textContent = '% of world ≤7nm wafer capacity offline · derived from risk-structures.js';
+}
+
+document.addEventListener('DOMContentLoaded', () => { buildStructureBar(); });
+</script>
 </body>
 </html>
