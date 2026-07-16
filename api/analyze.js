@@ -68,7 +68,23 @@ module.exports = async function handler(req, res) {
     shipping,
     defense,
     duration,
+    // v4.1: structure context sent by index.html (aiStructureContext()).
+    // Backward compatible: absent → Hormuz assumed (old clients).
+    structure = null,
   } = req.body || {};
+
+  /* ═══ v4.1 STRUCTURE CONTEXT ═══════════════════════════════════════════════
+     The platform has TWO risk structures. Every prompt below must narrate the
+     RIGHT one, with the RIGHT epistemic caveat:
+       hormuz-iran   : 'empirical' — betas FITTED to the actual 2026 war.
+       taiwan-strait : 'unpriced'  — betas ANALYTICAL, anchored to Bloomberg
+                       Economics. The market has NEVER priced this event. The AI
+                       must say so and must never present figures as market-derived.
+     Output format (all prose types) follows the product standard:
+       What changed → Why it matters to you → What to watch next.
+     Language is EXPOSURE-ORIENTED, never directive: we describe what a book is
+     exposed to; we do not issue buy/sell orders. ══════════════════════════════ */
+  const CTX = buildStructureContext(structure, scenario, oilPrice, cpi, gdp, liveDate);
 
   if (!type) {
     return res.status(400).json({ error: 'type is required: heatmap, kpi, newssummary, stockinsights, or agent' });
@@ -83,11 +99,7 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: 'query is required and must be at least 3 characters' });
     }
 
-    const scenLabel = {
-      baseline: 'Armed Truce (P=50%) — Iran retains leverage over Hormuz, Brent peaks ~$102',
-      optimistic: 'Normalisation (P=25%) — MOU holds, mines cleared, Brent settles $70–78',
-      pessimistic: 'Re-escalation (P=25%) — truce collapses, second Hormuz closure, Brent $150–180',
-    }[scenario] || `Scenario: ${scenario}`;
+    const scenLabel = CTX.scenLabel;
 
     const portfolioSummary = Array.isArray(portfolio) && portfolio.length
       ? portfolio.map(p => `${p.ticker || p.symbol}: ${p.shares || 0} shares @ $${p.cost || p.avgCost || 'N/A'}`).join('; ')
@@ -95,13 +107,10 @@ module.exports = async function handler(req, res) {
 
     const recentNews = (headlines || []).slice(0, 4).map((h, i) => `${i + 1}. ${h}`).join('\n') || 'No recent headlines';
 
-    const prompt = `You are the DELAX GEO-RISK Intelligence Agent — the sharpest geopolitical financial co-pilot an investor can have. You think like a senior PM at a multi-strategy hedge fund who lives and breathes oil, shipping, defense, and EM risk.
+    const prompt = `You are the DELAX GEO-RISK Intelligence Agent — the sharpest geopolitical financial co-pilot an investor can have. You think like a senior PM at a multi-strategy fund covering ${CTX.domain}.
 
-ACTIVE CONTEXT (live dashboard state):
-• Scenario: ${scenLabel}
-• Live WTI/Brent: $${oilPrice}/bbl (as of ${liveDate})
-• CPI Addition Yr1: ${cpi}
-• Global GDP Impact Yr1: ${gdp}
+ACTIVE RISK STRUCTURE: ${CTX.name}
+${CTX.contextBlock}
 • Shipping Index: ${shipping || 'N/A'}
 • Defense Spend Δ: ${defense || 'N/A'}
 • Est. Duration: ${duration || 'N/A'}
@@ -109,15 +118,17 @@ ACTIVE CONTEXT (live dashboard state):
 • Latest Headlines:
 ${recentNews}
 
+${CTX.honesty}
+
 USER QUERY: "${query.trim()}"
 
 INSTRUCTIONS:
-1. Answer the exact question the investor asked. Be direct, data-driven, and actionable.
+1. Answer the exact question the investor asked. Structure the answer as: what changed → why it matters to this investor → what to watch next.
 2. Reference the live context numbers above whenever relevant. Never invent figures.
-3. Give a clear investor takeaway: buy / hold / trim / hedge / avoid, with specific tickers when possible (XOM, CVX, LMT, RTX, GLD, CCJ, ZIM, etc.).
+3. Frame takeaways as EXPOSURE, never as orders: say which holdings or sectors are most exposed or most resilient under this structure (with tickers where natural), not "buy/sell". The investor decides; you illuminate.
 4. Keep total response under 220 words. Use short paragraphs or tight bullets if helpful.
 5. End with one concrete "Next watch" item (what number or event to monitor next).
-6. Tone: calm, precise, zero hype. You are not a news anchor — you are a portfolio tool.
+6. Tone: calm, precise, zero hype, plain English a first-time investor can follow. You are not a news anchor — you are a portfolio tool.
 
 Begin the answer immediately. No preamble.`;
 
@@ -134,27 +145,22 @@ Begin the answer immediately. No preamble.`;
   }
 
   if (type === 'heatmap') {
-    const scenDesc = {
-      baseline: `Baseline (P=50%): 24-month conflict, partial Hormuz disruption, Brent $${oilPrice}/bbl`,
-      optimistic: `Optimistic (P=22%): Ceasefire Month 10, Hormuz reopens, Brent $${oilPrice}/bbl`,
-      pessimistic: `Pessimistic (P=28%): Full Hormuz closure 6+ months, regional expansion, Brent $${oilPrice}/bbl`,
-    }[scenario] || `Scenario: ${scenario}, Brent $${oilPrice}/bbl`;
-
     const prompt = `You are DELAX GEO-RISK, a geopolitical economic analyst writing a narrative for an investor dashboard heatmap.
 
-ACTIVE SCENARIO: ${scenDesc}
-LIVE DATA: Brent $${oilPrice}/bbl | CPI add: ${cpi} | GDP: ${gdp} | Date: ${liveDate}
+ACTIVE RISK STRUCTURE: ${CTX.name}
+ACTIVE SCENARIO: ${CTX.scenLabel}
+${CTX.contextBlock}
 
 HEATMAP STRESS SCORES (0-10 scale, Year 1 → Year 10):
-Middle East: 9.1→1.7 | Africa: 6.8→1.1 | South Asia: 5.4→0.6
-Europe: 3.8→0.3 | East Asia: 2.8→0.2 | South America: 2.9→0.3
-North America: 2.1→0.2 | Oceania: 1.4→0.1
+${CTX.regionalStress}
+
+${CTX.honesty}
 
 Write exactly 3 paragraphs. No headers. No bullet points. Plain prose only.
 
-Paragraph 1 — REGIONAL EPICENTER: Which regions are hardest hit, their exact stress scores, and the specific reason under this scenario.
-Paragraph 2 — CASCADING EFFECTS: How high-stress regions create spillovers via food prices, energy supply, migration, and trade routes.
-Paragraph 3 — OUTLOOK AND INVESTOR SIGNAL: How stress evolves from Year 1 to Year 10, and one specific investor action with a ticker.
+Paragraph 1 — WHAT IS HAPPENING: Which regions are hardest hit, their exact stress scores, and the specific reason under this scenario.
+Paragraph 2 — WHY IT MATTERS: How high-stress regions create spillovers — ${CTX.spilloverChannels} — in terms a first-time investor can follow.
+Paragraph 3 — WHAT TO WATCH: How stress evolves from Year 1 to Year 10, which sector or ticker is most EXPOSED and which most RESILIENT under this structure. Describe exposure; do not issue buy/sell orders.
 
 55-70 words per paragraph. Data-driven. Use specific numbers. Begin immediately with Paragraph 1 — no intro line.`;
 
@@ -177,22 +183,25 @@ Paragraph 3 — OUTLOOK AND INVESTOR SIGNAL: How stress evolves from Year 1 to Y
       dur: { full: 'Estimated Conflict Duration', pre: 'N/A', drivers: 'Historical analogs Gulf War 7 months Russia-Ukraine 30 months, Iranian proxy network complexity, diplomatic channels' },
     }[kpiId] || { full: kpiLabel || kpiId, pre: 'N/A', drivers: 'Multiple geopolitical factors' };
 
-    const scenLabel = { baseline: 'Baseline P=50%', optimistic: 'Optimistic P=22%', pessimistic: 'Pessimistic P=28%' }[scenario] || 'Baseline';
     const prompt = `You are DELAX GEO-RISK explaining a market indicator to an investor who just clicked it on a financial dashboard.
 
+ACTIVE RISK STRUCTURE: ${CTX.name}
 INDICATOR: ${meta.full}
-CURRENT VALUE: ${kpiValue || 'N/A'} | PRE-CONFLICT BASELINE: ${meta.pre}
-SCENARIO: ${scenLabel} | Brent: $${oilPrice}/bbl | CPI: ${cpi} | GDP: ${gdp}
+CURRENT VALUE: ${kpiValue || 'N/A'} | PRE-CRISIS BASELINE: ${meta.pre}
+SCENARIO: ${CTX.scenLabel}
+${CTX.contextBlock}
 KEY DRIVERS: ${meta.drivers}
+
+${CTX.honesty}
 
 Write exactly 4 sections. Begin each with the label in bold followed by a colon. No other markdown or bullet points.
 
 **What it is:** One plain-English sentence that a retiree with no finance background can understand.
-**Why it is at ${kpiValue || 'this level'}:** 2 to 3 sentences explaining the specific conflict-driven forces under the ${scenario} scenario. Use exact figures.
-**Who feels it most:** 2 sentences naming specific countries or population groups and explaining why they are hit hardest.
-**Investor action:** One direct sentence recommending what to buy, avoid, or hedge, with at least one specific ticker or asset class.
+**Why it is at ${kpiValue || 'this level'}:** 2 to 3 sentences explaining the specific forces under the ${CTX.scenShort} scenario. Use exact figures.
+**Why it matters to you:** 2 sentences translating this into direct investor impact — portfolio, prices paid, or savings — for an ordinary person.
+**What to watch next:** One sentence naming which holdings or sectors are most EXPOSED or most RESILIENT to this indicator (a ticker or asset class is fine), plus the one number or event to monitor. Describe exposure; never instruct to buy or sell.
 
-Total 120 to 140 words. Be precise and actionable.`;
+Total 120 to 140 words. Be precise, plain-English, and calm.`;
 
     const result = await route(PROVIDERS, prompt, 400);
     if (result.error) return res.status(500).json({ error: result.error });
@@ -220,7 +229,7 @@ Total 120 to 140 words. Be precise and actionable.`;
 
     const prompt = `You are a Bloomberg terminal intelligence system for the DELAX GEO-RISK dashboard.
 
-SCENARIO: ${scenario} | Brent: $${oilPrice}/bbl | ${new Date().toISOString().slice(0, 10)}
+STRUCTURE: ${CTX.name} | SCENARIO: ${CTX.scenShort} | ${CTX.headline} | ${new Date().toISOString().slice(0, 10)}
 
 TOP HEADLINES:
 ${top5.map((h, i) => `${i + 1}. ${h}`).join('\n')}
@@ -258,13 +267,17 @@ Output the sentence only. No quotes. No explanation.`;
 
 STOCK: ${symbol} | Price: ${fmt(price, '$')} | Today: ${fmt(change, '', '%')}
 P/E: ${fmt(pe)} | Beta: ${fmt(beta)} | Sector: ${sector || 'general'}
-ACTIVE SCENARIO: ${String(scenario).toUpperCase()} | Brent: $${oilPrice}/bbl
+ACTIVE RISK STRUCTURE: ${CTX.name}
+ACTIVE SCENARIO: ${CTX.scenLabel}
+${CTX.contextBlock}
+
+${CTX.honesty}
 
 Write exactly 3 short paragraphs of plain prose. No markdown, no asterisks, no bullet points, no headers.
 
-Paragraph 1 — CONFLICT EXPOSURE: How the ${sector || 'stock\'s'} sector transmits the ${scenario} scenario to ${symbol} specifically (oil at $${oilPrice}/bbl, shipping, defense demand, or risk-off flows — whichever applies).
-Paragraph 2 — WHAT THE NUMBERS SAY: Interpret the figures provided above (price move, P/E, beta) in the context of this scenario. If a figure reads N/A, skip it — never invent a number.
-Paragraph 3 — POSITIONING: One concrete takeaway — hold, hedge, trim, or add — with the single most important thing to watch next.
+Paragraph 1 — WHAT CHANGED / EXPOSURE: How the ${sector || 'stock\'s'} sector transmits the ${CTX.scenShort} scenario to ${symbol} specifically (${CTX.transmission} — whichever applies).
+Paragraph 2 — WHY IT MATTERS: Interpret the figures provided above (price move, P/E, beta) in the context of this scenario, in plain English. If a figure reads N/A, skip it — never invent a number.
+Paragraph 3 — WHAT TO WATCH: Whether ${symbol} reads as EXPOSED or RESILIENT under this structure and the single most important number or event to monitor next. Describe exposure; do not issue a buy/hold/sell instruction.
 
 35-55 words per paragraph. Use ONLY the figures provided above; never invent data. Begin immediately with Paragraph 1 — no intro line.`;
 
@@ -285,10 +298,11 @@ Paragraph 3 — POSITIONING: One concrete takeaway — hold, hedge, trim, or add
     const stress = stressIndex || 'N/A';
     const cData = countryData || {};
 
-    const prompt = `You are a sell-side equity analyst at a global investment bank covering the Iran War 2026 scenario.
+    const prompt = `You are a sell-side equity analyst at a global investment bank covering: ${CTX.name}.
 
 COUNTRY: ${country}
-SCENARIO: ${String(scenario).toUpperCase()} | Brent: $${oilPrice}/bbl
+SCENARIO: ${CTX.scenLabel}
+${CTX.honesty}
 Stress Index: ${stress}/10 | CPI: ${cData.cpi || 'N/A'}% | GDP: ${cData.gdp || 'N/A'}%
 Oil dependency: ${cData.oilDep || 'N/A'}% | FX Vol: ${cData.fxVol || 'N/A'}%
 
@@ -298,9 +312,9 @@ Return ONLY valid JSON (no markdown, no backticks, no explanation):
 {
   "theme": "2-sentence macro theme for ${country} in this scenario",
   "stocks": [
-    {"sym":"TICKER","signal":"BUY","reason":"one sentence quantitative rationale"},
-    {"sym":"TICKER","signal":"HOLD","reason":"one sentence quantitative rationale"},
-    {"sym":"TICKER","signal":"SELL","reason":"one sentence quantitative rationale"}
+    {"sym":"TICKER","signal":"BENEFICIARY","reason":"one sentence quantitative rationale"},
+    {"sym":"TICKER","signal":"RESILIENT","reason":"one sentence quantitative rationale"},
+    {"sym":"TICKER","signal":"EXPOSED","reason":"one sentence quantitative rationale"}
   ],
   "risk": "one sentence key risk to this view"
 }
@@ -329,6 +343,68 @@ Include 3-4 stocks. Keep total under 140 words. JSON only.`;
 
   return res.status(400).json({ error: 'Unknown type. Use heatmap, kpi, newssummary, stockinsights, or agent.' });
 };
+
+/* ═══ v4.1: builds the per-structure prompt context. Falls back to HORMUZ when the
+   client sends nothing (old cached frontends). All Taiwan figures trace to
+   risk-structures.js / Bloomberg Economics — nothing here is invented. ═══ */
+function buildStructureContext(structure, scenario, oilPrice, cpi, gdp, liveDate) {
+  const isTaiwan = structure && structure.structureId === 'taiwan-strait';
+
+  if (isTaiwan) {
+    const kf = structure.keyFacts || {};
+    const scenLabel = structure.scenarioLabel
+      ? `${structure.scenarioLabel} — ${String(structure.scenarioDesc || '').slice(0, 140)}`
+      : ({ baseline: 'Quarantine / Blockade (P=28%)', optimistic: 'Gray-Zone Pressure (P=60%)', pessimistic: 'Invasion / Fab Denial (P=12%)' }[scenario] || scenario);
+    return {
+      name: 'TAIWAN STRAIT — Semiconductor Chokepoint (UNPRICED structure)',
+      domain: 'semiconductors, tech supply chains, container shipping, Asian FX, and defense — THERE IS NO OIL CHANNEL in this structure',
+      scenLabel,
+      scenShort: structure.scenarioLabel || scenario,
+      headline: `Adv. chip capacity offline: ${kf.advancedChipCapacityOffline || 'N/A'}`,
+      contextBlock:
+`• Advanced chip capacity offline: ${kf.advancedChipCapacityOffline || 'N/A'} (Taiwan holds ~90% of world ≤7nm capacity)
+• Lagging-edge chip shortfall: ${kf.laggingEdgeShortfall || 'N/A'}
+• World GDP impact (Yr 1): ${kf.worldGDP || gdp}
+• Anchor: ${kf.anchor || 'Bloomberg Economics (Feb 2026)'}
+• Date: ${liveDate}`,
+      honesty: 'EPISTEMIC STATUS (must be reflected in your answer): this structure is UNPRICED. No Taiwan blockade has ever occurred, so its sensitivities are ANALYTICAL estimates anchored to Bloomberg Economics — not fitted to market data. The Dec 2025 PLA escalation sent TSMC UP 20% vs the market: the market is not pricing this risk. Never present these figures as market-derived; where relevant, say plainly that these are reasoned estimates of a never-observed event.',
+      regionalStress:
+`East Asia: 9.4→3.1 | North America: 6.8→2.2 | Europe: 5.9→1.8
+South Asia: 4.6→1.4 | South America: 3.2→0.9 | Middle East: 2.6→0.8
+Africa: 2.4→0.7 | Oceania: 3.0→0.9
+(model values — this structure is analytical; see epistemic status)`,
+      spilloverChannels: 'chip shortages stalling electronics and auto production, container-trade collapse (the cargo disappears, unlike Red Sea rerouting), Asian FX stress, and tech-heavy index drawdowns',
+      transmission: 'chip supply cutoff, tech supply-chain shortfall, container-trade collapse, Asian FX stress, defense demand, or risk-off flows',
+    };
+  }
+
+  // HORMUZ (default; also the fallback for old clients that send no structure field)
+  const scenLabel = (structure && structure.scenarioLabel)
+    ? `${structure.scenarioLabel} — ${String(structure.scenarioDesc || '').slice(0, 140)}`
+    : ({
+        baseline: 'Armed Truce (P=50%) — Iran retains leverage over Hormuz, Brent peaks ~$102',
+        optimistic: 'Normalisation (P=25%) — MOU holds, mines cleared, Brent settles $70–78',
+        pessimistic: 'Re-escalation (P=25%) — truce collapses, second Hormuz closure, Brent $150–180',
+      }[scenario] || `Scenario: ${scenario}`);
+  return {
+    name: 'STRAIT OF HORMUZ / IRAN — post-war armed truce (EMPIRICAL structure)',
+    domain: 'oil, shipping, defense, and EM risk',
+    scenLabel,
+    scenShort: (structure && structure.scenarioLabel) || scenario,
+    headline: `Brent: $${oilPrice}/bbl`,
+    contextBlock:
+`• Live Brent: $${oilPrice}/bbl (as of ${liveDate})
+• CPI Addition Yr1: ${cpi}
+• Global GDP Impact Yr1: ${gdp}`,
+    honesty: 'EPISTEMIC STATUS: this structure is EMPIRICAL — its sector sensitivities were fitted to the actual 2026 Strait of Hormuz war (Brent $70.9→$138.2 peak, ceasefire 8 Apr). Speak of the war in the PAST tense; the live question is whether the armed truce holds, normalises, or breaks.',
+    regionalStress:
+`Middle East: 9.1→1.7 | Africa: 6.8→1.1 | South Asia: 5.4→0.6
+Europe: 3.8→0.3 | East Asia: 2.8→0.2 | South America: 2.9→0.3
+North America: 2.1→0.2 | Oceania: 1.4→0.1`,
+    spilloverChannels: 'food prices, energy supply, migration, and trade routes',
+    transmission: `oil at $${oilPrice}/bbl, shipping, defense demand, or risk-off flows`,
+  };
+}
 
 async function route(providers, prompt, maxTokens) {
   let lastErr = 'AI unavailable';
