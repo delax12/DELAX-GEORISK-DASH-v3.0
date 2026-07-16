@@ -672,7 +672,7 @@ body.beginner-mode body.beginner-mode
   </div>
   <div class="header-meta">
     <!-- Exposure Desk CTA (Phase 1 — links to standalone page) -->
-    <a href="/exposure-desk.html" class="ed-cta" aria-label="Open Exposure Desk (new feature)"
+    <a href="/exposure-desk.html" id="edCtaLink" class="ed-cta" aria-label="Open Exposure Desk (new feature)"
       style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;
       border:1px solid var(--cyan);border-radius:4px;padding:5px 12px;
       font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
@@ -3925,7 +3925,8 @@ async function fetchHeatmapNarrative() {
       body: JSON.stringify({
         type:     'heatmap',
         scenario: scenario,
-        oilPrice: liveBrentPrice || parseFloat((kpi.oil || '$102').replace('$','')) || 102,
+        structure: aiStructureContext(),
+        oilPrice: ACTIVE_STRUCTURE==='taiwan-strait' ? null : (liveBrentPrice || parseFloat((kpi.oil || '$102').replace('$','')) || 102),
         cpi:      kpi.cpi  || '+3.8%',
         gdp:      kpi.gdp  || '−1.9%',
         liveDate: liveDataDate || new Date().toISOString().slice(0,10),
@@ -4017,7 +4018,8 @@ async function showKPINarrative(kpiId, kpiLabel, kpiValue) {
         kpiLabel: kpiLabel,
         kpiValue: kpiValue,
         scenario: scenario,
-        oilPrice: liveBrentPrice || parseFloat((kpi.oil || '$102').replace('$','')) || 102,
+        structure: aiStructureContext(),
+        oilPrice: ACTIVE_STRUCTURE==='taiwan-strait' ? null : (liveBrentPrice || parseFloat((kpi.oil || '$102').replace('$','')) || 102),
         cpi:      kpi.cpi || '+3.8%',
         gdp:      kpi.gdp || '−1.9%',
         liveDate: liveDataDate || new Date().toISOString().slice(0,10),
@@ -4168,7 +4170,8 @@ async function requestGeoIntelBriefing() {
       body: JSON.stringify({
         type:     'heatmap',
         scenario: scenario,
-        oilPrice: liveBrentPrice || 121,
+        structure: aiStructureContext(),
+        oilPrice: ACTIVE_STRUCTURE==='taiwan-strait' ? null : (liveBrentPrice || 121),
         cpi:      kpi.cpi || '+3.8%',
         gdp:      kpi.gdp || '-1.9%',
         liveDate: liveDataDate || new Date().toISOString().slice(0,10),
@@ -5135,7 +5138,8 @@ async function eqGetAI() {
         beta:     fund.beta,
         sector:   eqGetSector(eqCurrentSymbol),
         scenario: sc,
-        oilPrice: liveBrentPrice || 78,
+        structure: aiStructureContext(),
+        oilPrice: ACTIVE_STRUCTURE==='taiwan-strait' ? null : (liveBrentPrice || 78),
       }),
     });
     const data = await res.json();
@@ -5253,6 +5257,40 @@ function switchTab(id, event) {
    There is no second copy of the numbers in this file.
    ═══════════════════════════════════════════════════════════════════════════ */
 window.ACTIVE_STRUCTURE = 'hormuz-iran';
+
+/* v4.0 — AI payload structure context. Every /api/analyze call includes this, so
+   the AI narrates the RIGHT conflict with the RIGHT epistemic caveat. Without it,
+   a user on the Taiwan page got confident Hormuz/Brent prose — wrong-context output
+   dressed as insight, under a page whose whole pitch is honesty tiers. */
+function aiStructureContext() {
+  try {
+    const S = RISK_STRUCTURES[ACTIVE_STRUCTURE];
+    const sc = S.scenarios.find(x => x.id === scenario) || S.scenarios[1];
+    const taiwan = ACTIVE_STRUCTURE === 'taiwan-strait';
+    return {
+      structureId:   S.id,
+      structureName: S.meta.name,
+      tier:          S.meta.calibration,
+      scenarioLabel: sc.label,
+      scenarioDesc:  sc.desc,
+      channels:      S.channels,
+      keyFacts: taiwan ? {
+        advancedChipCapacityOffline: sc.raw.semiconductors + '%',
+        laggingEdgeShortfall:        sc.raw.tech_supply + '%',
+        worldGDP:                    sc.raw.gdp + '%',
+        anchor: 'Bloomberg Economics (Feb 2026): blockade −5.0% world GDP; war −9.6% ($10.6T)',
+      } : null,
+      instruction: taiwan
+        ? 'CRITICAL: Analyze the TAIWAN STRAIT structure, NOT Hormuz/Iran/oil. There is no ' +
+          'oil channel. This structure is UNPRICED: its sensitivities are analytical estimates ' +
+          'anchored to Bloomberg Economics, NOT fitted to market data, because the market has ' +
+          'never priced a Taiwan supply cut. State this caveat. Never present these figures as ' +
+          'market-derived.'
+        : 'Analyze the Hormuz/Iran structure (post-war armed truce). Betas are empirical, ' +
+          'fitted to the actual 2026 war.',
+    };
+  } catch(e) { return { structureId: 'hormuz-iran' }; }
+}
 let _hormuzKpiHTML = null;        // snapshot for restore
 let _hormuzMonthlyLabel = null;
 
@@ -5295,6 +5333,9 @@ function styleStructureBtns() {
 function setStructure(id) {
   if (!RISK_STRUCTURES[id] || id === ACTIVE_STRUCTURE) return;
   ACTIVE_STRUCTURE = id;
+  // carry the selection into the Exposure Desk
+  const cta = document.getElementById('edCtaLink');
+  if (cta) cta.href = '/exposure-desk.html?structure=' + id;
   styleStructureBtns();
   if (id === 'taiwan-strait') enterTaiwan(); else restoreHormuz();
   // Re-render everything scenario-dependent through the existing pipeline:

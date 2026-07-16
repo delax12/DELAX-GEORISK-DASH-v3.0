@@ -152,7 +152,12 @@ a{color:var(--cyan);text-decoration:none}
 <div class="wrap">
   <header>
     <div class="brand"><small>DELAX Geo-Risk</small>Exposure Desk</div>
-    <div class="struct"><span class="live"></span> Active structure: <b id="structName">—</b></div>
+    <div class="struct" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span><span class="live"></span> Active structure: <b id="structName">—</b></span>
+      <span id="structSwitch" style="display:inline-flex;gap:5px"></span>
+      <span id="tierBadge" style="font-size:.55rem;letter-spacing:.08em;padding:2px 8px;
+        border:1px solid;border-radius:3px;white-space:normal;max-width:420px;line-height:1.5"></span>
+    </div>
   </header>
 
   <div class="grid">
@@ -223,8 +228,24 @@ a{color:var(--cyan);text-decoration:none}
 
 <script src="/risk-structures.js"></script>
 <script>
-const STRUCT_ID='hormuz-iran';
-const CHAN_LABEL={oil:'Oil',shipping:'Shipping',cpi:'Inflation',gdp:'Growth',fx:'EM FX',defense:'Defense',food:'Food'};
+/* v4.0 — structure is a VARIABLE. Read from ?structure= (handoff from index.html),
+   validated against the registry, falling back to hormuz. */
+let STRUCT_ID = (() => {
+  try {
+    const q = new URLSearchParams(location.search).get('structure');
+    if (q && window.RISK_STRUCTURES && window.RISK_STRUCTURES[q]) return q;
+  } catch(e) {}
+  return 'hormuz-iran';
+})();
+const CHAN_LABEL={oil:'Oil',shipping:'Shipping',cpi:'Inflation',gdp:'Growth',fx:'EM FX',
+  defense:'Defense',food:'Food',
+  semiconductors:'Chip Supply',tech_supply:'Tech Supply'};   // Taiwan channels
+const TIER_BADGE={
+  empirical:{c:'#00e676',t:'EMPIRICAL · fitted to the 2026 Hormuz war'},
+  unpriced:{c:'#f5a623',t:'UNPRICED · analytical — anchored to Bloomberg Economics. The market has never priced this event.'},
+  spliced:{c:'#00d4ff',t:'SPLICED · proxy-fitted'},
+  draft:{c:'#ff3d4a',t:'DRAFT'},
+};
 let scenarioId='baseline';
 let book=[];            // {sym, weight, sector}
 let quotes={}, meta=null;
@@ -232,21 +253,30 @@ let symSector={};       // sym -> sector (from UNIVERSE)
 
 function struct(){return window.RISK_STRUCTURES[STRUCT_ID];}
 
-function init(){
-  if(!window.RISK_STRUCTURES||!window.computeExposure){
-    document.getElementById('verdict').textContent='Model failed to load.';return;
-  }
+function applyStructure(){
+  // Everything derived from struct() — rebuild on structure change.
   document.getElementById('structName').textContent=struct().meta.short;
-  (window.CATALOG||window.UNIVERSE||[]).forEach(u=>symSector[u.sym]=u.sector);
-
-  // sector dropdown for custom tickers
+  // tier badge (the honesty system, visible BEFORE the score)
+  const tb=document.getElementById('tierBadge');
+  if(tb){ const t=TIER_BADGE[struct().meta.calibration]||TIER_BADGE.draft;
+    tb.textContent=t.t; tb.style.color=t.c; tb.style.borderColor=t.c; }
+  // structure toggle buttons
+  const sw=document.getElementById('structSwitch');
+  if(sw){ sw.innerHTML=Object.values(window.RISK_STRUCTURES).map(S=>
+    `<button onclick="switchStructure('${S.id}')" aria-pressed="${S.id===STRUCT_ID}"
+      style="font-family:inherit;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+      padding:3px 10px;cursor:pointer;border:1px solid ${S.id===STRUCT_ID?'var(--amber,#f0a83c)':'#1e2530'};
+      background:${S.id===STRUCT_ID?'rgba(240,168,60,.1)':'transparent'};
+      color:${S.id===STRUCT_ID?'var(--amber,#f0a83c)':'#78849a'}">${S.meta.short}</button>`).join(''); }
+  // sector dropdown for custom tickers (rebuild)
   const sel=document.getElementById('customSec');
+  sel.innerHTML='';
   Object.keys(struct().exposure.sectors).forEach(s=>{
     const o=document.createElement('option');o.value=s;o.textContent=s.replace(/_/g,' ');sel.appendChild(o);
   });
-
-  // scenario tabs
+  // scenario tabs (rebuild; reset to baseline on switch)
   const scn=document.getElementById('scn');
+  scn.innerHTML='';
   struct().scenarios.forEach(s=>{
     const b=document.createElement('button');
     b.setAttribute('aria-selected', s.id===scenarioId);
@@ -254,6 +284,21 @@ function init(){
     b.innerHTML=`<span class="l">${s.label}</span><span class="p">P ${Math.round(s.probability*100)}%</span>`;
     scn.appendChild(b);
   });
+}
+
+function switchStructure(id){
+  if(!window.RISK_STRUCTURES[id]||id===STRUCT_ID) return;
+  STRUCT_ID=id; scenarioId='baseline';
+  try{history.replaceState(null,'', '?structure='+id);}catch(e){}
+  applyStructure(); render();
+}
+
+function init(){
+  if(!window.RISK_STRUCTURES||!window.computeExposure){
+    document.getElementById('verdict').textContent='Model failed to load.';return;
+  }
+  (window.CATALOG||window.UNIVERSE||[]).forEach(u=>symSector[u.sym]=u.sector);
+  applyStructure();
 
   document.getElementById('q').addEventListener('input',e=>renderSearch(e.target.value));
   document.getElementById('q').addEventListener('focus',e=>renderSearch(e.target.value));
@@ -370,7 +415,8 @@ function render(){
   big.textContent=(r.pct>0?'+':'')+r.pct.toFixed(1)+'%';
   verdict.textContent=neg?'Net exposed':'Net beneficiary';
   stamp.textContent=struct().meta.short+' · '+r.scenario.label;
-  sub.textContent=`Under "${r.scenario.label}" (P ${Math.round(r.scenario.probability*100)}%), this book would move about ${r.pct.toFixed(1)}% versus pre-conflict normal. ${neg?'Geopolitical risk is a net drag here.':'This book leans into the disruption.'}`;
+  const _base = STRUCT_ID==='taiwan-strait' ? 'versus a no-crisis baseline (analytical model — see badge)' : 'versus pre-conflict normal';
+  sub.textContent=`Under "${r.scenario.label}" (P ${Math.round(r.scenario.probability*100)}%), this book would move about ${r.pct.toFixed(1)}% ${_base}. ${neg?'Geopolitical risk is a net drag here.':'This book leans into the disruption.'}`;
 
   // channels
   const entries=Object.entries(r.byChannel).filter(([,v])=>Math.abs(v)>=0.05).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
@@ -415,7 +461,7 @@ window.addEventListener('DOMContentLoaded',init);
     <ol>
       <li><b>Build your book.</b> Search a ticker (101 names) and click it, or use the custom row — pick a sector for a quick sector exposure, or sector + a specific ticker.</li>
       <li><b>Set weights.</b> Use − / + or type a number. Weights auto-normalise to % of book; they need not sum to 100.</li>
-      <li><b>Pick a scenario.</b> Tap Ceasefire, Central War, or Full Closure — the score recomputes instantly, in your browser.</li>
+      <li><b>Pick a scenario.</b> Tap any of the three scenario tabs — the score recomputes instantly, in your browser.</li>
       <li><b>Read the score.</b> Green = net beneficiary, red = net exposed: how much the book moves vs pre-conflict normal under that scenario.</li>
       <li><b>See where it hits.</b> “By channel” shows the drivers (oil, growth, FX…); “Most exposed holdings” ranks positions by weighted contribution.</li>
     </ol>
