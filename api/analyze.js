@@ -11,6 +11,10 @@
  *   data.analysis → rendered an empty string (silent blank panel).
  *   Now: payload with `symbol` → single-stock prose returned as { analysis },
  *   payload without → the original country JSON path, unchanged.
+ *
+ * AGENT TYPE (Jul 2026 — Intelligence Agent Bar):
+ *   New type:'agent' (also accepts 'command'). Full context-aware investor AI.
+ *   Used by the ⌘K Intelligence Agent Bar. No new serverless function required.
  */
 'use strict';
 
@@ -58,10 +62,75 @@ module.exports = async function handler(req, res) {
     pe,
     beta,
     sector,
+    // NEW: Intelligence Agent Bar payload
+    query,
+    portfolio = [],
+    shipping,
+    defense,
+    duration,
   } = req.body || {};
 
   if (!type) {
-    return res.status(400).json({ error: 'type is required: heatmap, kpi, newssummary, or stockinsights' });
+    return res.status(400).json({ error: 'type is required: heatmap, kpi, newssummary, stockinsights, or agent' });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // NEW TYPE: agent / command  — Intelligence Agent Bar
+  // Zero new serverless functions. Reuses this endpoint cleanly.
+  // ═══════════════════════════════════════════════════════════════
+  if (type === 'agent' || type === 'command') {
+    if (!query || typeof query !== 'string' || query.trim().length < 3) {
+      return res.status(400).json({ error: 'query is required and must be at least 3 characters' });
+    }
+
+    const scenLabel = {
+      baseline: 'Armed Truce (P=50%) — Iran retains leverage over Hormuz, Brent peaks ~$102',
+      optimistic: 'Normalisation (P=25%) — MOU holds, mines cleared, Brent settles $70–78',
+      pessimistic: 'Re-escalation (P=25%) — truce collapses, second Hormuz closure, Brent $150–180',
+    }[scenario] || `Scenario: ${scenario}`;
+
+    const portfolioSummary = Array.isArray(portfolio) && portfolio.length
+      ? portfolio.map(p => `${p.ticker || p.symbol}: ${p.shares || 0} shares @ $${p.cost || p.avgCost || 'N/A'}`).join('; ')
+      : 'No portfolio loaded';
+
+    const recentNews = (headlines || []).slice(0, 4).map((h, i) => `${i + 1}. ${h}`).join('\n') || 'No recent headlines';
+
+    const prompt = `You are the DELAX GEO-RISK Intelligence Agent — the sharpest geopolitical financial co-pilot an investor can have. You think like a senior PM at a multi-strategy hedge fund who lives and breathes oil, shipping, defense, and EM risk.
+
+ACTIVE CONTEXT (live dashboard state):
+• Scenario: ${scenLabel}
+• Live WTI/Brent: $${oilPrice}/bbl (as of ${liveDate})
+• CPI Addition Yr1: ${cpi}
+• Global GDP Impact Yr1: ${gdp}
+• Shipping Index: ${shipping || 'N/A'}
+• Defense Spend Δ: ${defense || 'N/A'}
+• Est. Duration: ${duration || 'N/A'}
+• User Portfolio: ${portfolioSummary}
+• Latest Headlines:
+${recentNews}
+
+USER QUERY: "${query.trim()}"
+
+INSTRUCTIONS:
+1. Answer the exact question the investor asked. Be direct, data-driven, and actionable.
+2. Reference the live context numbers above whenever relevant. Never invent figures.
+3. Give a clear investor takeaway: buy / hold / trim / hedge / avoid, with specific tickers when possible (XOM, CVX, LMT, RTX, GLD, CCJ, ZIM, etc.).
+4. Keep total response under 220 words. Use short paragraphs or tight bullets if helpful.
+5. End with one concrete "Next watch" item (what number or event to monitor next).
+6. Tone: calm, precise, zero hype. You are not a news anchor — you are a portfolio tool.
+
+Begin the answer immediately. No preamble.`;
+
+    const result = await route(PROVIDERS, prompt, 480);
+    if (result.error) return res.status(500).json({ error: result.error });
+
+    return res.status(200).json({
+      analysis: result.text.trim(),
+      query: query.trim(),
+      scenario,
+      oilPrice,
+      generatedAt: new Date().toISOString(),
+    });
   }
 
   if (type === 'heatmap') {
@@ -258,7 +327,7 @@ Include 3-4 stocks. Keep total under 140 words. JSON only.`;
     });
   }
 
-  return res.status(400).json({ error: 'Unknown type. Use heatmap, kpi, newssummary, or stockinsights.' });
+  return res.status(400).json({ error: 'Unknown type. Use heatmap, kpi, newssummary, stockinsights, or agent.' });
 };
 
 async function route(providers, prompt, maxTokens) {
