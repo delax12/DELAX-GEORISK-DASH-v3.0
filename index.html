@@ -894,7 +894,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-label">Global <span data-jargon="CPI">CPI</span> (Yr 1)
         <i class="info-icon" data-prov="Source: IMF WEO Apr 2026 · +$10/bbl = +0.3% CPI · Confidence: 82%">i</i></div>
       <div class="kpi-value" id="kpiCPI">+1.2%</div>
-      <div class="kpi-plain">Everything costs ~3.8% more in Year 1.</div>
+      <div class="kpi-plain">Everyday prices run about 1.2% hotter than they would without this standoff.</div>
       <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
       <div class="kpi-ts" id="kpiTsCPI">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
@@ -904,7 +904,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-label">Global <span data-jargon="GDP">GDP</span> Loss (Yr 1)
         <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
       <div class="kpi-value" id="kpiGDP">−1.9%</div>
-      <div class="kpi-plain">~$1.7T in lost global output.</div>
+      <div class="kpi-plain">The world economy grows a bit slower — about 0.7% of output lost in year one.</div>
       <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
       <div class="kpi-ts" id="kpiTsGDP">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
@@ -914,7 +914,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-label">Shipping Index
         <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
       <div class="kpi-value" id="kpiShip">+310%</div>
-      <div class="kpi-plain">3× more to ship globally via Cape of Good Hope.</div>
+      <div class="kpi-plain">Moving goods by sea costs about 2.2× normal: insurers still charge war rates.</div>
       <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
       <div class="kpi-ts" id="kpiTsShip">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
@@ -924,7 +924,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-label">Defense Spend ΔYr1
         <i class="info-icon" data-prov="Source: SIPRI 2026 · NATO + Gulf states · Confidence: 87%">i</i></div>
       <div class="kpi-value" id="kpiDef">+$680B</div>
-      <div class="kpi-plain">$680B extra in global defense budgets.</div>
+      <div class="kpi-plain">Governments spend ~$480B extra on defense — good for defense stocks, paid by taxpayers.</div>
       <div class="kpi-delta">NATO · Gulf · Israel · India</div>
       <div class="kpi-ts" id="kpiTsDef">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
@@ -934,7 +934,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-label">Food Price (<span data-jargon="FAO">FAO</span>)
         <i class="info-icon" data-prov="Source: FAO FFPI · Fertilizer + fuel inputs · Confidence: 83%">i</i></div>
       <div class="kpi-value" id="kpiFAO">+27%</div>
-      <div class="kpi-plain">Food 27% more expensive. Africa & S. Asia hardest hit.</div>
+      <div class="kpi-plain">Food runs ~12% pricier; poorer, import-dependent countries feel it most.</div>
       <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
       <div class="kpi-ts" id="kpiTsFAO">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
@@ -944,7 +944,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-label"><span data-jargon="USD">USD</span>/<span data-jargon="EM FX">EM FX</span>
         <i class="info-icon" data-prov="Source: BIS FX · EM basket: TRY, BRL, INR, EGP, PKR · Confidence: 80%">i</i></div>
       <div class="kpi-value" id="kpiFX">−14%</div>
-      <div class="kpi-plain">EM currencies lose 14% vs USD. Imports cost more.</div>
+      <div class="kpi-plain">Emerging-market currencies slip ~5% vs the dollar, making their imports dearer.</div>
       <div class="kpi-delta">Flight-to-safety inflows</div>
       <div class="kpi-ts" id="kpiTsFX">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
@@ -954,7 +954,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-label">Conflict Duration
         <i class="info-icon" data-prov="Source: DELAX duration model · Gulf War 7M, Ukraine 30M+ · Confidence: 65%">i</i></div>
       <div class="kpi-value" id="kpiDur">18–36M</div>
-      <div class="kpi-plain">18–36 months active conflict expected.</div>
+      <div class="kpi-plain">Expect this uneasy standoff to last roughly 1 to 2.5 years.</div>
       <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
       <div class="kpi-ts" id="kpiTsDur">—</div>
       <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
@@ -1945,6 +1945,42 @@ const KPI_MAP = {
   optimistic:  {oil:'$78', cpi:'+0.3%',gdp:'−0.3%',ship:'+25%', def:'+$320B',fao:'+5%', fx:'−2%', dur:'6–12M'},
   pessimistic: {oil:'$165',cpi:'+4.2%',gdp:'−2.2%',ship:'+400%',def:'+$780B',fao:'+30%',fx:'−12%',dur:'12–36M'},
 };
+/* KPI_PLAIN — one plain-English sentence per KPI per scenario. Written for a
+   first-time investor; a retiree should understand every line. MIRRORS KPI_MAP:
+   if scenario values change, these sentences change with them. */
+const KPI_PLAIN = {
+  baseline: {
+    oil:  'Oil could spike to ~$102 on bad headlines — the war peaked at $138 and has cooled to ~$69, but the strait is not back to normal.',
+    cpi:  'Everyday prices run about 1.2% hotter than they would without this standoff.',
+    gdp:  'The world economy grows a bit slower — about 0.7% of output lost in year one.',
+    ship: 'Moving goods by sea costs about 2.2× normal: insurers still charge war rates.',
+    def:  'Governments spend ~$480B extra on defense — good for defense stocks, paid by taxpayers.',
+    fao:  'Food runs ~12% pricier; poorer, import-dependent countries feel it most.',
+    fx:   'Emerging-market currencies slip ~5% vs the dollar, making their imports dearer.',
+    dur:  'Expect this uneasy standoff to last roughly 1 to 2.5 years.',
+  },
+  optimistic: {
+    oil:  'If the truce holds, oil settles near $78 — close to normal.',
+    cpi:  'Barely noticeable at the checkout: ~0.3% extra inflation.',
+    gdp:  'Minimal drag — the world economy shrugs this off.',
+    ship: 'Shipping costs drift back toward normal as insurers relax.',
+    def:  'Defense budgets still rise ~$320B — rearmament outlasts the crisis.',
+    fao:  'Food prices roughly normal, +5% at worst.',
+    fx:   'Emerging-market currencies hold steady, −2% at most.',
+    dur:  'Back to normal within 6–12 months.',
+  },
+  pessimistic: {
+    oil:  'A second closure sends oil to ~$165 — filling a tank costs roughly half again as much.',
+    cpi:  'Inflation jumps ~4.2 points — everything from fuel to food gets noticeably dearer.',
+    gdp:  'A global slowdown: ~2.2% of world output lost, recession risk real.',
+    ship: 'Sea freight ~5× normal — many goods simply get scarcer.',
+    def:  'Defense spending surges ~$780B as the region rearms.',
+    fao:  'Food ~30% pricier — a crisis for import-dependent countries.',
+    fx:   'Emerging-market currencies drop ~12%; capital flees to the dollar.',
+    dur:  'One to three years of renewed conflict.',
+  },
+};
+
 /* Display names. Internal ids stay baseline/optimistic/pessimistic so nothing else breaks. */
 /* v4.0: label lookup follows the ACTIVE structure (falls back to HORMUZ labels). */
 const SCENARIO_LABELS = new Proxy({}, { get: (_, k) => {
@@ -2445,9 +2481,16 @@ function setScenario(s) {
     if (typeof renderTaiwanKPIs === 'function') renderTaiwanKPIs();
   } else {
     const kpi = KPI_MAP[s];
+    const plain = KPI_PLAIN[s] || {};
+    const KEYMAP = {Oil:'oil',CPI:'cpi',GDP:'gdp',Ship:'ship',Def:'def',FAO:'fao',FX:'fx',Dur:'dur'};
     ['Oil','CPI','GDP','Ship','Def','FAO','FX','Dur'].forEach((k,i)=>{
       const el = document.getElementById('kpi'+k);
       if(el) el.textContent = Object.values(kpi)[i];
+      // v4.1: the plain-English subline follows the scenario (previously static
+      // HTML that had gone stale against the v3.1 numbers shown above it).
+      if(el){ const card = el.closest('.kpi-card');
+        const p = card && card.querySelector('.kpi-plain');
+        if (p && plain[KEYMAP[k]]) p.textContent = plain[KEYMAP[k]]; }
     });
   }
   // (Removed legacy live-spot override of kpiOil — per Hotfix A, the tile shows

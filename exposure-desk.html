@@ -415,8 +415,18 @@ function render(){
   big.textContent=(r.pct>0?'+':'')+r.pct.toFixed(1)+'%';
   verdict.textContent=neg?'Net exposed':'Net beneficiary';
   stamp.textContent=struct().meta.short+' · '+r.scenario.label;
-  const _base = STRUCT_ID==='taiwan-strait' ? 'versus a no-crisis baseline (analytical model — see badge)' : 'versus pre-conflict normal';
-  sub.textContent=`Under "${r.scenario.label}" (P ${Math.round(r.scenario.probability*100)}%), this book would move about ${r.pct.toFixed(1)}% ${_base}. ${neg?'Geopolitical risk is a net drag here.':'This book leans into the disruption.'}`;
+  const _base = STRUCT_ID==='taiwan-strait' ? 'versus a no-crisis baseline' : 'versus pre-conflict normal';
+  // v4.1 plain-English layer: one sentence a first-time investor understands,
+  // plus the tier translation in plain words (per CLAUDE.md Phase 1.2).
+  const _mag = Math.abs(r.pct);
+  const _sizePlain = _mag < 3 ? 'barely feel this scenario' :
+                     _mag < 12 ? `move noticeably — roughly $${Math.round(_mag*10)} on every $1,000 invested` :
+                     _mag < 30 ? `take a serious hit — roughly $${Math.round(_mag*10)} of every $1,000 invested` :
+                     `be transformed — roughly $${Math.round(_mag*10)} of every $1,000 invested`;
+  const _tierPlain = STRUCT_ID==='taiwan-strait'
+    ? ' Important: no Taiwan blockade has ever happened, so these are reasoned estimates anchored to Bloomberg Economics — a map, not a forecast.'
+    : ' These sensitivities were measured against the real 2026 Hormuz war.';
+  sub.textContent=`Under "${r.scenario.label}" (P ${Math.round(r.scenario.probability*100)}%), this book would move about ${r.pct.toFixed(1)}% ${_base} — in plain terms, your portfolio would ${_sizePlain}${neg?', to the downside.':', to the upside.'}${_tierPlain}`;
 
   // channels
   const entries=Object.entries(r.byChannel).filter(([,v])=>Math.abs(v)>=0.05).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
