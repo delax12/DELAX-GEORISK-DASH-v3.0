@@ -157,6 +157,7 @@ a{color:var(--cyan);text-decoration:none}
       <span id="structSwitch" style="display:inline-flex;gap:5px"></span>
       <span id="tierBadge" style="font-size:.55rem;letter-spacing:.08em;padding:2px 8px;
         border:1px solid;border-radius:3px;white-space:normal;max-width:420px;line-height:1.5"></span>
+      <span id="reviewStamp"></span>
     </div>
   </header>
 
@@ -252,9 +253,24 @@ let quotes={}, meta=null;
 let symSector={};       // sym -> sector (from UNIVERSE)
 
 function struct(){return window.RISK_STRUCTURES[STRUCT_ID];}
-/* v4.1 — probability in plain words, shown alongside the number (never instead).
-   >=45% likely · 20-44% possible · <20% less likely */
-function probWord(p){ const pct=p>1?p:p*100; return pct>=45?'likely':pct>=20?'possible':'less likely'; }
+
+
+/* v4.1 — review stamp. Three states, derived entirely from meta.review:
+   normal (dim)  ·  overdue (amber, past nextScheduled)  ·  TRIGGERED (amber,
+   any switch flipped ON in risk-structures.js). Flipping a switch in the data
+   file thus makes the live site announce that maintenance is due. */
+function reviewStampHTML(S){
+  const R = S.meta && S.meta.review; if(!R) return '';
+  const trig = Object.entries(R.switches||{}).filter(([,v])=>v).map(([k])=>k);
+  const overdue = R.nextScheduled && (new Date(R.nextScheduled) < new Date());
+  const amber = trig.length || overdue;
+  const txt = trig.length ? ('REVIEW TRIGGERED: '+trig.join(', '))
+            : overdue     ? ('Review overdue (was due '+R.nextScheduled+')')
+            : ('Reviewed '+R.lastReviewed+' · next '+R.nextScheduled);
+  return `<span style="font-family:var(--mono,monospace);font-size:.53rem;letter-spacing:.08em;
+    padding:2px 8px;border:1px solid ${amber?'#f5a623':'#2a3550'};border-radius:3px;
+    color:${amber?'#f5a623':'#5a7299'};white-space:nowrap">${txt}</span>`;
+}
 
 function applyStructure(){
   // Everything derived from struct() — rebuild on structure change.
@@ -263,6 +279,8 @@ function applyStructure(){
   const tb=document.getElementById('tierBadge');
   if(tb){ const t=TIER_BADGE[struct().meta.calibration]||TIER_BADGE.draft;
     tb.textContent=t.t; tb.style.color=t.c; tb.style.borderColor=t.c; }
+  const rs=document.getElementById('reviewStamp');
+  if(rs) rs.innerHTML=reviewStampHTML(struct());
   // structure toggle buttons
   const sw=document.getElementById('structSwitch');
   if(sw){ sw.innerHTML=Object.values(window.RISK_STRUCTURES).map(S=>
@@ -284,7 +302,7 @@ function applyStructure(){
     const b=document.createElement('button');
     b.setAttribute('aria-selected', s.id===scenarioId);
     b.onclick=()=>{scenarioId=s.id;[...scn.children].forEach(c=>c.setAttribute('aria-selected',false));b.setAttribute('aria-selected',true);render();};
-    b.innerHTML=`<span class="l">${s.label}</span><span class="p">P ${Math.round(s.probability*100)}% · ${probWord(s.probability)}</span>`;
+    b.innerHTML=`<span class="l">${s.label}</span><span class="p">P ${Math.round(s.probability*100)}%</span>`;
     scn.appendChild(b);
   });
 }
@@ -429,7 +447,7 @@ function render(){
   const _tierPlain = STRUCT_ID==='taiwan-strait'
     ? ' Important: no Taiwan blockade has ever happened, so these are reasoned estimates anchored to Bloomberg Economics — a map, not a forecast.'
     : ' These sensitivities were measured against the real 2026 Hormuz war.';
-  sub.textContent=`Under "${r.scenario.label}" (P ${Math.round(r.scenario.probability*100)}% — ${probWord(r.scenario.probability)}), this book would move about ${r.pct.toFixed(1)}% ${_base} — in plain terms, your portfolio would ${_sizePlain}${neg?', to the downside.':', to the upside.'}${_tierPlain}`;
+  sub.textContent=`Under "${r.scenario.label}" (P ${Math.round(r.scenario.probability*100)}%), this book would move about ${r.pct.toFixed(1)}% ${_base} — in plain terms, your portfolio would ${_sizePlain}${neg?', to the downside.':', to the upside.'}${_tierPlain}`;
 
   // channels
   const entries=Object.entries(r.byChannel).filter(([,v])=>Math.abs(v)>=0.05).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));

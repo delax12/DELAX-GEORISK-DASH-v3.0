@@ -119,8 +119,17 @@ Phase 2 is a product decision for the owner, not a task to pick up.
 
 ### Phase 3 — Trust & authority (mostly built; extend, don't duplicate)
 Provenance/tiers/methodology exist. Remaining: per-signal provenance in the news/GDELT
-surfaces; Taiwan maintenance plumbing (review stamp in meta, re-test pipeline for new
-escalations, annual anchor refresh — the "Pricing Gap ledger").
+surfaces.
+
+**Taiwan maintenance plumbing — ✅ SHIPPED.** Each structure now carries `meta.review`
+(lastReviewed / nextScheduled / ON-OFF trigger `switches` / append-only `log`). The
+switches are real: flipping one `false → true` in risk-structures.js turns the site's
+review stamp amber ("REVIEW TRIGGERED") until the documented ACTION beside it is done.
+New escalations are re-tested with `node scripts/retest-taiwan.mjs` (frozen method;
+`--validate` must reproduce the original +20.6% Dec-2025 finding before any new verdict
+is trusted; PRICED threshold: foundry excess < −5%). The Pricing Evidence panel counts
+the ledger automatically ("N tested · priced: 0"). Semi-annual review floor: Jan 15 /
+Jul 15. Do NOT edit ledger history — append only.
 
 ### Phase 4 — Daily habit
 Daily briefing view (top risks / opportunities / one thing to WATCH — not a directive),

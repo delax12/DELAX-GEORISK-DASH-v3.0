@@ -201,6 +201,27 @@ const RISK_STRUCTURES = {
       calibrationBasis: 'THE 2026 STRAIT OF HORMUZ WAR ITSELF (primary, 70%) + Ukraine 2022 ' +
                         '(secondary, 30%). 41 tickers, weekly, 2020-01→2026-07; returns net of ' +
                         'SPY; oil channel Brent-denominated (FRED DCOILBRENTEU).',
+      review: {
+        lastReviewed:  '2026-07-15',
+        nextScheduled: '2027-01-15',
+        cadence:       'semi-annual',
+        switches: {
+          TRUCE_STATUS_CHANGE: false,
+          /* ON when: the armed truce materially changes (full normalisation, or
+             re-escalation/second closure). ACTION: re-author scenarios around the
+             new reality — the Armed Truce base case describes July 2026 and stops
+             being true the day the truce breaks either way. Log; flip back.    */
+          NEW_WAR_WINDOW_DATA: false,
+          /* ON when: a re-escalation produces a new measurable shock window.
+             ACTION: refit betas with the new window added (the 2026 fit pipeline
+             pattern), regression-gate, bump version, update methodology.html.  */
+        },
+        log: [
+          { date: '2026-07-15', version: '3.1',
+            note: 'v3.1 shipped: recalibrated to the real 2026 war (was Ukraine-proxy). ' +
+                  'Out-of-sample mean error 2.5pts. Scenarios re-authored post-ceasefire.' },
+        ],
+      },
     },
 
     /* Which economic channels THIS structure actually moves. Variable per structure —
@@ -402,6 +423,69 @@ const RISK_STRUCTURES = {
                         'supply-share reasoning, not fitted to any observed market response. ' +
                         'Five candidate analogues were tested and ALL FAILED to yield a usable ' +
                         'signal. See pricingEvidence.',
+
+      /* ═══ MAINTENANCE CONTRACT (v4.1) ══════════════════════════════════════
+         An unpriced structure decays: its finding must be RE-TESTED against every
+         new escalation or it becomes a 2026 artifact. This block is the contract.
+         The UI renders lastReviewed/nextScheduled next to the tier badge, turns
+         AMBER when nextScheduled is past, and shows "REVIEW TRIGGERED" when any
+         switch below is ON. Flipping a switch is therefore a real action: the
+         site itself starts announcing that maintenance is due.               ═══ */
+      review: {
+        lastReviewed:  '2026-07-15',
+        nextScheduled: '2027-01-15',        // semi-annual floor: Jan 15 / Jul 15
+        cadence:       'semi-annual',
+
+        /* ── TRIGGER SWITCHES ─────────────────────────────────────────────────
+           Flip false → true THE DAY the trigger fires. The site badge goes amber
+           ("REVIEW TRIGGERED") until you complete the ACTION and flip it back.
+           Each switch documents its exact action — no memory required.        */
+        switches: {
+
+          NEW_ESCALATION: false,
+          /* ON when: any major PLA escalation / Taiwan incident (median-line mass
+             crossing, live-fire near the island, vessel seizure, quarantine drill).
+             ACTION:
+               1. node scripts/retest-taiwan.mjs --event "NAME" \
+                    --base YYYY-MM-DD:YYYY-MM-DD --shock YYYY-MM-DD:YYYY-MM-DD
+                  (script prints the exact Twelve Data curl for the pull first)
+               2. Paste the printed verdict row into pricingEvidence.tests below
+               3. Append a row to review.log; update lastReviewed
+               4. Flip this back to false                                       */
+
+          NEW_INSTITUTIONAL_ESTIMATE: false,
+          /* ON when: Bloomberg Economics / Rhodium / CSIS publish a new Taiwan
+             blockade or war cost estimate.
+             ACTION: update scenario raw{gdp, semiconductors, tech_supply} and the
+             desc citations to the new figures; update pricingEvidence.anchor;
+             bump meta.modelVersion; log; flip back to false.                   */
+
+          CAPACITY_SHARE_SHIFT: false,
+          /* ON when: Taiwan's share of world ≤7nm capacity moves >5pts from the
+             ~90% assumed here (watch: TSMC Arizona ramp, Japan fabs, Samsung).
+             ACTION: update meta.flow + context %, re-derive the semiconductors-
+             channel betas proportionally (foundry, fabless, semi_equipment,
+             memory_idm scarcity premium), re-run the anchor check in the header
+             of scripts/retest-taiwan.mjs; bump version; log; flip back.        */
+
+          BLOCKADE_OR_QUARANTINE_REAL: false,
+          /* ON when: an actual quarantine or blockade begins. THE BIG ONE.
+             ACTION (same day): stop treating this as maintenance — the event is
+             now observable. Re-author scenarios around the live situation
+             (HORMUZ 2026 precedent: forecast pages describing a resolved or
+             ongoing event destroy credibility fastest). Begin measuring real
+             sector responses; structure graduates toward 'empirical' when a
+             post-event window can be fitted. Flip back only after re-author.   */
+        },
+
+        /* ── REVIEW LOG — append-only. "Reviewed, no change" is itself data. ── */
+        log: [
+          { date: '2026-07-15', version: '1.0',
+            note: 'Initial authoring. Anchored to Bloomberg Economics (Feb 2026). ' +
+                  'Five analogues tested, none priced — unpriced tier assigned. ' +
+                  'PRICED threshold locked: foundry market-excess < −5% in the shock window.' },
+        ],
+      },
     },
 
     /* ════════════════════════════════════════════════════════════════════════
