@@ -712,8 +712,6 @@ body.beginner-mode body.beginner-mode
   <span id="tierBadge" style="font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;
     padding:3px 10px;border-radius:3px;border:1px solid;white-space:nowrap"></span>
   <span id="reviewStamp"></span>
-  <a href="/methodology" id="tierLink" style="font-family:var(--mono);font-size:.55rem;
-    color:var(--text-dim,#5a7299);text-decoration:underline">how tiers work</a>
 </div>
 
 <!-- SETTINGS DRAWER — houses controls moved from header (Fix 2.7) -->
@@ -979,7 +977,7 @@ body.beginner-mode body.beginner-mode
       </div>
     </div>
     <!-- Prompt chips — investor-friendly examples -->
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem" aria-label="Example questions">
+    <div id="whatifChips" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem" aria-label="Example questions">
       <button onclick="setWhatIfChip(this)" class="whatif-chip"
         style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
           background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
@@ -1024,7 +1022,7 @@ body.beginner-mode body.beginner-mode
     <!-- Input row -->
     <div style="display:flex;gap:.6rem;align-items:center">
       <input class="whatif-input" id="whatifInput" type="text"
-        placeholder="Ask your own question about how this war affects your investments…"
+        placeholder="Ask your own question about how this affects your investments…"
         aria-label="Investor intelligence question"
         onkeydown="if(event.key==='Enter')runWhatIf()"
         style="flex:1"/>
@@ -5339,10 +5337,12 @@ let _hormuzKpiHTML = null;        // snapshot for restore
 let _hormuzMonthlyLabel = null;
 
 const TIER_STYLE = {
-  empirical: { color:'#00e676', text:(s)=>'EMPIRICAL · fitted to the 2026 Hormuz war' },
-  unpriced:  { color:'#f5a623', text:(s)=>'UNPRICED · analytical — anchored to Bloomberg Economics. The market has never priced this event.' },
-  spliced:   { color:'#00d4ff', text:(s)=>'SPLICED · fitted from proxy mechanisms' },
-  draft:     { color:'#ff3d4a', text:(s)=>'DRAFT · unexamined' },
+  empirical: { color:'#00e676', text:()=>'EMPIRICAL · fitted to the 2026 war',
+               tip:'Sector sensitivities were fitted to the actual 2026 Strait of Hormuz war.' },
+  unpriced:  { color:'#f5a623', text:()=>'UNPRICED · Bloomberg-anchored',
+               tip:'Analytical estimates anchored to Bloomberg Economics. The market has never priced this event — see the Pricing Evidence panel.' },
+  spliced:   { color:'#00d4ff', text:()=>'SPLICED · proxy-fitted', tip:'Fitted from proxy mechanisms.' },
+  draft:     { color:'#ff3d4a', text:()=>'DRAFT', tip:'Unexamined first-pass model.' },
 };
 
 
@@ -5385,7 +5385,8 @@ function styleStructureBtns() {
   const S = RISK_STRUCTURES[ACTIVE_STRUCTURE];
   const t = TIER_STYLE[S.meta.calibration] || TIER_STYLE.draft;
   const badge = document.getElementById('tierBadge');
-  if (badge) { badge.textContent = t.text(S); badge.style.color = t.color; badge.style.borderColor = t.color; }
+  if (badge) { badge.textContent = t.text(S); badge.style.color = t.color; badge.style.borderColor = t.color;
+    badge.title = t.tip || ''; badge.style.cursor = 'help'; }
   const stamp = document.getElementById('reviewStamp');
   if (stamp) stamp.innerHTML = reviewStampHTML(S);
   const sub = document.getElementById('structSubtitle');
@@ -5394,9 +5395,42 @@ function styleStructureBtns() {
     : 'Taiwan Strait · The Unpriced Semiconductor Chokepoint';
 }
 
+/* v4.2 — Investor Intelligence example chips follow the active structure.
+   The AI payload was already structure-aware; the SUGGESTIONS were still Hormuz. */
+const WHATIF_CHIPS = {
+  'hormuz-iran': [
+    'What happens to my energy stocks if Hormuz closes again?',
+    'How does the armed truce affect inflation over the next 2 years?',
+    'Which of my holdings are most exposed to a second closure?',
+    'What changes if the truce fully normalises?',
+    'How exposed is my portfolio if oil hits $150?',
+  ],
+  'taiwan-strait': [
+    'How exposed is my portfolio to a Taiwan blockade?',
+    'Why did TSMC rise during the December 2025 escalation?',
+    'What happens to NVDA if Taiwan\u2019s chips stop shipping?',
+    'Who are the relative winners if the strait closes?',
+    'Why does this model say the market isn\u2019t pricing Taiwan risk?',
+  ],
+};
+function renderWhatIfChips() {
+  const wrap = document.getElementById('whatifChips'); if (!wrap) return;
+  const qs = WHATIF_CHIPS[ACTIVE_STRUCTURE] || WHATIF_CHIPS['hormuz-iran'];
+  wrap.innerHTML = qs.map(q => `<button onclick="setWhatIfChip(this)" class="whatif-chip"
+    style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);background:var(--bg-deep);
+    border:1px solid var(--border-dim);border-radius:2px;padding:.3rem .7rem;cursor:pointer;transition:all .15s"
+    onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
+    onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">${q}</button>`).join('');
+  const inp = document.getElementById('whatifInput');
+  if (inp) inp.placeholder = ACTIVE_STRUCTURE === 'taiwan-strait'
+    ? 'Ask how a Taiwan supply cut would affect your investments…'
+    : 'Ask how the Hormuz standoff affects your investments…';
+}
+
 function setStructure(id) {
   if (!RISK_STRUCTURES[id] || id === ACTIVE_STRUCTURE) return;
   ACTIVE_STRUCTURE = id;
+  renderWhatIfChips();
   // carry the selection into the Exposure Desk
   const cta = document.getElementById('edCtaLink');
   if (cta) cta.href = '/exposure-desk.html?structure=' + id;

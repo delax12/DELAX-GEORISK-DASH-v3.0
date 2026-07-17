@@ -242,10 +242,12 @@ const CHAN_LABEL={oil:'Oil',shipping:'Shipping',cpi:'Inflation',gdp:'Growth',fx:
   defense:'Defense',food:'Food',
   semiconductors:'Chip Supply',tech_supply:'Tech Supply'};   // Taiwan channels
 const TIER_BADGE={
-  empirical:{c:'#00e676',t:'EMPIRICAL · fitted to the 2026 Hormuz war'},
-  unpriced:{c:'#f5a623',t:'UNPRICED · analytical — anchored to Bloomberg Economics. The market has never priced this event.'},
-  spliced:{c:'#00d4ff',t:'SPLICED · proxy-fitted'},
-  draft:{c:'#ff3d4a',t:'DRAFT'},
+  empirical:{c:'#00e676',t:'EMPIRICAL · fitted to the 2026 war',
+    tip:'Sector sensitivities were fitted to the actual 2026 Strait of Hormuz war.'},
+  unpriced:{c:'#f5a623',t:'UNPRICED · Bloomberg-anchored',
+    tip:'Analytical estimates anchored to Bloomberg Economics. The market has never priced this event.'},
+  spliced:{c:'#00d4ff',t:'SPLICED · proxy-fitted',tip:''},
+  draft:{c:'#ff3d4a',t:'DRAFT',tip:''},
 };
 let scenarioId='baseline';
 let book=[];            // {sym, weight, sector}
@@ -278,7 +280,8 @@ function applyStructure(){
   // tier badge (the honesty system, visible BEFORE the score)
   const tb=document.getElementById('tierBadge');
   if(tb){ const t=TIER_BADGE[struct().meta.calibration]||TIER_BADGE.draft;
-    tb.textContent=t.t; tb.style.color=t.c; tb.style.borderColor=t.c; }
+    tb.textContent=t.t; tb.style.color=t.c; tb.style.borderColor=t.c;
+    tb.title=t.tip||''; tb.style.cursor='help'; }
   const rs=document.getElementById('reviewStamp');
   if(rs) rs.innerHTML=reviewStampHTML(struct());
   // structure toggle buttons
