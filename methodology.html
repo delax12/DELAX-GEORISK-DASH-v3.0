@@ -4,164 +4,82 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Methodology · DELAX GEO-RISK</title>
-<meta name="description" content="How the DELAX GEO-RISK Exposure Score is calibrated: sector betas fitted to the 2026 Strait of Hormuz war itself, using six years of weekly price history, net of market.">
-<meta property="og:title" content="We calibrated against the wrong war. Then we fixed it. · DELAX GEO-RISK">
-<meta property="og:description" content="Sector betas fitted to the 2026 Hormuz war itself. The previous model overstated conflict sensitivity by 2-3x. Here is the correction, in full.">
+<meta name="description" content="How DELAX GEO-RISK measures geopolitical portfolio exposure: calibration standards, honesty tiers, validation against the 2026 Hormuz war, and how to use the platform.">
+<meta property="og:title" content="Methodology · DELAX GEO-RISK">
+<meta property="og:description" content="Calibration standards, honesty tiers, and validation record. Sector sensitivities fitted to the 2026 Hormuz war; Taiwan modelled as an unpriced risk, anchored to Bloomberg Economics.">
 <meta property="og:type" content="article">
 <style>
   :root{
-    --bg:#0a0c11;
-    --panel:#11151d;
-    --panel-2:#151a24;
-    --line:#1e2530;
-    --line-soft:#161c26;
-    --text:#dfe5ec;
-    --muted:#78849a;
-    --dim:#4d5769;
-    --accent:#f0a83c;
-    --up:#4ade80;
-    --down:#f2495c;
-    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --bg:#0a0c11; --panel:#11151d; --panel-2:#151a24; --line:#1e2530; --line-soft:#161c26;
+    --text:#dfe5ec; --muted:#78849a; --dim:#4d5769; --accent:#f0a83c;
+    --up:#4ade80; --down:#f2495c; --cyan:#00d4ff;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
     --sans:"Helvetica Neue",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{-webkit-text-size-adjust:100%}
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:var(--sans);
-    font-size:16px;
-    line-height:1.65;
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.65;
     -webkit-font-smoothing:antialiased;
-    background-image:
-      linear-gradient(var(--line-soft) 1px,transparent 1px),
+    background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),
       linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
-    background-size:88px 88px;
-    background-position:-1px -1px;
-  }
-  .wrap{max-width:820px;margin:0 auto;padding:0 20px 96px}
-
-  /* ── nav ── */
-  .nav{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:20px 0;border-bottom:1px solid var(--line);margin-bottom:48px;
-  }
-  .brand{
-    font-family:var(--mono);font-size:12px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--text);text-decoration:none;font-weight:700;
-  }
+    background-size:88px 88px;background-position:-1px -1px}
+  .wrap{max-width:840px;margin:0 auto;padding:0 20px 96px}
+  .nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:20px 0;border-bottom:1px solid var(--line);margin-bottom:44px}
+  .brand{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--text);text-decoration:none;font-weight:700}
   .brand span{color:var(--accent)}
-  .back{
-    font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--muted);text-decoration:none;border:1px solid var(--line);
-    padding:7px 12px;transition:border-color .15s,color .15s;
-  }
-  .back:hover,.back:focus-visible{color:var(--accent);border-color:var(--accent)}
-
-  /* ── eyebrow / section markers ── */
-  .eyebrow{
-    font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
-    color:var(--dim);margin-bottom:14px;
-  }
-
-  /* ── hero ── */
-  .hero{margin-bottom:14px}
-  h1{
-    font-size:clamp(30px,6.4vw,50px);line-height:1.08;font-weight:800;
-    letter-spacing:-.02em;margin-bottom:22px;
-  }
+  .navlinks{display:flex;gap:8px}
+  .navbtn{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-decoration:none;border:1px solid var(--line);padding:7px 12px;
+    transition:border-color .15s,color .15s}
+  .navbtn:hover,.navbtn:focus-visible{color:var(--accent);border-color:var(--accent)}
+  .navbtn.cy:hover,.navbtn.cy:focus-visible{color:var(--cyan);border-color:var(--cyan)}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:14px}
+  h1{font-size:clamp(28px,5.6vw,44px);line-height:1.1;font-weight:800;letter-spacing:-.02em;margin-bottom:20px}
   h1 em{font-style:normal;color:var(--accent)}
-  .lede{font-size:clamp(16px,2.3vw,19px);color:var(--muted);max-width:62ch}
-
-  .stamp{
-    display:flex;flex-wrap:wrap;gap:0;margin:36px 0 64px;
-    border:1px solid var(--line);background:var(--panel);
-  }
-  .stamp div{
-    flex:1 1 130px;padding:14px 16px;border-right:1px solid var(--line);
-  }
+  .lede{font-size:clamp(16px,2.2vw,18px);color:var(--muted);max-width:64ch}
+  .stamp{display:flex;flex-wrap:wrap;margin:34px 0 60px;border:1px solid var(--line);background:var(--panel)}
+  .stamp div{flex:1 1 140px;padding:14px 16px;border-right:1px solid var(--line)}
   .stamp div:last-child{border-right:none}
-  .stamp dt{
-    font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-    color:var(--dim);margin-bottom:5px;
-  }
-  .stamp dd{font-family:var(--mono);font-size:15px;color:var(--text);font-weight:600}
-  .stamp dd.on{color:var(--up)}
-
-  /* ── sections ── */
-  section{margin-bottom:60px}
-  h2{
-    font-size:clamp(20px,3.4vw,26px);font-weight:700;letter-spacing:-.01em;
-    margin-bottom:18px;
-  }
-  h3{
-    font-size:16px;font-weight:700;margin:30px 0 10px;
-  }
-  p{margin-bottom:16px;max-width:68ch}
+  .stamp dt{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+  .stamp dd{font-family:var(--mono);font-size:14px;color:var(--text);font-weight:600}
+  .stamp dd.g{color:var(--up)} .stamp dd.a{color:var(--accent)}
+  section{margin-bottom:58px}
+  h2{font-size:clamp(20px,3.2vw,25px);font-weight:700;letter-spacing:-.01em;margin-bottom:16px}
+  h3{font-size:16px;font-weight:700;margin:26px 0 10px}
+  p{margin-bottom:15px;max-width:70ch}
   p:last-child{margin-bottom:0}
   strong{color:#fff;font-weight:650}
   .muted{color:var(--muted)}
-
-  /* ── data table ── */
-  .tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin:22px 0}
-  .tbl th{
-    text-align:left;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--dim);font-weight:500;padding:0 12px 9px 0;border-bottom:1px solid var(--line);
-  }
+  .tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px;margin:20px 0}
+  .tbl th{text-align:left;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+    font-weight:500;padding:0 12px 9px 0;border-bottom:1px solid var(--line)}
   .tbl td{padding:9px 12px 9px 0;border-bottom:1px solid var(--line-soft);vertical-align:top}
   .tbl tr:last-child td{border-bottom:none}
   .tbl .num{text-align:right;white-space:nowrap}
-  .up{color:var(--up)}
-  .down{color:var(--down)}
-
-  /* ── the signature: the ledger of corrections ── */
-  .fix{
-    border:1px solid var(--line);border-left:2px solid var(--down);
-    background:var(--panel);padding:20px;margin:22px 0;
-  }
-  .fix-head{
-    font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
-    color:var(--down);margin-bottom:12px;
-  }
-  .fix h3{margin-top:0;font-size:17px}
-  .diff{font-family:var(--mono);font-size:13px;margin:14px 0 4px}
-  .diff div{padding:5px 10px;border-left:2px solid transparent}
-  .diff .was{color:var(--down);background:rgba(242,73,92,.06);border-left-color:var(--down)}
-  .diff .now{color:var(--up);background:rgba(74,222,128,.06);border-left-color:var(--up)}
-
-  /* ── limits ── */
-  .limit{
-    border-top:1px solid var(--line);padding-top:16px;margin-top:22px;
-  }
-  .limit h3{margin-top:0}
-
-  /* ── callout ── */
-  .key{
-    background:var(--panel-2);border:1px solid var(--line);border-top:2px solid var(--accent);
-    padding:22px;margin:24px 0;
-  }
+  .up{color:var(--up)} .down{color:var(--down)}
+  .key{background:var(--panel-2);border:1px solid var(--line);border-top:2px solid var(--accent);padding:20px;margin:22px 0}
   .key .eyebrow{color:var(--accent)}
-
-  footer{
-    border-top:1px solid var(--line);margin-top:72px;padding-top:24px;
-    font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim);
-    display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;
-  }
+  .howto{border:1px solid var(--line);background:var(--panel);padding:18px 20px;margin-bottom:14px}
+  .howto h3{margin:0 0 8px;display:flex;align-items:baseline;gap:10px}
+  .howto .n{font-family:var(--mono);font-size:11px;color:var(--cyan)}
+  .howto p{font-size:.92rem;color:var(--muted)}
+  .howto a{color:var(--cyan);text-decoration:none}
+  .howto a:hover{text-decoration:underline}
+  .limit{border-top:1px solid var(--line);padding-top:16px;margin-top:20px}
+  .limit h3{margin-top:0}
+  .tierbadge{font-family:var(--mono);font-size:11px;padding:2px 9px;border:1px solid;border-radius:3px;white-space:nowrap}
+  footer{border-top:1px solid var(--line);margin-top:68px;padding-top:24px;font-family:var(--mono);
+    font-size:11px;letter-spacing:.08em;color:var(--dim);display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between}
   footer a{color:var(--muted);text-decoration:none}
   footer a:hover,footer a:focus-visible{color:var(--accent)}
-
-  a:focus-visible,.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
-  @media (max-width:600px){
-    body{background-size:56px 56px}
-    .wrap{padding:0 16px 72px}
-    .stamp div{flex:1 1 50%;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
-    .tbl{font-size:12px}
-    .tbl th:nth-child(2),.tbl td:nth-child(2){display:none} /* hide 'channel' col on mobile */
-  }
-  @media (prefers-reduced-motion:reduce){
-    *{transition:none!important;animation:none!important}
-  }
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media (max-width:600px){body{background-size:56px 56px}.wrap{padding:0 16px 72px}
+    .stamp div{flex:1 1 50%;border-bottom:1px solid var(--line)}
+    .tbl th:nth-child(2),.tbl td:nth-child(2){display:none}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
@@ -169,170 +87,125 @@
 
   <nav class="nav">
     <a class="brand" href="/">DELAX <span>GEO-RISK</span></a>
-    <a class="back" href="/exposure-desk.html">← Exposure Desk</a>
+    <div class="navlinks">
+      <a class="navbtn" href="/">← Dashboard</a>
+      <a class="navbtn cy" href="/exposure-desk.html">⚡ Exposure Desk</a>
+    </div>
   </nav>
 
-  <header class="hero">
-    <div class="eyebrow">Methodology · Exposure Score</div>
-    <h1>We calibrated this model against the wrong war. Then we <em>fixed it</em>.</h1>
-    <p class="lede">The Strait of Hormuz war of 2026 is not a scenario. It happened, and it is in the price history. Every sector sensitivity here is now fitted to that war — the structure's own event, not a stand-in for it.</p>
+  <header>
+    <div class="eyebrow">Methodology &amp; Model Governance</div>
+    <h1>How DELAX GEO-RISK measures <em>geopolitical exposure</em>.</h1>
+    <p class="lede">DELAX GEO-RISK treats geopolitical risk as a measurable, cross-asset layer over equities, currencies, shipping, and commodities. This page sets out the calibration standards behind every number on the platform, the validation record, the limits, and how to put the tools to work.</p>
   </header>
 
   <dl class="stamp">
-    <div><dt>Model</dt><dd>v3.1</dd></div>
-    <div><dt>Calibrated</dt><dd>2026-07-11</dd></div>
-    <div><dt>Status</dt><dd class="on">Empirical</dd></div>
-    <div><dt>Fitted to</dt><dd>2026 Hormuz war</dd></div>
+    <div><dt>Model</dt><dd>v4.2</dd></div>
+    <div><dt>Structures</dt><dd>2 live</dd></div>
+    <div><dt>Hormuz</dt><dd class="g">Empirical</dd></div>
+    <div><dt>Taiwan</dt><dd class="a">Unpriced</dd></div>
+    <div><dt>Reviewed</dt><dd>2026-07-15</dd></div>
   </dl>
 
   <section>
-    <h2>What the Exposure Score is doing</h2>
-    <p>Every sector on the Exposure Desk carries a <strong>beta</strong> for each risk channel — a number describing how much that sector moves when oil, shipping, food, defense spending, global growth, or emerging-market currencies come under stress. Your score is your holdings, weighted, run through those betas.</p>
-    <p>So the betas are the whole model. If they are guesses, the score is a guess. They are not guesses.</p>
+    <div class="eyebrow">01 · The framework</div>
+    <h2>Risk structures, not headlines</h2>
+    <p>The platform models each geopolitical situation as a <strong>risk structure</strong>: a defined set of transmission channels (oil, shipping, chip supply, currencies, defense spending, growth), a set of probability-weighted scenarios, and a matrix of sector sensitivities that translate channel stress into expected portfolio impact. The Exposure Score you see anywhere on the platform is your holdings, weighted, run through that matrix — computed in your browser, against the same numbers documented here.</p>
+    <p>Two structures are live: the <strong>Strait of Hormuz / Iran</strong> standoff and the <strong>Taiwan Strait</strong> semiconductor chokepoint. They are deliberately different instruments: Hormuz transmits chiefly through energy and shipping; Taiwan through chip supply and the technology complex, with no oil channel at all. Geopolitical risk is not one trade, and the platform does not model it as one.</p>
   </section>
 
   <section>
-    <div class="eyebrow">01 · The evidence</div>
-    <h2>The event, not an analogue</h2>
-    <p>On 28 February 2026 a US–Israeli air war against Iran closed the Strait of Hormuz. Iran mined the waterway and struck merchant shipping; traffic fell to almost nothing. Brent ran from $70.9 to a peak of <strong>$138.2</strong> on 7 April — the day before the ceasefire. It has since round-tripped to about $69, but the strait has not normalised: transits remain below pre-war, war-risk premiums persist, and vessel attacks continue.</p>
-    <p>An earlier version of this model treated the 2022 Ukraine invasion as a proxy for a Hormuz event. That was a mistake. The Hormuz event was already sitting in the data.</p>
-
+    <div class="eyebrow">02 · The calibration standard</div>
+    <h2>Every number carries its evidence tier</h2>
+    <p>Not all model figures deserve equal confidence, and the platform says so on its face. Every structure carries a visible calibration tier:</p>
     <table class="tbl">
-      <thead><tr><th>Event</th><th>Role</th><th>Window</th></tr></thead>
+      <thead><tr><th>Tier</th><th>Meaning</th><th>Applied to</th></tr></thead>
       <tbody>
-        <tr><td><strong>Hormuz war, 2026</strong></td><td>Primary · 70%</td><td>Dec 2025 – Feb 2026 baseline<br>vs 2 Mar – 1 May 2026</td></tr>
-        <tr><td><strong>Russia–Ukraine, 2022</strong></td><td>Secondary · 30%</td><td>Q4-2021 baseline<br>vs 24 Feb – 30 Jun 2022</td></tr>
+        <tr><td><span class="tierbadge" style="color:var(--up);border-color:var(--up)">EMPIRICAL</span></td>
+          <td>Sensitivities fitted to the structure's own observed event</td><td>Hormuz / Iran</td></tr>
+        <tr><td><span class="tierbadge" style="color:var(--accent);border-color:var(--accent)">UNPRICED</span></td>
+          <td>Analytical estimates anchored to published institutional research; the event has never occurred, so no market response exists to fit</td><td>Taiwan Strait</td></tr>
+        <tr><td><span class="tierbadge" style="color:var(--dim);border-color:var(--dim)">DRAFT</span></td>
+          <td>Unvalidated first pass — never shipped to users</td><td>—</td></tr>
       </tbody>
     </table>
-    <p class="muted" style="font-size:14px">41 tickers, weekly closes, January 2020 – July 2026.</p>
+    <p>Three rules govern the tiers. A structure never inherits another structure's tier. A tier can only be upgraded by evidence — an event occurring and being measured. And each structure carries a standing maintenance contract: scheduled reviews (visible as the "Reviewed / next" stamp beside every tier badge), defined re-test triggers, and an append-only revision log.</p>
   </section>
 
   <section>
-    <div class="eyebrow">02 · The method</div>
-    <h2>One choice carries everything</h2>
-
-    <div class="key">
-      <div class="eyebrow">The rule</div>
-      <p><strong>Every return is measured net of the S&amp;P 500 over the same window.</strong></p>
-      <p class="muted" style="margin-bottom:0">Sector return minus market return. That's the whole arithmetic.</p>
-    </div>
-
-    <p>The first half of 2022 was not only a war. It was the fastest Federal Reserve hiking cycle in four decades. Growth stocks fell hard in that window and <strong>most of that fall was about interest rates, not Ukraine.</strong> In 2026 the same trick was needed for a different confound: the AI cycle.</p>
-    <p>A naive calibration absorbs the rate shock into the war beta and produces a model that screams whenever anything happens. Netting each sector against the broad market strips out what the whole market was doing anyway, and leaves the part that belongs to the conflict.</p>
-    <h3>The oil channel is Brent, not WTI.</h3>
-    <p>Hormuz is a <em>seaborne</em> crude shock. In 2026, WTI peaked at $115 while Brent hit $138 — US domestic crude was insulated, and shipped crude was not. In 2022 the two moved almost together, so the distinction never surfaced. Calibrating on the wrong barrel would have inflated every oil sensitivity by roughly 60%.</p>
-  </section>
-
-  <section>
-    <div class="eyebrow">03 · The headline finding</div>
-    <h2>The old model overstated everything by two to three times.</h2>
-    <p>Both wars delivered almost <strong>identical oil stress</strong> — Brent peaked at $133 in 2022 and $138 in 2026. Yet sectors moved less than half as far in the real Hormuz war.</p>
-
+    <div class="eyebrow">03 · Hormuz — the empirical record</div>
+    <h2>Fitted to the 2026 war, and validated against it</h2>
+    <p>The Strait of Hormuz was closed by war between 28 February and the ceasefire of 8 April 2026. Brent ran from a $70.9 pre-war average to a peak of <strong>$138.2 on 7 April</strong> (FRED daily spot) and has since returned to roughly $69. The war reached ceasefire; the crisis has not — transits remain below pre-war levels, war-risk premiums persist, and the model's central case treats the present armed truce, not a hypothetical conflict, as the baseline.</p>
+    <p>Because the event occurred inside the price history, the model's sector sensitivities are <strong>fitted to it directly</strong>: 41 instruments, weekly closes 2020–2026, with every sector return measured net of the S&amp;P 500 over identical windows. Market-netting is the load-bearing methodological choice — it strips the concurrent Federal Reserve cycle (2022) and the AI equity cycle (2026) out of the conflict signal. The 2022 Ukraine invasion serves as a secondary calibration event at reduced weight; the 2023–24 Red Sea crisis serves as a falsification test, confirming that oil-sensitive sensitivities do not fire when oil stress is absent.</p>
     <table class="tbl">
-      <thead><tr><th>Sector</th><th>Channel</th><th class="num">Ukraine 2022</th><th class="num">Hormuz 2026</th></tr></thead>
+      <thead><tr><th>Sector</th><th>Channel</th><th class="num">Model</th><th class="num">Observed 2026</th></tr></thead>
       <tbody>
-        <tr><td>Energy producers</td><td>oil</td><td class="num up">+46.1%</td><td class="num up">+19.4%</td></tr>
-        <tr><td>Tankers</td><td>shipping</td><td class="num up">+50.7%</td><td class="num up">+25.1%</td></tr>
-        <tr><td>LNG</td><td>oil</td><td class="num up">+38.1%</td><td class="num up">+26.4%</td></tr>
-        <tr><td>Defense</td><td>defense</td><td class="num up">+26.5%</td><td class="num up">+6.1%</td></tr>
-        <tr><td>Gold</td><td>cpi / fx</td><td class="num up">+14.4%</td><td class="num up">+0.9%</td></tr>
-        <tr><td>Luxury</td><td>gdp</td><td class="num down">−8.8%</td><td class="num down">−19.7%</td></tr>
+        <tr><td>Gulf producers</td><td>oil</td><td class="num">+4.9%</td><td class="num up">+3.3%</td></tr>
+        <tr><td>Energy producers</td><td>oil</td><td class="num">+19.6%</td><td class="num up">+19.4%</td></tr>
+        <tr><td>Tankers</td><td>shipping</td><td class="num">+24.8%</td><td class="num up">+25.1%</td></tr>
+        <tr><td>Utilities</td><td>defensive bid</td><td class="num">+9.3%</td><td class="num up">+10.1%</td></tr>
+        <tr><td>Aviation</td><td>fuel / demand</td><td class="num">−8.7%</td><td class="num down">−9.9%</td></tr>
+        <tr><td>Luxury</td><td>demand</td><td class="num">−17.9%</td><td class="num down">−19.7%</td></tr>
       </tbody>
     </table>
-    <p class="muted" style="font-size:14px">Market-excess returns. Same oil shock, roughly half the response.</p>
-
-    <p><strong>Why the gap?</strong> 2022 caught energy equities after a decade of underinvestment. That +46% was a one-time <em>re-rating</em> as much as an oil pass-through — and a re-rating only happens once. Fitting to it inflates every future call. The new model deliberately does not chase those magnitudes.</p>
-
     <div class="key">
-      <div class="eyebrow">Out-of-sample test</div>
-      <p>Run against the real Hormuz war, the old betas missed by an average of <strong>19.0 percentage points</strong> per sector. The new ones miss by <strong>2.5</strong>.</p>
+      <div class="eyebrow">Validation record</div>
+      <p>Tested out of sample against the full 2026 event, the current model's mean absolute error is <strong>2.5 percentage points per sector</strong>. The preceding version — calibrated on the Ukraine analogue before the Hormuz event could be used — erred by 19.0 points and systematically overstated conflict sensitivity. It was replaced, and the revision is logged.</p>
+    </div>
+    <p>That replacement reflects the platform's governing discipline: <strong>when observation contradicts the model, the model changes.</strong> Airline sensitivity was cut 3.6× when measured fuel-cost impact proved milder than assumed; commodity funds mis-grouped with gold were re-classified when their wartime behaviour diverged (+24.5% versus gold's +0.9%); emerging-market sensitivities were re-signed when both 2022 and 2026 showed exporter gains outweighing importer pain. Corrections of this kind are not exceptions to the methodology — they are the methodology.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">04 · Taiwan — the unpriced risk</div>
+    <h2>Measured absence of pricing, anchored analysis of impact</h2>
+    <p>No Taiwan blockade has ever occurred. Chip supply has never been interrupted by geopolitics. There is therefore no market response to fit — and rather than disguise that, the platform makes it the structure's central, testable finding.</p>
+    <p><strong>The pricing evidence:</strong> five candidate analogues were tested with the same market-excess method used for Hormuz. The December 2025 PLA escalation — the sharpest in decades — saw the foundry complex rise <strong>20.6% against the market</strong>; the AI demand cycle did not merely mute the risk signal, it inverted it. The August 2022 Pelosi episode produced the only coherent fear response on record (foundry −8.3%), and it was small. Physical fab damage (the April 2024 Hualien earthquake) and genuine chip scarcity (2021) left no usable price signature. Each test, with windows and verdicts, is published in the structure's Pricing Evidence panel, and every future escalation is re-tested by a frozen, validated pipeline against a fixed threshold.</p>
+    <p><strong>The impact model:</strong> scenario magnitudes are anchored to Bloomberg Economics (February 2026): a year-long blockade at −5.0% of world GDP; war at −9.6%, some $10.6 trillion in the first year; lagging-edge chip output −35% and −62% respectively. Sector sensitivities are then set analytically from revenue exposure and supply-share reasoning so the model reproduces outcomes consistent with those published figures. They are estimates of a never-observed event — a map, not a forecast — and the platform labels them accordingly everywhere they appear.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">05 · Using the platform</div>
+    <h2>Four tools that answer real questions</h2>
+
+    <div class="howto">
+      <h3><span class="n">01</span> Score your actual portfolio — the Exposure Desk</h3>
+      <p>Open the <a href="/exposure-desk.html">Exposure Desk</a>, add your holdings (search covers 100+ names; custom tickers can be sector-tagged), pick a structure and scenario, and read your Conflict Exposure Score: the modelled move of <em>your</em> book, decomposed by channel and by holding, worst-hit first. Everything computes in your browser — your portfolio is never sent anywhere.</p>
+    </div>
+    <div class="howto">
+      <h3><span class="n">02</span> Compare risks — the structure switcher</h3>
+      <p>On the <a href="/">dashboard</a>, switch between HORMUZ and TAIWAN and watch the same portfolio tell two different stories. An oil crisis barely touches a typical tech-heavy book; a Taiwan blockade transforms it. Then use the scenario tabs — each carries its probability, in numbers and plain words — to see the range, not just the base case.</p>
+    </div>
+    <div class="howto">
+      <h3><span class="n">03</span> Ask your own question — Investor Intelligence</h3>
+      <p>The AI panel on the dashboard answers free-form questions ("How exposed is my portfolio to a Taiwan blockade?") using the live model state — the active structure, scenario, and current data — and answers in a fixed discipline: what changed, why it matters to you, what to watch next. It describes exposure; it does not give buy or sell instructions.</p>
+    </div>
+    <div class="howto">
+      <h3><span class="n">04</span> Judge the confidence — tiers and evidence</h3>
+      <p>Before acting on any number, check its badge. <span style="color:var(--up)">EMPIRICAL</span> means fitted to an observed event; <span style="color:var(--accent)">UNPRICED</span> means analytical and anchored. On the Taiwan view, the Monthly tab holds the full Pricing Evidence ledger — every escalation tested, every verdict, and the running count. The review stamp beside each badge shows when the structure was last examined and when it is due again.</p>
     </div>
   </section>
 
   <section>
-    <div class="eyebrow">04 · What broke</div>
-    <h2>Four sectors were pointing the wrong way.</h2>
-
-    <div class="fix">
-      <div class="fix-head">Correction 01 · Emerging markets</div>
-      <h3>The "EM gets crushed" thesis is refuted by both wars.</h3>
-      <p>The old model predicted EM equity would fall 17.8% on a Hormuz shock. It <strong>rose 7.2%</strong> — and rose 7.8% in Ukraine too. Two conflicts, same answer, opposite to the model.</p>
-      <p>The reason is composition: the EM index is commodity <em>exporter</em>-heavy. Importers hurt, exporters win, and the exporters carry the index.</p>
-      <div class="diff">
-        <div class="was">was &nbsp; em_equity · fx −0.50, gdp −0.35, oil −0.15 &nbsp;→ −17.8%</div>
-        <div class="now">now &nbsp; em_equity · oil +0.20, gdp −0.15, fx −0.10 &nbsp;→ +6.9%</div>
-      </div>
-    </div>
-
-    <div class="fix">
-      <div class="fix-head">Correction 02 · Utilities</div>
-      <h3>Utilities are a haven, not a victim.</h3>
-      <p>Scored as a mild loser. In the actual war they <strong>gained 10.1% over the market</strong> — the defensive bid, the same instinct that normally lifts gold. (Gold, meanwhile, managed +0.9%. It did not show up.)</p>
-      <div class="diff">
-        <div class="was">was &nbsp; utilities · gdp −0.05, cpi −0.20 &nbsp;→ −6.0%</div>
-        <div class="now">now &nbsp; utilities · gdp +0.35, cpi −0.10 &nbsp;→ +4.5%</div>
-      </div>
-    </div>
-
-    <div class="fix">
-      <div class="fix-head">Correction 03 · Gulf producers</div>
-      <h3>In a Hormuz war, the Gulf is inside the blast radius.</h3>
-      <p>Modelled as the obvious oil winner. In reality Gulf producers gained just <strong>3.3%</strong> — because their own export infrastructure was struck and they could not ship. They win in <em>someone else's</em> oil war. Not in this one.</p>
-      <div class="diff">
-        <div class="was">was &nbsp; gulf_producers · oil +0.60 &nbsp;→ +32.1%</div>
-        <div class="now">now &nbsp; gulf_producers · oil +0.15, gdp −0.15 &nbsp;→ +4.9%</div>
-      </div>
-    </div>
-
-    <div class="fix" style="border-left-color:var(--accent)">
-      <div class="fix-head" style="color:var(--accent)">Correction 04 · Semiconductors</div>
-      <h3>Sometimes the honest beta is zero.</h3>
-      <p>Semis fell 8.2% in Ukraine and rose 11.4% in the Hormuz war. The two events <strong>disagree on the sign.</strong> That is not a signal to be tuned — it means semiconductors trade on the AI cycle, not on Middle East geopolitics.</p>
-      <p class="muted" style="font-size:14px;margin-bottom:0">The beta is set near zero and flagged low-confidence, rather than fitting a number to noise.</p>
-    </div>
-
-    <div class="fix" style="border-left-color:var(--muted)">
-      <div class="fix-head" style="color:var(--muted)">And one the old model got right</div>
-      <h3>Airlines really do lose.</h3>
-      <p>Ukraine had said otherwise — airlines beat the market in 2022, because post-COVID travel demand swamped the fuel bill. The Hormuz war settled it: aviation fell <strong>9.9%</strong> below market, jet fuel rose about 95%, and Spirit Airlines ceased operations on 2 May 2026 citing fuel costs. The direction was right. The magnitude was 3.6× too harsh.</p>
-    </div>
-  </section>
-
-  <section>
-    <div class="eyebrow">05 · The limits</div>
-    <h2>What we are not claiming</h2>
-
-    <div class="limit">
-      <h3>One war is one sample.</h3>
-      <p>The 2026 war ran six weeks to a ceasefire. A longer closure could transmit through corporate earnings in ways a six-week shock never did. These betas describe what <em>has</em> happened. They do not describe the tail that hasn't.</p>
-    </div>
-
-    <div class="limit">
-      <h3>Shipping is the channel we measure worst — and it matters most.</h3>
-      <p>Hormuz hit shipping hardest: tanker traffic fell to almost nothing and war-risk premiums spiked. There is no free tanker-rate index. Shipping, global GDP and defense appropriations all have no clean high-frequency series, so their stress levels are judgment, not measurement. We would rather state that than dress an estimate up as data.</p>
-    </div>
-
-    <div class="limit">
-      <h3>The currency channel is the weakest link.</h3>
-      <p>The emerging-market currency basket moved 1.5% during the Hormuz war and 0.7% during Ukraine. In both cases exporters offset importers, so there is almost no measured response to fit to. The currency betas are small and are the first thing we will revisit when a better event arrives.</p>
-    </div>
-
-    <div class="limit">
-      <h3>Inflation betas are still judgment.</h3>
-      <p>Monthly CPI gives roughly four data points inside a shock window. That is not enough to fit anything honestly, and we did not pretend otherwise.</p>
-    </div>
+    <div class="eyebrow">06 · Limits</div>
+    <h2>What this model does not claim</h2>
+    <div class="limit"><h3>One war is one sample.</h3>
+      <p>The 2026 Hormuz war ran six weeks to ceasefire. A longer closure could transmit through corporate earnings in ways a six-week shock never did. Empirical sensitivities describe what has happened, not every tail that hasn't.</p></div>
+    <div class="limit"><h3>Some channels are judgment-tier, and are labelled.</h3>
+      <p>No free high-frequency series exists for tanker rates, real-time global GDP, or defense appropriations; their stress levels are stated estimates. The emerging-market currency channel is the weakest-evidenced in the model — in both measured conflicts, exporter and importer moves largely offset. Confidence scores on the dashboard's indicators reflect these gradations.</p></div>
+    <div class="limit"><h3>Unpriced means unpriced.</h3>
+      <p>Taiwan figures are anchored estimates of a never-observed event. They are built for exposure comparison and stress-thinking, not point prediction, and the linear model's extreme-scenario outputs should be read as order of magnitude.</p></div>
+    <div class="limit"><h3>This is analysis, not advice.</h3>
+      <p>The platform measures and explains exposure. It does not issue investment recommendations, and nothing on it should be read as a personalised instruction to buy or sell.</p></div>
   </section>
 
   <section>
     <h2>Why this page exists</h2>
-    <p>An exposure score you cannot interrogate is a number taken on faith. This one can be checked. The war is public. The tickers are liquid. The windows are stated above. The method is one line of arithmetic — sector return minus market return.</p>
-    <p>And the first thing this page told you is that we got it wrong the first time, by a factor of two to three, across the whole model.</p>
-    <p><strong>If you think a beta is still wrong, you now have everything you need to argue with us.</strong></p>
+    <p>An exposure score you cannot interrogate is a number taken on faith. Everything above can be checked: the events are public, the instruments are liquid, the windows are stated, the anchors are cited, and the method is one line of arithmetic — sector return minus market return. Where the model has been wrong, the correction is on the record. If you believe a sensitivity is still wrong, this page gives you everything needed to make that case.</p>
   </section>
 
   <footer>
-    <span>DELAX GEO-RISK · Model v3.1 · Fitted to the 2026 Hormuz war · 2026-07-11</span>
-    <span><a href="/exposure-desk.html">Exposure Desk</a> &nbsp;·&nbsp; Not financial advice.</span>
+    <span>DELAX GEO-RISK · Model v4.2 · Reviewed 2026-07-15</span>
+    <span><a href="/">Dashboard</a> · <a href="/exposure-desk.html">Exposure Desk</a> · Not financial advice.</span>
   </footer>
 
 </div>

@@ -97,7 +97,11 @@ and every beta came out 2–3× too hot.
    mono data + bold sans headers). Mobile-first.
 5. **Validate before delivery:** `node --check` every JS file; extract and check inline
    <script> blocks in HTML; verify JSON parses.
-6. **Honesty compounds.** Publishing corrections ("our airline beta was 3.6× too harsh")
+6. **Tense discipline (Hormuz).** The WAR is past tense (28 Feb–8 Apr 2026); the ARMED
+   TRUCE and strait disruption are PRESENT tense. Never write copy — UI, AI prompts, or
+   social — implying the risk is over/closed/resolved. House formulation: "the war
+   reached ceasefire; the crisis has not."
+7. **Honesty compounds.** Publishing corrections ("our airline beta was 3.6× too harsh")
    is the brand's core credibility mechanism. Never smooth over a model error — document
    it in the file and, when material, on the methodology page.
 

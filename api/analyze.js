@@ -396,7 +396,7 @@ Africa: 2.4→0.7 | Oceania: 3.0→0.9
 `• Live Brent: $${oilPrice}/bbl (as of ${liveDate})
 • CPI Addition Yr1: ${cpi}
 • Global GDP Impact Yr1: ${gdp}`,
-    honesty: 'EPISTEMIC STATUS: this structure is EMPIRICAL — its sector sensitivities were fitted to the actual 2026 Strait of Hormuz war (Brent $70.9→$138.2 peak, ceasefire 8 Apr). Speak of the war in the PAST tense; the live question is whether the armed truce holds, normalises, or breaks.',
+    honesty: 'EPISTEMIC STATUS: this structure is EMPIRICAL — its sector sensitivities were fitted to the actual 2026 Strait of Hormuz war (Brent $70.9→$138.2 peak, ceasefire 8 Apr). TENSE DISCIPLINE: the WAR is past tense (it ran 28 Feb–8 Apr 2026); the ARMED TRUCE and strait disruption are PRESENT tense — transits remain below pre-war, war-risk premia persist, attacks continue, and Re-escalation carries P=25%. Never state or imply that the risk is over, closed, or resolved. The house formulation: the war reached ceasefire; the crisis has not.',
     regionalStress:
 `Middle East: 9.1→1.7 | Africa: 6.8→1.1 | South Asia: 5.4→0.6
 Europe: 3.8→0.3 | East Asia: 2.8→0.2 | South America: 2.9→0.3
