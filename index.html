@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- Phase 1: Taiwan data-driven improvements applied -->
 <head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-KEK0Q8HN11"></script>
@@ -5582,6 +5583,26 @@ function renderTaiwanCapacityChart(chartId, horizon) {
 }
 
 document.addEventListener('DOMContentLoaded', () => { buildStructureBar(); });
+
+// Phase 1 safety wrapper: ensure Taiwan switch guarantees enter + KPI render
+(function(){
+  try {
+    const _origSetStructure = window.setStructure;
+    if (typeof _origSetStructure === 'function') {
+      window.setStructure = function(id) {
+        // Call original implementation first to preserve behavior
+        _origSetStructure(id);
+        try {
+          if (id === 'taiwan-strait') {
+            if (typeof enterTaiwan === 'function') enterTaiwan();
+            if (typeof renderTaiwanKPIs === 'function') renderTaiwanKPIs();
+          }
+        } catch(e) { console.warn('[Phase1Patch] Taiwan post-hook error', e); }
+      };
+    }
+  } catch(e) { console.warn('[Phase1Patch] wrapper init error', e); }
+})();
+
 </script>
 </body>
 </html>
