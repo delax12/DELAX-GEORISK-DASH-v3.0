@@ -1233,7 +1233,7 @@ body.beginner-mode body.beginner-mode
   <div class="export-row">
     <button class="btn" onclick="exportPDF()" aria-label="Export report as PDF">📄 Export PDF Report</button>
   </div>
-  <div class="exec-card">
+  <div class="exec-card" id="execCard">
     <h3>Executive Summary</h3>
     <p><strong>The Hormuz shock is no longer a scenario. It happened.</strong> On 28 February 2026 a US–Israeli air war against Iran closed the Strait of Hormuz. Iran mined the waterway and struck merchant shipping; tanker traffic fell to almost nothing and the IEA called it the largest supply disruption in the history of the oil market. Brent ran from $70.9 to a peak of <strong>$138.2 on 7 April</strong> — the day before the ceasefire — and has since round-tripped to about $69.</p>
     <p>But the strait has <strong>not normalised</strong>. Mines remain, war-risk premiums remain, transits sit well below pre-war levels, vessel attacks continue, and Iran now asserts standing authority over passage. The live question is no longer whether a Hormuz shock occurs. It is whether this armed truce holds, normalises, or breaks.</p>
@@ -1241,8 +1241,8 @@ body.beginner-mode body.beginner-mode
     <p><strong>What the war actually did to portfolios</strong> (measured, net of market): energy producers +19.4%, LNG +26.4%, tankers +25.1%, defense +6.1%, utilities +10.1% — against aviation −9.9% and luxury −19.7%. Gold, notably, delivered +0.9%: it did not show up. Every sector sensitivity in this model is now fitted to those observed moves rather than to a proxy conflict.</p>
     <p style="font-size:.72rem;color:var(--text-dim)"><strong>Not financial advice.</strong> Sector sensitivities are estimates fitted to one six-week war and one secondary analogue. A longer closure could transmit through earnings in ways this sample never observed.</p>
   </div>
-  <div class="section-label">Key Assumptions & Methodology</div>
-  <div class="assumption-grid">
+  <div class="section-label" id="assumptionLabel">Key Assumptions &amp; Methodology</div>
+  <div class="assumption-grid" id="assumptionGrid">
     <div class="assumption-card"><h4>Scenario Framework</h4><ul>
       <li>Armed Truce (P=50%): Iran retains leverage over the strait; transits below pre-war; Brent peaks ~$102</li>
       <li>Normalisation (P=25%): MOU holds, mines cleared, premiums decay; Brent settles $70–78</li>
@@ -1415,8 +1415,8 @@ body.beginner-mode body.beginner-mode
     </div>
   </div>
 
-  <div class="section-label">Black Swan Trigger Events</div>
-  <div class="assumption-grid">
+  <div class="section-label" id="blackSwanLabel">Black Swan Trigger Events</div>
+  <div class="assumption-grid" id="blackSwanGrid">
     <div class="assumption-card"><h4 style="color:var(--red)">🔴 Hormuz Full Closure (>90 Days)</h4><ul>
       <li>Probability: 18% baseline → 55% pessimistic</li>
       <li>Oil: $190–220/bbl within 3 weeks of closure</li>
@@ -5742,8 +5742,143 @@ function setStructure(id) {
   setScenario(scenario);
 }
 
+
+/* ═══ TAIWAN NARRATIVE CONTENT (v4.5) ═══════════════════════════════════════
+   The Summary and Risks tabs were authored as static HORMUZ markup, so under
+   TAIWAN they described the wrong conflict entirely. These blocks replace them
+   on structure switch; the HORMUZ markup is snapshotted and restored verbatim.
+   Every figure below traces to risk-structures.js, Bloomberg Economics (Feb 2026),
+   or the structure's own pricingEvidence tests. Nothing here is invented, and the
+   unpriced tier is stated in the copy rather than left to the badge.          */
+const TAIWAN_EXEC = `
+    <h3>Executive Summary</h3>
+    <p><strong>Taiwan is the opposite of Hormuz: the shock has not happened, and the market is not pricing it.</strong>
+    Taiwan manufactures roughly 90% of the world's advanced (≤7nm) logic. TSMC alone took 74% of its
+    Q1-2026 wafer revenue from 7nm and below and guided 2026 revenue growth above 30%. No blockade has
+    occurred; chip supply has never been interrupted by geopolitics.</p>
+    <p>That absence is measurable, and we measured it. Five candidate analogues were tested with the same
+    market-excess method used for Hormuz. In the <strong>December 2025 PLA escalation</strong> — 100+ aircraft,
+    90 median-line crossings, rockets inside Taiwan's contiguous zone — the foundry complex rose
+    <strong>20.6% against the market</strong>. Not muted: inverted. The Pelosi visit of August 2022 produced
+    the only coherent fear response ever recorded (foundry −8.3%), and it was small. Physical fab damage
+    (Hualien, April 2024) and genuine chip scarcity (2021) left no usable price signature at all.</p>
+    <p>So this structure ships as <strong>UNPRICED</strong>. Its sensitivities are analytical, derived from
+    revenue exposure and supply-share reasoning and anchored to <strong>Bloomberg Economics</strong> (February 2026):
+    a year-long blockade at −5.0% of world GDP; war at −9.6%, roughly $10.6 trillion in the first year;
+    lagging-edge chip output −35% and −62% respectively. They are estimates of a never-observed event.</p>
+    <p><strong>Why this reaches your portfolio when Hormuz did not.</strong> A regional oil war barely moved the
+    S&amp;P. Taiwan is different in kind: semiconductors and big tech <em>are</em> the index. Under the blockade case
+    the model puts the foundry complex near −65%, fabless designers near −60%, and the broad market near −33%,
+    while fabs outside Taiwan become the scarcest asset on earth (Intel +46%, Micron +35%). One correction worth
+    naming: container shipping was modelled as a winner by analogy to the Red Sea, until Bloomberg's carrier
+    figures (COSCO revenue −63–68%) showed the difference — in a Taiwan blockade the cargo itself disappears.</p>
+    <p style="font-size:.72rem;color:var(--text-dim)"><strong>Not financial advice.</strong> Every Taiwan figure
+    is a reasoned estimate of an event that has never occurred — a map, not a forecast. Read the tier badge before
+    the number.</p>`;
+
+const TAIWAN_ASSUMPTIONS = `
+    <div class="assumption-card"><h4>Scenario Framework</h4><ul>
+      <li>Gray-Zone Pressure (P=60%): coercion without interruption; chips keep shipping</li>
+      <li>Quarantine / Blockade (P=28%): world loses access to ALL Taiwan chips; −5.0% world GDP</li>
+      <li>Invasion / Fab Denial (P=12%): −9.6% world GDP ($10.6T) in year one; tail −14%</li>
+      <li>Betas are ANALYTICAL, not fitted — no market response exists to fit</li>
+    </ul></div>
+    <div class="assumption-card"><h4>Pricing Evidence (5 tests)</h4><ul>
+      <li>PLA escalation Dec 2025: foundry <strong>+20.6%</strong> vs market — INVERTED</li>
+      <li>Pelosi Aug 2022: foundry −8.3%, Taiwan −6.5% — the only fear signal ever</li>
+      <li>Hualien quake Apr 2024: foundry +1.8% — physical fab damage was a non-event</li>
+      <li>Chip shortage 2021: autos +23.2% — real scarcity, invisible in prices</li>
+      <li>Export controls Oct 2022: hit China (−10.8%), not Taiwan</li>
+    </ul></div>
+    <div class="assumption-card"><h4>Chip Supply Assumptions</h4><ul>
+      <li>Taiwan holds ~90% of world ≤7nm capacity; TSMC 74% of Q1-26 wafer revenue from ≤7nm</li>
+      <li>Blockade removes ALL of it — fabs intact but unreachable</li>
+      <li>Lagging-edge output −35% (blockade) / −62% (war) — Bloomberg</li>
+      <li>Fabless designers own no fabs: a cutoff halts production entirely</li>
+      <li>US/Japan fab buildouts are 3–5 years from materially changing this</li>
+    </ul></div>
+    <div class="assumption-card"><h4>Macro Model Inputs</h4><ul>
+      <li>World GDP: −5.0% blockade / −9.6% war (Bloomberg Economics, Feb 2026)</li>
+      <li>Taiwan −12.2% / −40%; China −8.9% / −16.7%; US −3.3% / −6.7%</li>
+      <li>Korea −23.3%, Japan −13.5% in the war case</li>
+      <li>&gt;20% of global seaborne trade transits the Strait; carrier revenue −63–68%</li>
+      <li>NO OIL CHANNEL — this structure declares none</li>
+    </ul></div>
+    <div class="assumption-card"><h4>Data Sources</h4><ul>
+      <li>Bloomberg Economics: scenario GDP and chip-loss anchors (Feb 2026)</li>
+      <li>Twelve Data: weekly closes for the 27-ticker pricing-evidence set</li>
+      <li>FRED: FX and macro series</li>
+      <li>Company disclosures: TSMC revenue mix and guidance</li>
+      <li>GDELT: escalation event tracking</li>
+    </ul></div>
+    <div class="assumption-card"><h4>Key Uncertainties</h4><ul>
+      <li>Whether the market ever prices this risk before it materialises</li>
+      <li>How fast non-Taiwan capacity substitutes (Intel, Samsung, TSMC Arizona)</li>
+      <li>Whether fabs survive a conflict intact, are sabotaged, or are denied</li>
+      <li>Whether the AI demand cycle keeps overwhelming geopolitical signal</li>
+      <li>Extreme-scenario outputs are order-of-magnitude, not point estimates</li>
+    </ul></div>`;
+
+const TAIWAN_BLACKSWANS = `
+    <div class="assumption-card"><h4 style="color:var(--red)">🔴 Sustained Blockade (&gt;90 Days)</h4><ul>
+      <li>Probability: 28% baseline → 70% pessimistic</li>
+      <li>All Taiwan leading-edge capacity offline; no second source inside 5 years</li>
+      <li>World GDP −5.0% in year one (Bloomberg Economics)</li>
+      <li>Foundry ≈ −65%, fabless ≈ −60%, broad market ≈ −33%</li>
+      <li>Fabs outside Taiwan reprice as strategic monopoly (INTC +46%, MU +35%)</li>
+    </ul></div>
+    <div class="assumption-card"><h4 style="color:var(--red)">🔴 Fab Denial or Destruction</h4><ul>
+      <li>Probability: 12% baseline → 46% pessimistic</li>
+      <li>EUV-class capacity cannot be improvised anywhere</li>
+      <li>World GDP −9.6% ($10.6T) year one; −14% if chips prove wholly unreplaceable</li>
+      <li>Taiwan −40%, China −16.7%, Korea −23.3%, Japan −13.5%</li>
+      <li>Deepest technology supply shock on record</li>
+    </ul></div>
+    <div class="assumption-card"><h4 style="color:var(--amber)">🟡 Chip Export Weaponisation</h4><ul>
+      <li>Probability: 40% baseline; rises with escalation</li>
+      <li>Allocation of leading-edge capacity becomes a political instrument</li>
+      <li>Lagging-edge output −35%: autos and consumer electronics first</li>
+      <li>Accelerates the fab-subsidy race in the US, Japan and EU</li>
+    </ul></div>
+    <div class="assumption-card"><h4 style="color:var(--amber)">🟡 US–China Financial Decoupling</h4><ul>
+      <li>Probability: 45% baseline → 82% pessimistic</li>
+      <li>Secondary sanctions, ADR delisting, capital controls</li>
+      <li>China equity −33% blockade / −60% war: the aggressor is not a winner</li>
+      <li>Supply-chain fragmentation accelerates by years, not quarters</li>
+    </ul></div>
+    <div class="assumption-card"><h4 style="color:var(--amber)">🟡 Korea / Japan Spillover</h4><ul>
+      <li>Probability: 18% baseline → 44% pessimistic</li>
+      <li>Samsung and SK Hynix are the only credible substitute capacity</li>
+      <li>Both economies sit inside the blast radius and are trade-levered</li>
+      <li>Substitution bid roughly offsets in a blockade; buried in a war</li>
+    </ul></div>
+    <div class="assumption-card"><h4 style="color:var(--green)">🟢 Durable De-escalation</h4><ul>
+      <li>Probability: 25% baseline → 58% optimistic</li>
+      <li>PLA sorties have DECLINED since the start of 2026 from the post-2024 peak</li>
+      <li>Capacity diversification proceeds without a shock: Taiwan's share erodes toward 75–80%</li>
+      <li>The structure's own exposure falls as the world's dependence falls</li>
+      <li>Would falsify nothing: unpriced risk can resolve quietly</li>
+    </ul></div>`;
+
+let _hormuzExec = null, _hormuzAssump = null, _hormuzSwans = null, _hormuzAssumpLabel = null;
+function applyNarrative(taiwan) {
+  const ex = document.getElementById('execCard');
+  const ag = document.getElementById('assumptionGrid');
+  const bs = document.getElementById('blackSwanGrid');
+  const al = document.getElementById('assumptionLabel');
+  if (ex && _hormuzExec === null)   _hormuzExec   = ex.innerHTML;
+  if (ag && _hormuzAssump === null) _hormuzAssump = ag.innerHTML;
+  if (bs && _hormuzSwans === null)  _hormuzSwans  = bs.innerHTML;
+  if (al && _hormuzAssumpLabel === null) _hormuzAssumpLabel = al.textContent;
+  if (ex) ex.innerHTML = taiwan ? TAIWAN_EXEC : _hormuzExec;
+  if (ag) ag.innerHTML = taiwan ? TAIWAN_ASSUMPTIONS : _hormuzAssump;
+  if (bs) bs.innerHTML = taiwan ? TAIWAN_BLACKSWANS : _hormuzSwans;
+  if (al) al.textContent = taiwan ? 'Key Assumptions, Evidence & Method' : (_hormuzAssumpLabel || 'Key Assumptions & Methodology');
+}
+
 /* ── TAIWAN MODE ─────────────────────────────────────────────────────────── */
 function enterTaiwan() {
+  applyNarrative(true);
   const grid = document.querySelector('.kpi-grid');
   if (grid && _hormuzKpiHTML === null) _hormuzKpiHTML = grid.innerHTML;
   renderTaiwanKPIs();
@@ -5759,6 +5894,7 @@ function enterTaiwan() {
   renderTaiwanEvidence();
 }
 function restoreHormuz() {
+  applyNarrative(false);
   const grid = document.querySelector('.kpi-grid');
   if (grid && _hormuzKpiHTML !== null) grid.innerHTML = _hormuzKpiHTML;
   toggleTaiwanPanels(false);
