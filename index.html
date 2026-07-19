@@ -416,7 +416,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 /* KPI BOTTOM BAR — scrolls with page, sits right above footer */
 body.beginner-mode body.beginner-mode 
 /* FOOTER */
-.footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.25rem;margin-top:2.5rem;font-family:var(--mono);font-size:.58rem;color:var(--text-dim);text-align:center;letter-spacing:.08em;line-height:1.8}
+.footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.75rem 1.25rem;margin-top:2.5rem;font-family:var(--mono);font-size:.8rem;color:var(--text-sec);text-align:center;letter-spacing:.04em;line-height:1.75}
 .footer strong{color:var(--text-sec)}
 
 /* SCROLLBAR */
@@ -662,12 +662,31 @@ body.beginner-mode body.beginner-mode
 }
 </style>
 <style>
-.footer-line{margin:0 0 .3rem 0;line-height:1.6}
+/* FOOTER — accessibility pass.
+   Previous sizes (.55–.58rem ≈ 8–9px) were below any reasonable legibility floor and
+   used --text-dim on a dark panel, which fails contrast badly. Now: 0.72–0.8rem, the
+   secondary text colour, generous line-height, and a centred measure. */
+.footer-line{margin:0 0 .5rem 0;line-height:1.7;max-width:82ch;margin-left:auto;margin-right:auto}
 .footer-line:last-child{margin-bottom:0}
-.footer-dim{color:var(--text-dim);font-size:.56rem}
-.footer-sep{opacity:.4;margin:0 .3rem}
-.footer-legal{margin-top:.55rem;padding-top:.5rem;border-top:1px solid var(--border-dim);
-  color:var(--text-dim);font-size:.55rem;max-width:78ch;margin-left:auto;margin-right:auto}
+.footer-brand{font-size:.86rem;letter-spacing:.06em;color:var(--text-pri)}
+.footer-brand strong{color:var(--cyan)}
+.footer-meta{font-size:.72rem;color:var(--text-sec)}
+.footer-dim{color:var(--text-sec);font-size:.72rem}
+.footer-sep{opacity:.45;margin:0 .45rem}
+.footer-links{display:flex;gap:1.25rem;justify-content:center;flex-wrap:wrap;margin-top:.65rem}
+.footer-links a{color:var(--cyan);text-decoration:none;font-size:.74rem;letter-spacing:.05em;
+  border-bottom:1px solid transparent;padding-bottom:1px;transition:border-color .15s,color .15s}
+.footer-links a:hover,.footer-links a:focus-visible{border-bottom-color:var(--cyan);color:#fff}
+.footer-links a:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:2px}
+.footer-legal{margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--border-dim);
+  color:var(--text-sec);font-size:.72rem;line-height:1.75;max-width:76ch;
+  margin-left:auto;margin-right:auto;letter-spacing:.02em}
+@media (max-width:600px){
+  .footer{padding:1.4rem 1rem;font-size:.76rem}
+  .footer-brand{font-size:.8rem}
+  .footer-line,.footer-dim,.footer-meta,.footer-legal,.footer-links a{font-size:.72rem}
+  .footer-links{gap:1rem}
+}
 </style>
 </head>
 <body>
@@ -1826,22 +1845,24 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <footer class="footer" role="contentinfo">
-  <div class="footer-line">
+  <div class="footer-line footer-brand">
     <strong>DELAX GEO-RISK</strong> · Cross-asset geopolitical risk analytics
-    <span class="footer-sep">·</span> Model <span id="footerVersion">v4.4</span>
-    <span class="footer-sep">·</span> <span id="footerReview">Reviewed —</span>
+  </div>
+  <div class="footer-line footer-meta">
+    Model <span id="footerVersion">v4.4</span><span id="footerReviewWrap" hidden><span class="footer-sep">·</span><span id="footerReview"></span></span>
   </div>
   <div class="footer-line footer-dim" id="footerSources">
     Sources: EIA · FRED · Twelve Data · GDELT · IMF WEO · SIPRI · FAO · Baltic Exchange
   </div>
-  <div class="footer-line footer-dim">
-    <a onclick="document.getElementById('transparencyPanel').scrollIntoView({behavior:'smooth'})"
-       style="color:var(--text-dim);text-decoration:underline;cursor:pointer">Model assumptions &amp; confidence</a>
-  </div>
+  <nav class="footer-links" aria-label="Footer">
+    <a href="/methodology">Methodology &amp; calibration</a>
+    <a href="/exposure-desk.html">Exposure Desk</a>
+    <a href="#" onclick="event.preventDefault();document.getElementById('transparencyPanel').scrollIntoView({behavior:'smooth'})">Model assumptions</a>
+  </nav>
   <div class="footer-line footer-legal">
-    Analysis, not advice. Scenario outputs are probabilistic model estimates, not
-    forecasts or recommendations, and nothing here is personalised investment advice.
-    Consult a qualified adviser before acting. © 2026 DELAXCOM LLC.
+    Analysis, not advice. Scenario outputs are probabilistic model estimates — not forecasts,
+    not recommendations, and not personalised investment advice. Consult a qualified adviser
+    before acting on anything you read here. © 2026 DELAXCOM LLC.
   </div>
 </footer>
 
@@ -5645,7 +5666,14 @@ function styleStructureBtns() {
   /* Footer follows the active structure: sources differ per structure (no oil series
      under TAIWAN), and the review date comes from the structure's maintenance block. */
   const fr = document.getElementById('footerReview');
-  if (fr && S.meta.review) fr.textContent = 'Reviewed ' + S.meta.review.lastReviewed;
+  const frw = document.getElementById('footerReviewWrap');
+  /* Only render the review stamp when the model actually carries one — a dangling
+     "Reviewed —" reads as broken. (If this stays hidden, the browser is running a
+     cached risk-structures.js: bump CACHE_NAME in sw.js.) */
+  if (fr && frw && S.meta.review && S.meta.review.lastReviewed) {
+    fr.textContent = 'Reviewed ' + S.meta.review.lastReviewed;
+    frw.hidden = false;
+  } else if (frw) { frw.hidden = true; }
   const fs = document.getElementById('footerSources');
   if (fs) fs.innerHTML = (ACTIVE_STRUCTURE === 'taiwan-strait')
     ? 'Sources: Bloomberg Economics (scenario anchors) · Twelve Data · FRED · GDELT · company disclosures'

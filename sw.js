@@ -6,7 +6,7 @@
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v2.7'; // bumped — Global Pulse + network-first HTML navigations
+const CACHE_NAME  = 'delax-georisk-v4.4'; // bumped — v4.4 structure sweep; model files now network-first
 const CACHE_URLS  = [
   '/',
   '/index.html',
@@ -67,7 +67,28 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first for static assets (scripts, libs, etc.)
+  /* ── MODEL & APP SCRIPTS: NETWORK-FIRST ──────────────────────────────────────
+     risk-structures.js is the single source of truth for every number on the site.
+     Serving it cache-first meant returning visitors ran an OLD model against a NEW
+     page — which is exactly how a deployed structure update can appear "not to have
+     shipped" (the review stamp rendering as an em-dash was this bug). Any same-origin
+     first-party script now goes to the network first and falls back to cache offline.
+     Third-party CDN libraries stay cache-first below: they are version-pinned.       */
+  const isOwnScript = url.startsWith(self.location.origin) && /\.(js|json)(\?|$)/.test(url);
+  if (isOwnScript) {
+    event.respondWith(
+      fetch(req).then(response => {
+        if (response && response.status === 200 && response.type !== 'opaque') {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+        }
+        return response;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Cache-first for third-party/static assets (version-pinned CDN libs, fonts, etc.)
   event.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;
