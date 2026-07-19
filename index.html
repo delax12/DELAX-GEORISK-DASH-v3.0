@@ -661,6 +661,14 @@ body.beginner-mode body.beginner-mode
   .eq-drop-footer{display:none}
 }
 </style>
+<style>
+.footer-line{margin:0 0 .3rem 0;line-height:1.6}
+.footer-line:last-child{margin-bottom:0}
+.footer-dim{color:var(--text-dim);font-size:.56rem}
+.footer-sep{opacity:.4;margin:0 .3rem}
+.footer-legal{margin-top:.55rem;padding-top:.5rem;border-top:1px solid var(--border-dim);
+  color:var(--text-dim);font-size:.55rem;max-width:78ch;margin-left:auto;margin-right:auto}
+</style>
 </head>
 <body>
 
@@ -1818,20 +1826,23 @@ body.beginner-mode body.beginner-mode
 </div>
 
 <footer class="footer" role="contentinfo">
-  DELAX GEO-RISK ANALYTICS ·
-  Iran War Global Economic Impact Dashboard <strong>v2.2 — Production Investor Edition</strong><br>
-  Model calibrated: <span id="footerDate">—</span> · Live data: EIA.gov WTI RWTC ·
-  Sources: EIA · IMF WEO · SIPRI · FAO · Baltic Exchange · BIS · GDELT ·
-  <a onclick="document.getElementById('transparencyPanel').scrollIntoView({behavior:'smooth'})"
-     style="color:var(--text-dim);text-decoration:underline;cursor:pointer;font-size:.56rem">ⓘ Model assumptions</a>
-     &nbsp;·&nbsp;
-     <a href="/methodology" style="color:var(--amber);text-decoration:underline;font-size:.56rem">ⓘ How the betas were calibrated — against the 2026 Hormuz war itself →</a><br>
-  <span style="color:var(--red)">⚠ IMPORTANT DISCLAIMER:</span>
-  This dashboard is for <strong>informational and research purposes only</strong> and does not constitute financial, investment, or legal advice.
-  All projections are probabilistic model outputs — not guarantees or predictions.
-  Past geopolitical events are not indicative of future outcomes.
-  Always consult a qualified financial advisor before making investment decisions.
-  Model error ranges: ±15–35% depending on scenario variable. · © 2026 DELAX LLC
+  <div class="footer-line">
+    <strong>DELAX GEO-RISK</strong> · Cross-asset geopolitical risk analytics
+    <span class="footer-sep">·</span> Model <span id="footerVersion">v4.4</span>
+    <span class="footer-sep">·</span> <span id="footerReview">Reviewed —</span>
+  </div>
+  <div class="footer-line footer-dim" id="footerSources">
+    Sources: EIA · FRED · Twelve Data · GDELT · IMF WEO · SIPRI · FAO · Baltic Exchange
+  </div>
+  <div class="footer-line footer-dim">
+    <a onclick="document.getElementById('transparencyPanel').scrollIntoView({behavior:'smooth'})"
+       style="color:var(--text-dim);text-decoration:underline;cursor:pointer">Model assumptions &amp; confidence</a>
+  </div>
+  <div class="footer-line footer-legal">
+    Analysis, not advice. Scenario outputs are probabilistic model estimates, not
+    forecasts or recommendations, and nothing here is personalised investment advice.
+    Consult a qualified adviser before acting. © 2026 DELAXCOM LLC.
+  </div>
 </footer>
 
 <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
@@ -1878,20 +1889,75 @@ let OIL_DATA = {
   optimistic:  [69,70,71,72,72,73,74,74,75,76,76,77,77,78,78,78,78,78,78,78,78,78],
   pessimistic: [69,88,115,142,165,158,146,135,124,116,108,102,98,96,94,92,90,89,88,87,86,85],
 };
-const GDP_REGIONS = ['N. America','Europe','Middle East','East Asia','South Asia','Africa','S. America','Oceania'];
+/* ═══ v4.3 STRUCTURE-KEYED TAB DATA ═══════════════════════════════════════════
+   Every deep tab (Charts, Risks, Continental, Sectors, Portfolio) reads its data
+   through SD(name), which resolves against ACTIVE_STRUCTURE and falls back to
+   HORMUZ. HORMUZ payloads below are byte-identical to the pre-sweep constants.
+   DECLARED FIRST, populated below: the assignments are spread through this data
+   section, so the registry must exist before any of them run (temporal dead zone).
+   Vocabulary note: per the platform advice line, zones and badges read BENEFICIARY /
+   WATCH / EXPOSED — never Buy / Sell. Internal keys stay buy/monitor/avoid so the
+   existing CSS classes keep working.                                            */
+const STRUCT_DATA = { 'hormuz-iran': {}, 'taiwan-strait': {} };
+function SD(name){ const S = STRUCT_DATA[window.ACTIVE_STRUCTURE||'hormuz-iran']||STRUCT_DATA['hormuz-iran']; return (name in S)?S[name]:STRUCT_DATA['hormuz-iran'][name]; }
+/* Risk bubbles resolve by structure AND scenario (custom scenarios fall back to baseline). */
+function RB(){ const d = SD('RISK_BUBBLE'); return d[typeof scenario!=='undefined'?scenario:'baseline'] || d.baseline; }
+const SIGNAL_LABEL = { buy:'▲ Beneficiary', monitor:'● Watch', avoid:'▼ Exposed' };
+const ZONE_LABEL   = { buy:'Beneficiary Zone', monitor:'Watch Zone', avoid:'Exposed Zone' };
+
+STRUCT_DATA['hormuz-iran'].GDP_REGIONS = ['N. America','Europe','Middle East','East Asia','South Asia','Africa','S. America','Oceania'];
+STRUCT_DATA['taiwan-strait'].GDP_REGIONS = ['N. America','Europe','Middle East','East Asia','South Asia','Africa','S. America','Oceania'];
 // Forward GDP drag from the truce onward, scaled to the v3.1 scenario gdp values.
-const GDP_DATA = {
+STRUCT_DATA['hormuz-iran'].GDP_DATA = {
   baseline:    {yr1:[-0.3,-0.7,-3.0,-0.4,-0.9,-1.1,-0.4,-0.2],yr2:[-0.1,-0.3,-1.5,-0.2,-0.4,-0.7,-0.3,-0.1],yr3:[0.3,0.2,-0.4,0.2,0.0,-0.2,0.1,0.3]},
   optimistic:  {yr1:[-0.2,-0.3,-1.5,-0.2,-0.4,-0.6,-0.2,-0.1],yr2:[0.1,0.1,-0.6,0.1,-0.1,-0.2,0.1,0.1],yr3:[0.5,0.4,0.4,0.4,0.3,0.2,0.4,0.5]},
   pessimistic: {yr1:[-1.2,-2.1,-8.0,-1.4,-2.7,-3.4,-1.4,-0.7],yr2:[-0.7,-1.2,-4.4,-0.8,-1.7,-2.2,-0.9,-0.4],yr3:[-0.1,-0.3,-1.8,-0.2,-0.6,-0.9,-0.3,-0.1]},
 };
+/* TAIWAN regional GDP drag — anchored to Bloomberg Economics (Feb 2026). Blockade:
+   world -5.0%, US -3.3%, China -8.9%, Taiwan -12.2%. War: world -9.6%, US -6.7%,
+   China -16.7%, Korea -23.3%, Japan -13.5%. East Asia is an aggregate of the last
+   three plus Taiwan, which is why it dominates the chart the way the Middle East
+   dominates under HORMUZ. Yr2 ~55% of Yr1, Yr3 ~25%, tracking capacity substitution. */
+STRUCT_DATA['taiwan-strait'].GDP_DATA = {
+  baseline:    {yr1:[-3.3,-2.6,-1.0,-6.8,-1.9,-1.2,-1.4,-1.6],yr2:[-1.8,-1.4,-0.5,-3.7,-1.0,-0.6,-0.7,-0.9],yr3:[-0.8,-0.6,-0.2,-1.7,-0.4,-0.2,-0.3,-0.4]},
+  optimistic:  {yr1:[-0.2,-0.2,-0.1,-0.4,-0.1,-0.1,-0.1,-0.2],yr2:[-0.1,-0.1,0.0,-0.2,-0.1,0.0,0.0,-0.1],yr3:[0.1,0.1,0.1,0.0,0.1,0.1,0.1,0.1]},
+  pessimistic: {yr1:[-6.7,-5.0,-1.8,-16.0,-3.6,-2.2,-2.6,-3.1],yr2:[-4.0,-3.0,-1.1,-9.8,-2.2,-1.3,-1.6,-1.9],yr3:[-2.1,-1.6,-0.6,-5.2,-1.2,-0.7,-0.8,-1.0]},
+};
+
+/* Regional excess CPI, points above trend, Yr1-Yr4.
+   HORMUZ baseline is byte-identical to the previous inline literal; optimistic and
+   pessimistic are scaled to the v3.1 scenario CPI ratios (+0.3% and +4.2% vs the
+   +1.2% baseline), so the chart now moves with the scenario instead of standing still. */
+STRUCT_DATA['hormuz-iran'].INFLATION_BY_REGION = {
+  baseline:   {'N. America':[1.8,1.2,0.7,0.3],Europe:[3.4,2.6,1.5,0.7],'Middle East':[5.8,4.9,3.6,2.1],'E. Asia':[2.5,1.9,1.1,0.5],'S. Asia':[4.5,3.8,2.7,1.4],Africa:[5.4,4.6,3.3,1.9],'S. America':[2.8,2.1,1.3,0.6],Oceania:[1.5,1.0,0.5,0.2]},
+  optimistic: {'N. America':[0.5,0.3,0.2,0.1],Europe:[0.9,0.7,0.4,0.2],'Middle East':[1.5,1.2,0.9,0.5],'E. Asia':[0.6,0.5,0.3,0.1],'S. Asia':[1.1,1.0,0.7,0.4],Africa:[1.4,1.2,0.8,0.5],'S. America':[0.7,0.5,0.3,0.2],Oceania:[0.4,0.3,0.1,0.1]},
+  pessimistic:{'N. America':[6.3,4.2,2.5,1.1],Europe:[11.9,9.1,5.3,2.5],'Middle East':[20.3,17.2,12.6,7.4],'E. Asia':[8.8,6.7,3.9,1.8],'S. Asia':[15.8,13.3,9.5,4.9],Africa:[18.9,16.1,11.6,6.7],'S. America':[9.8,7.4,4.6,2.1],Oceania:[5.3,3.5,1.8,0.7]},
+};
+/* TAIWAN inflation is a GOODS-PRICE shock, not an energy one: electronics, vehicles and
+   capital equipment, concentrated in manufacturing economies. Magnitudes are far below
+   the Hormuz oil pass-through — Bloomberg's Taiwan damage runs through OUTPUT, not CPI.
+   Yr1 values match the cpi column of this structure's Continental table. */
+STRUCT_DATA['taiwan-strait'].INFLATION_BY_REGION = {
+  baseline:   {'N. America':[2.4,1.8,1.1,0.6],Europe:[1.9,1.4,0.9,0.4],'Middle East':[0.9,0.7,0.4,0.2],'E. Asia':[1.8,1.4,0.8,0.4],'S. Asia':[1.6,1.2,0.7,0.3],Africa:[1.0,0.8,0.5,0.2],'S. America':[1.1,0.8,0.5,0.2],Oceania:[1.2,0.9,0.5,0.2]},
+  optimistic: {'N. America':[0.3,0.2,0.1,0.1],Europe:[0.2,0.2,0.1,0.0],'Middle East':[0.1,0.1,0.0,0.0],'E. Asia':[0.2,0.2,0.1,0.1],'S. Asia':[0.2,0.1,0.1,0.0],Africa:[0.1,0.1,0.1,0.0],'S. America':[0.1,0.1,0.1,0.0],Oceania:[0.2,0.1,0.1,0.0]},
+  pessimistic:{'N. America':[4.6,3.6,2.3,1.2],Europe:[3.7,2.8,1.8,0.9],'Middle East':[1.7,1.3,0.8,0.4],'E. Asia':[3.5,2.7,1.7,0.8],'S. Asia':[3.1,2.4,1.5,0.7],Africa:[1.9,1.5,0.9,0.4],'S. America':[2.1,1.6,1.0,0.5],Oceania:[2.3,1.7,1.0,0.5]},
+};
 const INFLATION_LABELS = [...MONTHS_12,'Y2','Y3','Y4','Y5','Y6'];
 // Excess CPI points ABOVE trend, forward from the truce. The war's own CPI pass-through
 // (US y/y 2.43% → 4.17%, i.e. +1.73pts) is already in the base — this is what comes NEXT.
-const INFLATION_DATA = {
+STRUCT_DATA['hormuz-iran'].INFLATION_DATA = {
   baseline:    [0.6,0.8,1.0,1.2,1.2,1.1,1.0,0.9,0.8,0.7,0.7,0.6,0.5,0.3,0.2,0.1,0.0],
   optimistic:  [0.3,0.3,0.3,0.2,0.2,0.2,0.2,0.1,0.1,0.1,0.1,0.0,0.0,0.0,0.0,0.0,0.0],
   pessimistic: [0.8,1.6,2.6,3.5,4.2,4.1,3.8,3.5,3.2,2.9,2.6,2.3,1.7,1.1,0.6,0.3,0.1],
+};
+/* TAIWAN CPI path — deliberately far milder than Hormuz. Bloomberg's Taiwan damage runs
+   through OUTPUT (world GDP -5.0% / -9.6%), not through consumer prices: a chip cutoff
+   raises goods prices modestly while destroying volumes. Peak matches the structure's
+   own scenario CPI, and it fades as substitution builds. */
+STRUCT_DATA['taiwan-strait'].INFLATION_DATA = {
+  baseline:   [0.3,0.7,1.2,1.6,1.8,1.9,1.9,1.8,1.7,1.6,1.5,1.4,1.1,0.8,0.5,0.3,0.2],
+  optimistic: [0.1,0.1,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.2,0.1,0.1,0.1,0.1,0.0,0.0,0.0],
+  pessimistic:[0.6,1.4,2.4,3.2,3.7,3.9,4.0,3.9,3.8,3.6,3.4,3.2,2.6,2.0,1.4,0.9,0.6],
 };
 /* v4.3 — STRUCTURE-KEYED TAB DATA. Every deep tab (Risks, Continental, Sectors,
    Portfolio) reads through SD(name), which resolves against ACTIVE_STRUCTURE.
@@ -1899,36 +1965,37 @@ const INFLATION_DATA = {
    from risk-structures.js scenario logic + the Bloomberg anchors — noted inline.
    Vocabulary: per the advice line, zones/badges read BENEFICIARY / WATCH / EXPOSED,
    never Buy / Sell. Internal keys stay buy/monitor/avoid so CSS classes still work. */
-const STRUCT_DATA = {
- 'hormuz-iran': {
-  RADAR_LABELS: ['Energy Prod.','Defense','Infrastructure','Airlines','Luxury','Commodities','Agri-Tech','Healthcare'],
-  RADAR_DATA: {
-    baseline:    {buy:[85,72,68,30,28,88,80,42],monitor:[55,60,45,55,48,60,52,65],avoid:[20,22,18,75,80,15,25,35]},
-    optimistic:  {buy:[78,65,55,38,35,80,72,48],monitor:[60,62,50,58,52,65,55,62],avoid:[25,28,22,70,72,20,30,38]},
-    pessimistic: {buy:[90,80,78,22,18,95,88,35],monitor:[50,55,40,50,42,55,48,68],avoid:[15,18,12,82,88,10,20,30]},
-  },
- },
- 'taiwan-strait': {
-  /* Zones score how strongly each complex reads as beneficiary vs exposed under this
-     structure's betas (foundry/fabless most exposed; non-Taiwan fabs, defense and
-     utilities most resilient). Derived from the v4 sector matrix. */
-  RADAR_LABELS: ['Foundry/Fabless','Non-TW Fabs','Defense','Utilities','Big Tech','Autos','Shipping','Taiwan/China Eq.'],
-  RADAR_DATA: {
-    baseline:    {buy:[8,88,75,68,22,25,35,10],monitor:[30,50,55,60,55,58,60,32],avoid:[92,15,18,20,62,55,45,88]},
-    optimistic:  {buy:[45,55,58,52,48,50,50,42],monitor:[60,60,60,62,60,60,62,58],avoid:[40,30,25,26,35,34,34,45]},
-    pessimistic: {buy:[4,82,85,72,15,16,28,6],monitor:[24,46,48,55,45,50,55,26],avoid:[96,22,14,17,74,68,55,94]},
-  },
- },
+STRUCT_DATA['hormuz-iran'].RADAR_LABELS = ['Energy Prod.','Defense','Infrastructure','Airlines','Luxury','Commodities','Agri-Tech','Healthcare'];
+STRUCT_DATA['hormuz-iran'].RADAR_DATA = {
+  baseline:    {buy:[85,72,68,30,28,88,80,42],monitor:[55,60,45,55,48,60,52,65],avoid:[20,22,18,75,80,15,25,35]},
+  optimistic:  {buy:[78,65,55,38,35,80,72,48],monitor:[60,62,50,58,52,65,55,62],avoid:[25,28,22,70,72,20,30,38]},
+  pessimistic: {buy:[90,80,78,22,18,95,88,35],monitor:[50,55,40,50,42,55,48,68],avoid:[15,18,12,82,88,10,20,30]},
 };
-function SD(name){ const S = STRUCT_DATA[window.ACTIVE_STRUCTURE||'hormuz-iran']||STRUCT_DATA['hormuz-iran']; return (name in S)?S[name]:STRUCT_DATA['hormuz-iran'][name]; }
-const SIGNAL_LABEL = { buy:'▲ Beneficiary', monitor:'● Watch', avoid:'▼ Exposed' };
-const ZONE_LABEL   = { buy:'Beneficiary Zone', monitor:'Watch Zone', avoid:'Exposed Zone' };
+/* Zones score how strongly each complex reads as beneficiary vs exposed under this
+   structure's betas (foundry/fabless most exposed; non-Taiwan fabs, defense and
+   utilities most resilient). Derived from the v4 sector matrix. */
+STRUCT_DATA['taiwan-strait'].RADAR_LABELS = ['Foundry/Fabless','Non-TW Fabs','Defense','Utilities','Big Tech','Autos','Shipping','Taiwan/China Eq.'];
+STRUCT_DATA['taiwan-strait'].RADAR_DATA = {
+  baseline:    {buy:[8,88,75,68,22,25,35,10],monitor:[30,50,55,60,55,58,60,32],avoid:[92,15,18,20,62,55,45,88]},
+  optimistic:  {buy:[45,55,58,52,48,50,50,42],monitor:[60,60,60,62,60,60,62,58],avoid:[40,30,25,26,35,34,34,45]},
+  pessimistic: {buy:[4,82,85,72,15,16,28,6],monitor:[24,46,48,55,45,50,55,26],avoid:[96,22,14,17,74,68,55,94]},
+};
+
 // Index, 100 = pre-war normal. Today sits ELEVATED (~125): mines, war-risk premia,
 // transits still below pre-war. Peaks = 100 + KPI ship %.
-const SHIPPING_DATA = {
+STRUCT_DATA['hormuz-iran'].SHIPPING_DATA = {
   baseline:    [128,140,165,190,220,205,185,170,160,152,146,142,145,155,150,144,138,134,130,128,126,124],
   optimistic:  [125,122,118,115,112,109,107,105,104,103,102,101,101,100,100,100,100,100,100,100,100,100],
   pessimistic: [135,200,300,400,500,470,430,395,365,340,320,305,295,285,275,265,258,250,244,238,232,228],
+};
+/* TAIWAN shipping index, 100 = normal. This is CONTAINER traffic, not tankers, and it
+   is not a rerouting story: Bloomberg has COSCO revenue -63-68% in the war case because
+   the cargo itself disappears. Rates spike while volumes collapse — the index tracks
+   cost/disruption, peaking at the scenario's shipping stress (+220% blockade / +420%). */
+STRUCT_DATA['taiwan-strait'].SHIPPING_DATA = {
+  baseline:    [108,180,320,300,285,265,250,238,225,215,205,196,188,180,174,168,162,157,152,148,144,140],
+  optimistic:  [105,108,110,109,108,107,106,105,105,104,104,103,103,102,102,101,101,101,100,100,100,100],
+  pessimistic: [112,260,520,500,480,455,430,408,388,368,350,334,318,304,290,278,266,256,246,237,228,220],
 };
 STRUCT_DATA['hormuz-iran'].HEATMAP_REGIONS = ['N. America','Europe','Mid. East','E. Asia','S. Asia','Africa','S. America','Oceania'];
 STRUCT_DATA['taiwan-strait'].HEATMAP_REGIONS = ['N. America','Europe','Mid. East','E. Asia','S. Asia','Africa','S. America','Oceania'];
@@ -1956,36 +2023,106 @@ STRUCT_DATA['taiwan-strait'].HEATMAP_RAW = [
   [3.0,2.5,2.1,1.8,1.5,1.3,1.1,1.0,0.9,0.8],
 ];
 const SPEND_LABELS = ['Y1','Y2','Y3','Y4','Y5'];
-const SPEND_DATA = {defense:[480,610,640,560,510],energy:[190,320,410,470,450],recon:[60,180,330,460,530]};
-const RISK_LINE_DATA = {
+STRUCT_DATA['hormuz-iran'].SPEND_DATA = {defense:[480,610,640,560,510],energy:[190,320,410,470,450],recon:[60,180,330,460,530]};
+/* TAIWAN spend — defense scales to this structure's own defense channel ($600B blockade
+   / $1000B invasion vs Hormuz's $480B). "energy" is repurposed as FAB/CAPEX: the
+   subsidised rebuild of leading-edge capacity outside Taiwan, which is the defining
+   fiscal response to this structure rather than energy substitution. */
+STRUCT_DATA['taiwan-strait'].SPEND_DATA = {defense:[600,780,860,820,760],energy:[240,520,700,780,760],recon:[60,180,340,520,640]};
+/* Systemic Risk Index (0-10, 10-year path). Previously a bare const — the Systemic
+   Index chart was Hormuz-only regardless of the active structure. Hormuz series are
+   byte-identical to the previous values. */
+STRUCT_DATA['hormuz-iran'].RISK_LINE_DATA = {
   baseline:   [8.2,7.6,6.8,5.9,5.1,4.4,3.8,3.3,2.9,2.5],
   optimistic: [6.1,5.2,4.0,3.1,2.4,1.9,1.6,1.3,1.1,0.9],
   pessimistic:[9.1,8.8,8.2,7.5,6.8,6.1,5.5,4.9,4.4,3.9],
 };
-STRUCT_DATA['hormuz-iran'].RISK_BUBBLE = [
-  {name:'Second Hormuz Closure', prob:25,impact:9.4, size:52,color:'#ff3d4a'},
-  {name:'Saudi Infra Strike',     prob:12,impact:9.5, size:40,color:'#ff3d4a'},
-  {name:'Regional Expansion',    prob:35,impact:7.2, size:60,color:'#f5a623'},
-  {name:'China Sanctions Defiance',prob:42,impact:6.8,size:55,color:'#f5a623'},
-  {name:'EM Debt Crisis',         prob:55,impact:6.2, size:50,color:'#ffe040'},
-  {name:'US Recession Trigger',   prob:38,impact:7.8, size:52,color:'#f5a623'},
-  {name:'Global Food Crisis',     prob:48,impact:6.5, size:48,color:'#ffe040'},
-  {name:'Nuclear Breach',         prob:4, impact:10.0,size:35,color:'#b388ff'},
-  {name:'Full Normalisation',     prob:25,impact:-4.2,size:42,color:'#00e676'},
-];
+/* TAIWAN systemic index — the blockade case peaks HIGHER than a Hormuz closure and
+   decays SLOWER, because leading-edge capacity cannot be replaced inside five years
+   (Bloomberg: world GDP -5.0% blockade / -9.6% war). Gray-zone sits at a persistent
+   floor rather than resolving: coercion continues indefinitely without interruption. */
+STRUCT_DATA['taiwan-strait'].RISK_LINE_DATA = {
+  baseline:   [8.6,8.1,7.3,6.4,5.6,4.9,4.3,3.8,3.4,3.0],
+  optimistic: [3.6,3.5,3.4,3.3,3.3,3.2,3.2,3.1,3.1,3.0],
+  pessimistic:[9.6,9.4,9.0,8.5,7.9,7.3,6.7,6.1,5.6,5.1],
+};
+/* RISK_BUBBLE — now SCENARIO-KEYED. Previously one flat array, so the Risk
+   Probability chart never moved when the scenario changed. Impacts are structural
+   (a Hormuz closure is as damaging whichever scenario you are in); PROBABILITIES are
+   scenario-conditional, which is what actually shifts. baseline sets are byte-identical
+   to the previous flat arrays — only optimistic/pessimistic are new. */
+STRUCT_DATA['hormuz-iran'].RISK_BUBBLE = {
+  baseline: [
+    {name:'Second Hormuz Closure', prob:25,impact:9.4, size:52,color:'#ff3d4a'},
+    {name:'Saudi Infra Strike',     prob:12,impact:9.5, size:40,color:'#ff3d4a'},
+    {name:'Regional Expansion',    prob:35,impact:7.2, size:60,color:'#f5a623'},
+    {name:'China Sanctions Defiance',prob:42,impact:6.8,size:55,color:'#f5a623'},
+    {name:'EM Debt Crisis',         prob:55,impact:6.2, size:50,color:'#ffe040'},
+    {name:'US Recession Trigger',   prob:38,impact:7.8, size:52,color:'#f5a623'},
+    {name:'Global Food Crisis',     prob:48,impact:6.5, size:48,color:'#ffe040'},
+    {name:'Nuclear Breach',         prob:4, impact:10.0,size:35,color:'#b388ff'},
+    {name:'Full Normalisation',     prob:25,impact:-4.2,size:42,color:'#00e676'},
+  ],
+  optimistic: [
+    {name:'Second Hormuz Closure', prob:9, impact:9.4, size:38,color:'#ff3d4a'},
+    {name:'Saudi Infra Strike',     prob:5, impact:9.5, size:30,color:'#ff3d4a'},
+    {name:'Regional Expansion',    prob:16,impact:7.2, size:44,color:'#f5a623'},
+    {name:'China Sanctions Defiance',prob:30,impact:6.8,size:48,color:'#f5a623'},
+    {name:'EM Debt Crisis',         prob:34,impact:6.2, size:44,color:'#ffe040'},
+    {name:'US Recession Trigger',   prob:24,impact:7.8, size:44,color:'#f5a623'},
+    {name:'Global Food Crisis',     prob:26,impact:6.5, size:40,color:'#ffe040'},
+    {name:'Nuclear Breach',         prob:2, impact:10.0,size:28,color:'#b388ff'},
+    {name:'Full Normalisation',     prob:62,impact:-4.2,size:58,color:'#00e676'},
+  ],
+  pessimistic: [
+    {name:'Second Hormuz Closure', prob:74,impact:9.4, size:66,color:'#ff3d4a'},
+    {name:'Saudi Infra Strike',     prob:30,impact:9.5, size:48,color:'#ff3d4a'},
+    {name:'Regional Expansion',    prob:62,impact:7.2, size:64,color:'#f5a623'},
+    {name:'China Sanctions Defiance',prob:58,impact:6.8,size:58,color:'#f5a623'},
+    {name:'EM Debt Crisis',         prob:72,impact:6.2, size:58,color:'#ffe040'},
+    {name:'US Recession Trigger',   prob:60,impact:7.8, size:60,color:'#f5a623'},
+    {name:'Global Food Crisis',     prob:68,impact:6.5, size:56,color:'#ffe040'},
+    {name:'Nuclear Breach',         prob:9, impact:10.0,size:36,color:'#b388ff'},
+    {name:'Full Normalisation',     prob:5, impact:-4.2,size:30,color:'#00e676'},
+  ],
+};
 /* TAIWAN risk map — probabilities follow the structure's scenario tree (blockade 28%,
-   invasion 12%) plus component risks; impacts scale to the Bloomberg magnitudes. */
-STRUCT_DATA['taiwan-strait'].RISK_BUBBLE = [
-  {name:'Quarantine / Blockade',   prob:28,impact:8.8, size:56,color:'#ff3d4a'},
-  {name:'Invasion / Fab Denial',   prob:12,impact:10.0,size:42,color:'#ff3d4a'},
-  {name:'Chip Export Weaponisation',prob:40,impact:6.4,size:52,color:'#f5a623'},
-  {name:'US-China Sanctions Spiral',prob:45,impact:6.0,size:54,color:'#f5a623'},
-  {name:'Grey-Zone Cable Incident',prob:55,impact:4.2,size:48,color:'#ffe040'},
-  {name:'Semi Equipment Embargo',  prob:35,impact:5.5, size:46,color:'#f5a623'},
-  {name:'Korea Spillover',         prob:18,impact:7.0, size:38,color:'#f5a623'},
-  {name:'AI-Cycle Demand Shock',   prob:30,impact:5.8, size:44,color:'#ffe040'},
-  {name:'Durable De-escalation',   prob:25,impact:-3.0,size:40,color:'#00e676'},
-];
+   invasion 12% at baseline) plus component risks; impacts scale to Bloomberg magnitudes. */
+STRUCT_DATA['taiwan-strait'].RISK_BUBBLE = {
+  baseline: [
+    {name:'Quarantine / Blockade',   prob:28,impact:8.8, size:56,color:'#ff3d4a'},
+    {name:'Invasion / Fab Denial',   prob:12,impact:10.0,size:42,color:'#ff3d4a'},
+    {name:'Chip Export Weaponisation',prob:40,impact:6.4,size:52,color:'#f5a623'},
+    {name:'US-China Sanctions Spiral',prob:45,impact:6.0,size:54,color:'#f5a623'},
+    {name:'Grey-Zone Cable Incident',prob:55,impact:4.2,size:48,color:'#ffe040'},
+    {name:'Semi Equipment Embargo',  prob:35,impact:5.5, size:46,color:'#f5a623'},
+    {name:'Korea Spillover',         prob:18,impact:7.0, size:38,color:'#f5a623'},
+    {name:'AI-Cycle Demand Shock',   prob:30,impact:5.8, size:44,color:'#ffe040'},
+    {name:'Durable De-escalation',   prob:25,impact:-3.0,size:40,color:'#00e676'},
+  ],
+  optimistic: [
+    {name:'Quarantine / Blockade',   prob:10,impact:8.8, size:40,color:'#ff3d4a'},
+    {name:'Invasion / Fab Denial',   prob:4, impact:10.0,size:30,color:'#ff3d4a'},
+    {name:'Chip Export Weaponisation',prob:26,impact:6.4,size:44,color:'#f5a623'},
+    {name:'US-China Sanctions Spiral',prob:32,impact:6.0,size:46,color:'#f5a623'},
+    {name:'Grey-Zone Cable Incident',prob:48,impact:4.2,size:46,color:'#ffe040'},
+    {name:'Semi Equipment Embargo',  prob:22,impact:5.5, size:40,color:'#f5a623'},
+    {name:'Korea Spillover',         prob:8, impact:7.0, size:30,color:'#f5a623'},
+    {name:'AI-Cycle Demand Shock',   prob:28,impact:5.8, size:42,color:'#ffe040'},
+    {name:'Durable De-escalation',   prob:58,impact:-3.0,size:58,color:'#00e676'},
+  ],
+  pessimistic: [
+    {name:'Quarantine / Blockade',   prob:70,impact:8.8, size:64,color:'#ff3d4a'},
+    {name:'Invasion / Fab Denial',   prob:46,impact:10.0,size:58,color:'#ff3d4a'},
+    {name:'Chip Export Weaponisation',prob:78,impact:6.4,size:62,color:'#f5a623'},
+    {name:'US-China Sanctions Spiral',prob:82,impact:6.0,size:64,color:'#f5a623'},
+    {name:'Grey-Zone Cable Incident',prob:76,impact:4.2,size:56,color:'#ffe040'},
+    {name:'Semi Equipment Embargo',  prob:68,impact:5.5, size:56,color:'#f5a623'},
+    {name:'Korea Spillover',         prob:44,impact:7.0, size:50,color:'#f5a623'},
+    {name:'AI-Cycle Demand Shock',   prob:60,impact:5.8, size:54,color:'#ffe040'},
+    {name:'Durable De-escalation',   prob:4, impact:-3.0,size:28,color:'#00e676'},
+  ],
+};
 /* KPI_MAP — MIRRORS risk-structures.js v3.1 scenarios EXACTLY. If you change one,
    change both, or the Exposure Desk and the front page will disagree.
    Scenarios are FORWARD from the July 2026 armed truce — the war itself is history. */
@@ -3834,11 +3971,11 @@ const TOOLTIP_STYLE = {
 
 function initGDPChart() {
   const c=makeChart('chartGDP'); if(!c) return;
-  const d=GDP_DATA[scenario];
+  const d=SD('GDP_DATA')[scenario];
   c.setOption({...EC_BASE,tooltip:{trigger:'axis',...TOOLTIP_STYLE},
   legend:{data:['Year 1','Year 2','Year 3'],textStyle:{color:'#7a91b3',fontSize:9},bottom:0},
   grid:{top:10,left:60,right:15,bottom:50},
-  xAxis:{type:'category',data:GDP_REGIONS,axisLine:{lineStyle:{color:'#1e3055'}},axisTick:{show:false},axisLabel:{color:'#3d5270',fontSize:8,interval:0,rotate:20}},
+  xAxis:{type:'category',data:SD('GDP_REGIONS'),axisLine:{lineStyle:{color:'#1e3055'}},axisTick:{show:false},axisLabel:{color:'#3d5270',fontSize:8,interval:0,rotate:20}},
   yAxis:{type:'value',axisLine:{lineStyle:{color:'#1e3055'}},splitLine:{lineStyle:{color:'#111d33'}},axisLabel:{color:'#3d5270',fontSize:9,formatter:v=>v+'%'},name:'%GDP',nameTextStyle:{color:'#3d5270',fontSize:9}},
   series:[
     {name:'Year 1',type:'bar',data:d.yr1,itemStyle:{color:p=>d.yr1[p.dataIndex]<0?getColors().pessimistic:'#00e676'},barGap:'8%'},
@@ -3849,7 +3986,7 @@ function initGDPChart() {
 
 function initInflationChart() {
   const c=makeChart('chartInflation'); if(!c) return;
-  const d=INFLATION_DATA[scenario];
+  const d=SD('INFLATION_DATA')[scenario];
   c.setOption({...EC_BASE,tooltip:{trigger:'axis',...TOOLTIP_STYLE,formatter:p=>`<b>${p[0].axisValue}:</b> +${p[0].value}% CPI addition`},
   grid:{top:10,left:55,right:15,bottom:20},
   xAxis:{type:'category',data:INFLATION_LABELS.slice(0,d.length),axisLine:{lineStyle:{color:'#1e3055'}},axisTick:{show:false},axisLabel:{color:'#3d5270',fontSize:9}},
@@ -3873,7 +4010,7 @@ function initRadarChart() {
 
 function initShippingChart() {
   const c=makeChart('chartShipping'); if(!c) return;
-  const d=SHIPPING_DATA[scenario];
+  const d=SD('SHIPPING_DATA')[scenario];
   const sl=d.length; // always show full shipping dataset
   c.setOption({...EC_BASE,tooltip:{trigger:'axis',...TOOLTIP_STYLE},
   grid:{top:10,left:55,right:15,bottom:20},
@@ -3927,9 +4064,9 @@ function showHeatmapNarrativePrompt() {
 function initSpendChart() {
   const c=makeChart('chartSpend'); if(!c) return;
   const mult=scenario==='pessimistic'?1.35:scenario==='optimistic'?0.7:1;
-  const def  =SPEND_DATA.defense.map(v=>Math.round(v*mult));
-  const eng  =SPEND_DATA.energy.map(v=>Math.round(v*(scenario==='pessimistic'?.85:scenario==='optimistic'?1.4:1)));
-  const recon=SPEND_DATA.recon.map(v=>Math.round(v*(scenario==='pessimistic'?.6:scenario==='optimistic'?1.6:1)));
+  const def  =SD('SPEND_DATA').defense.map(v=>Math.round(v*mult));
+  const eng  =SD('SPEND_DATA').energy.map(v=>Math.round(v*(scenario==='pessimistic'?.85:scenario==='optimistic'?1.4:1)));
+  const recon=SD('SPEND_DATA').recon.map(v=>Math.round(v*(scenario==='pessimistic'?.6:scenario==='optimistic'?1.6:1)));
   c.setOption({...EC_BASE,tooltip:{trigger:'axis',axisPointer:{type:'shadow'},...TOOLTIP_STYLE,formatter:p=>{let s=`<b>${p[0].axisValue}</b><br>`;p.forEach(pp=>s+=`${pp.marker}${pp.seriesName}: $${pp.value}B<br>`);return s;}},
   legend:{data:['Defense','Energy Investment','Reconstruction'],bottom:0,textStyle:{color:'#7a91b3',fontSize:9}},
   grid:{top:10,left:55,right:15,bottom:40},
@@ -3944,11 +4081,11 @@ function initSpendChart() {
 
 function initContCharts() {
   const c1=makeChart('chartContGDP'); if(c1){
-    const d=GDP_DATA[scenario];
+    const d=SD('GDP_DATA')[scenario];
     c1.setOption({...EC_BASE,tooltip:{trigger:'axis',...TOOLTIP_STYLE},
     legend:{data:['Yr1','Yr2','Yr3'],bottom:0,textStyle:{color:'#7a91b3',fontSize:9}},
     grid:{top:10,left:60,right:15,bottom:50},
-    xAxis:{type:'category',data:GDP_REGIONS,axisLine:{lineStyle:{color:'#1e3055'}},axisTick:{show:false},axisLabel:{color:'#3d5270',fontSize:8,interval:0,rotate:25}},
+    xAxis:{type:'category',data:SD('GDP_REGIONS'),axisLine:{lineStyle:{color:'#1e3055'}},axisTick:{show:false},axisLabel:{color:'#3d5270',fontSize:8,interval:0,rotate:25}},
     yAxis:{type:'value',axisLine:{lineStyle:{color:'#1e3055'}},splitLine:{lineStyle:{color:'#111d33'}},axisLabel:{color:'#3d5270',fontSize:9,formatter:v=>v+'%'}},
     series:[
       {name:'Yr1',type:'bar',data:d.yr1,itemStyle:{color:p=>d.yr1[p.dataIndex]<0?'#ff3d4a':'#00e676'}},
@@ -3957,7 +4094,9 @@ function initContCharts() {
     ]});
   }
   const c2=makeChart('chartContInflation'); if(c2){
-    const infByRegion={'N. America':[1.8,1.2,0.7,0.3],Europe:[3.4,2.6,1.5,0.7],'Middle East':[5.8,4.9,3.6,2.1],'E. Asia':[2.5,1.9,1.1,0.5],'S. Asia':[4.5,3.8,2.7,1.4],Africa:[5.4,4.6,3.3,1.9],'S. America':[2.8,2.1,1.3,0.6],Oceania:[1.5,1.0,0.5,0.2]};
+    /* v4.4 — was an INLINE LITERAL inside this function, so the regional inflation
+       chart responded to neither structure nor scenario. Now registry-resolved. */
+    const infByRegion = SD('INFLATION_BY_REGION')[scenario] || SD('INFLATION_BY_REGION').baseline;
     const RCOLS=['#00d4ff','#f5a623','#ff3d4a','#b388ff','#ffe040','#00e676','#78909c','#4dd0e1'];
     c2.setOption({...EC_BASE,tooltip:{trigger:'axis',...TOOLTIP_STYLE},
     legend:{data:Object.keys(infByRegion),bottom:0,textStyle:{color:'#7a91b3',fontSize:8},type:'scroll'},
@@ -3973,10 +4112,10 @@ function initRiskCharts() {
     c1.setOption({...EC_BASE,tooltip:{formatter:p=>`<b>${p.data[3]}</b><br>Probability: ${p.data[0]}%<br>Impact: ${Math.abs(p.data[1])}/10<br>${p.data[1]<0?'🟢 Positive':'🔴 Negative'}`,...TOOLTIP_STYLE},
     xAxis:{type:'value',name:'Probability (%)',nameTextStyle:{color:'#3d5270',fontSize:9},axisLine:{lineStyle:{color:'#1e3055'}},splitLine:{lineStyle:{color:'#111d33'}},axisLabel:{color:'#3d5270',fontSize:9}},
     yAxis:{type:'value',name:'Impact (1–10)',nameTextStyle:{color:'#3d5270',fontSize:9},axisLine:{lineStyle:{color:'#1e3055'}},splitLine:{lineStyle:{color:'#111d33'}},axisLabel:{color:'#3d5270',fontSize:9},min:-6,max:11},
-    series:[{type:'scatter',data:SD('RISK_BUBBLE').map(r=>[r.prob,r.impact,r.size,r.name]),symbolSize:d=>d[2],itemStyle:{color:d=>SD('RISK_BUBBLE').find(r=>r.name===d.data[3]).color,opacity:.75},label:{show:true,formatter:p=>p.data[3],position:'top',fontSize:8,color:'#7a91b3'}}]});
+    series:[{type:'scatter',data:RB().map(r=>[r.prob,r.impact,r.size,r.name]),symbolSize:d=>d[2],itemStyle:{color:d=>RB().find(r=>r.name===d.data[3]).color,opacity:.75},label:{show:true,formatter:p=>p.data[3],position:'top',fontSize:8,color:'#7a91b3'}}]});
   }
   const c2=makeChart('chartRiskLine'); if(c2){
-    const d=RISK_LINE_DATA; const col=getColors();
+    const d=SD('RISK_LINE_DATA'); const col=getColors();
     c2.setOption({...EC_BASE,tooltip:{trigger:'axis',...TOOLTIP_STYLE},
     legend:{data:['Baseline','Optimistic','Pessimistic'],bottom:0,textStyle:{color:'#7a91b3',fontSize:9}},
     grid:{top:10,left:50,right:15,bottom:40},
@@ -5503,6 +5642,14 @@ function styleStructureBtns() {
     badge.title = t.tip || ''; badge.style.cursor = 'help'; }
   const stamp = document.getElementById('reviewStamp');
   if (stamp) stamp.innerHTML = reviewStampHTML(S);
+  /* Footer follows the active structure: sources differ per structure (no oil series
+     under TAIWAN), and the review date comes from the structure's maintenance block. */
+  const fr = document.getElementById('footerReview');
+  if (fr && S.meta.review) fr.textContent = 'Reviewed ' + S.meta.review.lastReviewed;
+  const fs = document.getElementById('footerSources');
+  if (fs) fs.innerHTML = (ACTIVE_STRUCTURE === 'taiwan-strait')
+    ? 'Sources: Bloomberg Economics (scenario anchors) · Twelve Data · FRED · GDELT · company disclosures'
+    : 'Sources: EIA · FRED · Twelve Data · GDELT · IMF WEO · SIPRI · FAO · Baltic Exchange';
   const sub = document.getElementById('structSubtitle');
   if (sub) sub.textContent = ACTIVE_STRUCTURE === 'hormuz-iran'
     ? 'Iran War · Global Economic Impact · 2026–2036'
