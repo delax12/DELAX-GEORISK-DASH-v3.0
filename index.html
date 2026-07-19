@@ -1,27 +1,3 @@
-STRUCT_DATA['hormuz-iran'].RISK_BUBBLE = [
-  {name:'Second Hormuz Closure', prob:25,impact:9.4, size:52,color:'#ff3d4a'},
-  {name:'Saudi Infra Strike',     prob:12,impact:9.5, size:40,color:'#ff3d4a'},
-  {name:'Regional Expansion',    prob:35,impact:7.2, size:60,color:'#f5a623'},
-  {name:'China Sanctions Defiance',prob:42,impact:6.8,size:55,color:'#f5a623'},
-  {name:'EM Debt Crisis',         prob:55,impact:6.2, size:50,color:'#ffe040'},
-  {name:'US Recession Trigger',   prob:38,impact:7.8, size:52,color:'#f5a623'},
-  {name:'Global Food Crisis',     prob:48,impact:6.5, size:48,color:'#ffe040'},
-  {name:'Nuclear Breach',         prob:4, impact:10.0,size:35,color:'#b388ff'},
-  {name:'Full Normalisation',     prob:25,impact:-4.2,size:42,color:'#00e676'},
-];
-/* TAIWAN risk map — probabilities follow the structure's scenario tree (blockade 28%,
-   invasion 12%) plus component risks; impacts scale to Bloomberg magnitudes. */
-STRUCT_DATA['taiwan-strait'].RISK_BUBBLE = [
-  {name:'Quarantine / Blockade',   prob:28,impact:8.8, size:56,color:'#ff3d4a'},
-  {name:'Invasion / Fab Denial',   prob:12,impact:10.0,size:42,color:'#ff3d4a'},
-  {name:'Chip Export Weaponisation',prob:40,impact:6.4,size:52,color:'#f5a623'},
-  {name:'US–China Sanctions Spiral',prob:45,impact:6.0,size:54,color:'#f5a623'},
-  {name:'Grey-Zone Cable/Port Incident',prob:55,impact:4.2,size:48,color:'#ffe040'},
-  {name:'Semi Equipment Embargo',  prob:35,impact:5.5, size:46,color:'#f5a623'},
-  {name:'Korea Spillover',         prob:18,impact:7.0, size:38,color:'#f5a623'},
-  {name:'AI-Cycle Demand Shock',   prob:30,impact:5.8, size:44,color:'#ffe040'},
-  {name:'Durable De-escalation',   prob:25,impact:-3.0,size:40,color:'#00e676'},
-];
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1919,11 +1895,10 @@ const INFLATION_DATA = {
 };
 /* v4.3 — STRUCTURE-KEYED TAB DATA. Every deep tab (Risks, Continental, Sectors,
    Portfolio) reads through SD(name), which resolves against ACTIVE_STRUCTURE.
-   HORMUZ entries are the previous constants, unchanged. TAIWAN entries derive from
-   risk-structures.js scenario logic + the Bloomberg anchors — sources noted inline.
-   Vocabulary: per the platform advice line, zones/badges read BENEFICIARY / WATCH /
-   EXPOSED (exposure description), never Buy / Sell. Internal keys stay buy/monitor/
-   avoid so existing CSS classes keep working. */
+   HORMUZ entries are the previous constants, byte-for-byte. TAIWAN entries derive
+   from risk-structures.js scenario logic + the Bloomberg anchors — noted inline.
+   Vocabulary: per the advice line, zones/badges read BENEFICIARY / WATCH / EXPOSED,
+   never Buy / Sell. Internal keys stay buy/monitor/avoid so CSS classes still work. */
 const STRUCT_DATA = {
  'hormuz-iran': {
   RADAR_LABELS: ['Energy Prod.','Defense','Infrastructure','Airlines','Luxury','Commodities','Agri-Tech','Healthcare'],
@@ -1934,8 +1909,8 @@ const STRUCT_DATA = {
   },
  },
  'taiwan-strait': {
-  /* Zones score how strongly each complex reads as beneficiary vs exposed under the
-     structure's betas (foundry/fabless most exposed; non-Taiwan fabs, defense,
+  /* Zones score how strongly each complex reads as beneficiary vs exposed under this
+     structure's betas (foundry/fabless most exposed; non-Taiwan fabs, defense and
      utilities most resilient). Derived from the v4 sector matrix. */
   RADAR_LABELS: ['Foundry/Fabless','Non-TW Fabs','Defense','Utilities','Big Tech','Autos','Shipping','Taiwan/China Eq.'],
   RADAR_DATA: {
@@ -1956,6 +1931,7 @@ const SHIPPING_DATA = {
   pessimistic: [135,200,300,400,500,470,430,395,365,340,320,305,295,285,275,265,258,250,244,238,232,228],
 };
 STRUCT_DATA['hormuz-iran'].HEATMAP_REGIONS = ['N. America','Europe','Mid. East','E. Asia','S. Asia','Africa','S. America','Oceania'];
+STRUCT_DATA['taiwan-strait'].HEATMAP_REGIONS = ['N. America','Europe','Mid. East','E. Asia','S. Asia','Africa','S. America','Oceania'];
 STRUCT_DATA['hormuz-iran'].HEATMAP_RAW = [
   [2.1,1.4,1.0,0.8,0.6,0.5,0.4,0.3,0.2,0.2],
   [3.8,2.9,2.1,1.5,1.1,0.8,0.6,0.5,0.4,0.3],
@@ -1966,10 +1942,9 @@ STRUCT_DATA['hormuz-iran'].HEATMAP_RAW = [
   [2.9,2.2,1.6,1.2,0.9,0.7,0.6,0.5,0.4,0.3],
   [1.4,0.9,0.6,0.5,0.4,0.3,0.2,0.2,0.2,0.1],
 ];
-/* TAIWAN regional stress — East Asia is the epicentre; N. America/Europe stressed via
-   the chip channel (their tech complexes ARE their indices). Mirrors the regional
-   table in api/analyze.js so AI narration and heatmap agree. Model values. */
-STRUCT_DATA['taiwan-strait'].HEATMAP_REGIONS = ['N. America','Europe','Mid. East','E. Asia','S. Asia','Africa','S. America','Oceania'];
+/* TAIWAN regional stress — East Asia is the epicentre; N. America and Europe are
+   stressed through the chip channel (their tech complexes ARE their indices).
+   Mirrors the regional table in api/analyze.js so AI narration and heatmap agree. */
 STRUCT_DATA['taiwan-strait'].HEATMAP_RAW = [
   [6.8,5.6,4.4,3.6,3.0,2.6,2.2,1.9,1.7,1.5],
   [5.9,4.8,3.8,3.1,2.6,2.2,1.9,1.7,1.5,1.3],
@@ -1979,6 +1954,115 @@ STRUCT_DATA['taiwan-strait'].HEATMAP_RAW = [
   [2.4,2.0,1.7,1.4,1.2,1.0,0.9,0.8,0.7,0.6],
   [3.2,2.6,2.1,1.8,1.5,1.3,1.1,1.0,0.9,0.8],
   [3.0,2.5,2.1,1.8,1.5,1.3,1.1,1.0,0.9,0.8],
+];
+const SPEND_LABELS = ['Y1','Y2','Y3','Y4','Y5'];
+const SPEND_DATA = {defense:[480,610,640,560,510],energy:[190,320,410,470,450],recon:[60,180,330,460,530]};
+const RISK_LINE_DATA = {
+  baseline:   [8.2,7.6,6.8,5.9,5.1,4.4,3.8,3.3,2.9,2.5],
+  optimistic: [6.1,5.2,4.0,3.1,2.4,1.9,1.6,1.3,1.1,0.9],
+  pessimistic:[9.1,8.8,8.2,7.5,6.8,6.1,5.5,4.9,4.4,3.9],
+};
+STRUCT_DATA['hormuz-iran'].RISK_BUBBLE = [
+  {name:'Second Hormuz Closure', prob:25,impact:9.4, size:52,color:'#ff3d4a'},
+  {name:'Saudi Infra Strike',     prob:12,impact:9.5, size:40,color:'#ff3d4a'},
+  {name:'Regional Expansion',    prob:35,impact:7.2, size:60,color:'#f5a623'},
+  {name:'China Sanctions Defiance',prob:42,impact:6.8,size:55,color:'#f5a623'},
+  {name:'EM Debt Crisis',         prob:55,impact:6.2, size:50,color:'#ffe040'},
+  {name:'US Recession Trigger',   prob:38,impact:7.8, size:52,color:'#f5a623'},
+  {name:'Global Food Crisis',     prob:48,impact:6.5, size:48,color:'#ffe040'},
+  {name:'Nuclear Breach',         prob:4, impact:10.0,size:35,color:'#b388ff'},
+  {name:'Full Normalisation',     prob:25,impact:-4.2,size:42,color:'#00e676'},
+];
+/* TAIWAN risk map — probabilities follow the structure's scenario tree (blockade 28%,
+   invasion 12%) plus component risks; impacts scale to the Bloomberg magnitudes. */
+STRUCT_DATA['taiwan-strait'].RISK_BUBBLE = [
+  {name:'Quarantine / Blockade',   prob:28,impact:8.8, size:56,color:'#ff3d4a'},
+  {name:'Invasion / Fab Denial',   prob:12,impact:10.0,size:42,color:'#ff3d4a'},
+  {name:'Chip Export Weaponisation',prob:40,impact:6.4,size:52,color:'#f5a623'},
+  {name:'US-China Sanctions Spiral',prob:45,impact:6.0,size:54,color:'#f5a623'},
+  {name:'Grey-Zone Cable Incident',prob:55,impact:4.2,size:48,color:'#ffe040'},
+  {name:'Semi Equipment Embargo',  prob:35,impact:5.5, size:46,color:'#f5a623'},
+  {name:'Korea Spillover',         prob:18,impact:7.0, size:38,color:'#f5a623'},
+  {name:'AI-Cycle Demand Shock',   prob:30,impact:5.8, size:44,color:'#ffe040'},
+  {name:'Durable De-escalation',   prob:25,impact:-3.0,size:40,color:'#00e676'},
+];
+/* KPI_MAP — MIRRORS risk-structures.js v3.1 scenarios EXACTLY. If you change one,
+   change both, or the Exposure Desk and the front page will disagree.
+   Scenarios are FORWARD from the July 2026 armed truce — the war itself is history. */
+const KPI_MAP = {
+  baseline:    {oil:'$102',cpi:'+1.2%',gdp:'−0.7%',ship:'+120%',def:'+$480B',fao:'+12%',fx:'−5%', dur:'12–30M'},
+  optimistic:  {oil:'$78', cpi:'+0.3%',gdp:'−0.3%',ship:'+25%', def:'+$320B',fao:'+5%', fx:'−2%', dur:'6–12M'},
+  pessimistic: {oil:'$165',cpi:'+4.2%',gdp:'−2.2%',ship:'+400%',def:'+$780B',fao:'+30%',fx:'−12%',dur:'12–36M'},
+};
+/* KPI_PLAIN — one plain-English sentence per KPI per scenario. Written for a
+   first-time investor; a retiree should understand every line. MIRRORS KPI_MAP:
+   if scenario values change, these sentences change with them. */
+const KPI_PLAIN = {
+  baseline: {
+    oil:  'Oil could spike to ~$102 on bad headlines — the war peaked at $138 and has cooled to ~$69, but the strait is not back to normal.',
+    cpi:  'Everyday prices run about 1.2% hotter than they would without this standoff.',
+    gdp:  'The world economy grows a bit slower — about 0.7% of output lost in year one.',
+    ship: 'Moving goods by sea costs about 2.2× normal: insurers still charge war rates.',
+    def:  'Governments spend ~$480B extra on defense — good for defense stocks, paid by taxpayers.',
+    fao:  'Food runs ~12% pricier; poorer, import-dependent countries feel it most.',
+    fx:   'Emerging-market currencies slip ~5% vs the dollar, making their imports dearer.',
+    dur:  'Expect this uneasy standoff to last roughly 1 to 2.5 years.',
+  },
+  optimistic: {
+    oil:  'If the truce holds, oil settles near $78 — close to normal.',
+    cpi:  'Barely noticeable at the checkout: ~0.3% extra inflation.',
+    gdp:  'Minimal drag — the world economy shrugs this off.',
+    ship: 'Shipping costs drift back toward normal as insurers relax.',
+    def:  'Defense budgets still rise ~$320B — rearmament outlasts the crisis.',
+    fao:  'Food prices roughly normal, +5% at worst.',
+    fx:   'Emerging-market currencies hold steady, −2% at most.',
+    dur:  'Back to normal within 6–12 months.',
+  },
+  pessimistic: {
+    oil:  'A second closure sends oil to ~$165 — filling a tank costs roughly half again as much.',
+    cpi:  'Inflation jumps ~4.2 points — everything from fuel to food gets noticeably dearer.',
+    gdp:  'A global slowdown: ~2.2% of world output lost, recession risk real.',
+    ship: 'Sea freight ~5× normal — many goods simply get scarcer.',
+    def:  'Defense spending surges ~$780B as the region rearms.',
+    fao:  'Food ~30% pricier — a crisis for import-dependent countries.',
+    fx:   'Emerging-market currencies drop ~12%; capital flees to the dollar.',
+    dur:  'One to three years of renewed conflict.',
+  },
+};
+
+/* Display names. Internal ids stay baseline/optimistic/pessimistic so nothing else breaks. */
+/* v4.0: label lookup follows the ACTIVE structure (falls back to HORMUZ labels). */
+const SCENARIO_LABELS = new Proxy({}, { get: (_, k) => {
+  try {
+    const S = window.RISK_STRUCTURES && RISK_STRUCTURES[window.ACTIVE_STRUCTURE || 'hormuz-iran'];
+    const scn = S && S.scenarios.find(x => x.id === k);
+    if (scn) return scn.label;
+  } catch(e) {}
+  return ({ optimistic:'Normalisation', baseline:'Armed Truce', pessimistic:'Re-escalation' })[k];
+}});
+/* The war that already happened — measured monthly-average Brent (FRED DCOILBRENTEU).
+   Not a model output. This is the spine of the v3.1 calibration. */
+const ACTUAL_WAR = {
+  labels: ['Feb 26','Mar 26','Apr 26','May 26','Jun 26','Jul 26'],
+  brent:  [70.9, 103.1, 117.3, 107.1, 85.4, 69.0],
+  peak:   138.2,   // 7 Apr 2026 — the day before the ceasefire
+};
+/* THE WAR THAT HAPPENED — months 1-6 are HISTORY, not forecast.
+   Brent figures are measured monthly averages (FRED DCOILBRENTEU). Events are public record.
+   Months 7+ are the forward Armed Truce path. `actual: true` marks the retrospective rows. */
+const MONTHLY_BREAKDOWN = [
+  {m:'Feb 2026', actual:true, phase:'WAR OPENS',        oil:'$71', cpi:'+0.0%',gdp:'−0.0%',desc:'28 Feb: US and Israel open an air war against Iran. Brent averages $70.9. Markets treat it as contained; the strait is still moving.'},
+  {m:'Mar 2026', actual:true, phase:'STRAIT CLOSES',    oil:'$103',cpi:'+0.4%',gdp:'−0.3%',desc:'IRGC forbids passage, mines the waterway and boards merchant ships. Tanker traffic collapses to near nil. 27 Mar: strait declared closed to vessels to/from the US, Israel and allies. Brent averages $103, peaking $127.'},
+  {m:'Apr 2026', actual:true, phase:'PEAK · CEASEFIRE',  oil:'$117',cpi:'+1.1%',gdp:'−0.6%',desc:'7 Apr: Brent peaks at $138.2. 8 Apr: ceasefire. 13 Apr: US blockades Iranian ports. 21 Apr: IMO reports ~2,000 ships and ~20,000 mariners stranded in the Gulf. The strait opens on the 17th and shuts again on the 18th.'},
+  {m:'May 2026', actual:true, phase:'FRAGILE TRUCE',     oil:'$107',cpi:'+1.5%',gdp:'−0.7%',desc:'2 May: Spirit Airlines ceases all operations, citing fuel costs — North American jet fuel is up ~95%. Late May: IRGC redefines the strait as a "vast operational area". Brent averages $107.'},
+  {m:'Jun 2026', actual:true, phase:'DE-ESCALATION',     oil:'$85', cpi:'+1.7%',gdp:'−0.7%',desc:'US–Iran memorandum of understanding signed. Transits resume but stay far below pre-war. 26 Jun: a vessel is struck, halting the IMO evacuation plan. 29 Jun: tit-for-tat strikes. Brent averages $85.'},
+  {m:'Jul 2026', actual:true, phase:'ROUND TRIP',        oil:'$69', cpi:'+1.7%',gdp:'−0.7%',desc:'Brent completes the round trip to ~$69 — essentially pre-war. But the strait has NOT normalised: mines, war-risk premia and sporadic attacks persist. 7 Jul: Iran strikes a Qatari LNG tanker; the US revokes Iran\'s oil sale licence.'},
+  {m:'M+1',  phase:'ARMED TRUCE',        oil:'$74', cpi:'+0.6%',gdp:'−0.2%',desc:'FORWARD. Iran retains standing leverage over passage. Insurers stay out; transits stay below pre-war. Headline-driven spikes, no sustained shortage.'},
+  {m:'M+2',  phase:'INSURANCE DRAG',     oil:'$80', cpi:'+0.8%',gdp:'−0.3%',desc:'FORWARD. War-risk premiums remain the binding constraint, not barrels. Shipping costs, not crude supply, carry the inflation.'},
+  {m:'M+3',  phase:'INVENTORY REBUILD',  oil:'$88', cpi:'+1.0%',gdp:'−0.4%',desc:'FORWARD. Every importer rebuilds drawn-down stocks at once. Demand for cargoes firms prices even without a new supply shock.'},
+  {m:'M+4',  phase:'FLARE RISK',         oil:'$96', cpi:'+1.2%',gdp:'−0.5%',desc:'FORWARD. Incident-driven spike toward the model peak. The truce holds, but the tail is fat.'},
+  {m:'M+5',  phase:'MODEL PEAK',         oil:'$102',cpi:'+1.2%',gdp:'−0.7%',desc:'FORWARD. Armed Truce peak Brent $102. Stagflationary tax, not a crisis. Well below the $138 the real war delivered.'},
+  {m:'M+6',  phase:'NEW EQUILIBRIUM',    oil:'$95', cpi:'+1.1%',gdp:'−0.7%',desc:'FORWARD. A permanently more expensive strait becomes the baseline. Iran keeps de facto say over transit; the world prices it in.'},
 ];
 STRUCT_DATA['hormuz-iran'].CONTINENTAL_ROWS = [
   {region:'North America',         gdp:'-0.9%',cpi:'+2.1%',energy:'LOW (net exporter)',   food:'MODERATE', fx:'STRONG (+USD)',  debt:'LOW',      recovery:'12–18M',    signal:'monitor'},
@@ -1992,18 +2076,19 @@ STRUCT_DATA['hormuz-iran'].CONTINENTAL_ROWS = [
   {region:'Oceania',               gdp:'-0.6%',cpi:'+1.8%',energy:'LOW (exporter)',       food:'LOW',      fx:'AUD mild −',    debt:'LOW',      recovery:'6–12M',     signal:'buy'},
   {region:'Central Asia',          gdp:'+1.4%',cpi:'+3.1%',energy:'POSITIVE (exports)',   food:'ELEVATED', fx:'Mixed',         debt:'MODERATE', recovery:'N/A (gain)',signal:'buy'},
 ];
-/* TAIWAN continental table — energy column repurposed as CHIP/TECH exposure (this
-   structure has no oil channel). GDP figures scale from Bloomberg blockade case. */
+/* TAIWAN continental table — the "energy" column is repurposed as CHIP/TECH exposure
+   because this structure has NO oil channel. GDP figures scale from the Bloomberg
+   blockade case (world −5.0%: Taiwan −12.2%, China −8.9%, US −3.3%). */
 STRUCT_DATA['taiwan-strait'].CONTINENTAL_ROWS = [
-  {region:'East Asia (epicentre)',  gdp:'-6.8%',cpi:'+1.8%',energy:'CRITICAL (chip supply)', food:'MODERATE', fx:'TWD/KRW −12–20%', debt:'MODERATE', recovery:'36–60M', signal:'avoid'},
-  {region:'North America',          gdp:'-3.3%',cpi:'+2.4%',energy:'VERY HIGH (tech complex)',food:'LOW',     fx:'USD haven bid',   debt:'LOW',      recovery:'24–36M', signal:'monitor'},
-  {region:'Europe',                 gdp:'-2.6%',cpi:'+1.9%',energy:'HIGH (autos/industrials)',food:'LOW',     fx:'EUR −4%',         debt:'MODERATE', recovery:'24–36M', signal:'monitor'},
-  {region:'China',                  gdp:'-8.9%',cpi:'+2.6%',energy:'CRITICAL (sanctions)',    food:'MODERATE',fx:'CNY −8%',         debt:'HIGH',     recovery:'48–72M', signal:'avoid'},
-  {region:'South Asia',             gdp:'-1.9%',cpi:'+1.6%',energy:'MODERATE (electronics)',  food:'MODERATE',fx:'−6% basket',      debt:'HIGH',     recovery:'24–42M', signal:'monitor'},
-  {region:'Middle East',            gdp:'-1.0%',cpi:'+0.9%',energy:'LOW (no oil channel)',    food:'LOW',     fx:'GCC pegged',      debt:'MODERATE', recovery:'12–24M', signal:'monitor'},
-  {region:'South America',          gdp:'-1.4%',cpi:'+1.1%',energy:'LOW–MODERATE',            food:'LOW',     fx:'−5% basket',      debt:'MODERATE', recovery:'18–30M', signal:'monitor'},
-  {region:'Sub-Saharan Africa',     gdp:'-1.2%',cpi:'+1.0%',energy:'LOW (indirect trade)',    food:'MODERATE',fx:'−6% basket',      debt:'HIGH',     recovery:'24–36M', signal:'monitor'},
-  {region:'Oceania',                gdp:'-1.6%',cpi:'+1.2%',energy:'MODERATE (China trade)',  food:'LOW',     fx:'AUD −6%',         debt:'LOW',      recovery:'18–30M', signal:'monitor'},
+  {region:'East Asia (epicentre)',  gdp:'-6.8%',cpi:'+1.8%',energy:'CRITICAL (chip supply)',  food:'MODERATE',fx:'TWD/KRW -12-20%',debt:'MODERATE',recovery:'36-60M',signal:'avoid'},
+  {region:'North America',          gdp:'-3.3%',cpi:'+2.4%',energy:'VERY HIGH (tech complex)',food:'LOW',     fx:'USD haven bid',  debt:'LOW',     recovery:'24-36M',signal:'monitor'},
+  {region:'Europe',                 gdp:'-2.6%',cpi:'+1.9%',energy:'HIGH (autos/industry)',   food:'LOW',     fx:'EUR -4%',        debt:'MODERATE',recovery:'24-36M',signal:'monitor'},
+  {region:'China',                  gdp:'-8.9%',cpi:'+2.6%',energy:'CRITICAL (sanctions)',    food:'MODERATE',fx:'CNY -8%',        debt:'HIGH',    recovery:'48-72M',signal:'avoid'},
+  {region:'South Asia',             gdp:'-1.9%',cpi:'+1.6%',energy:'MODERATE (electronics)',  food:'MODERATE',fx:'-6% basket',     debt:'HIGH',    recovery:'24-42M',signal:'monitor'},
+  {region:'Middle East',            gdp:'-1.0%',cpi:'+0.9%',energy:'LOW (no oil channel)',    food:'LOW',     fx:'GCC pegged',     debt:'MODERATE',recovery:'12-24M',signal:'monitor'},
+  {region:'South America',          gdp:'-1.4%',cpi:'+1.1%',energy:'LOW-MODERATE',            food:'LOW',     fx:'-5% basket',     debt:'MODERATE',recovery:'18-30M',signal:'monitor'},
+  {region:'Sub-Saharan Africa',     gdp:'-1.2%',cpi:'+1.0%',energy:'LOW (indirect trade)',    food:'MODERATE',fx:'-6% basket',     debt:'HIGH',    recovery:'24-36M',signal:'monitor'},
+  {region:'Oceania',                gdp:'-1.6%',cpi:'+1.2%',energy:'MODERATE (China trade)',  food:'LOW',     fx:'AUD -6%',        debt:'LOW',     recovery:'18-30M',signal:'monitor'},
 ];
 STRUCT_DATA['hormuz-iran'].SECTOR_ROWS = [
   {sector:'Energy (Integrated)',    sig12:'buy',    sig3:'buy',    ret12:'+35–55%',ret3:'+80–120%',driver:'Oil price surge + capex',      risk:'Ceasefire crash',     names:'XOM, CVX, SHEL'},
@@ -2022,24 +2107,25 @@ STRUCT_DATA['hormuz-iran'].SECTOR_ROWS = [
   {sector:'Healthcare & Pharma',   sig12:'buy',    sig3:'buy',    ret12:'+12–22%',ret3:'+20–40%', driver:'Defensive + humanitarian',     risk:'EM market access',    names:'JNJ, ABT, PFE'},
   {sector:'Reconstruction Infra.', sig12:'monitor',sig3:'buy',    ret12:'+5–15%', ret3:'+50–100%',driver:'Post-conflict rebuild $1.2T', risk:'Political instability',names:'FLR, MDR, STLD'},
 ];
-
-/* TAIWAN sector matrix — 12M column = blockade case, 3Yr = decay/substitution phase.
-   Ranges derive from the structure's sector betas at Bloomberg-anchored stress. */
+/* TAIWAN sector matrix — 12M column = the blockade case; 3Yr = the decay/substitution
+   phase as non-Taiwan capacity builds. Ranges derive from this structure's sector
+   betas at Bloomberg-anchored stress levels. */
 STRUCT_DATA['taiwan-strait'].SECTOR_ROWS = [
-  {sector:'Memory / Non-TW Fabs',   sig12:'buy',    sig3:'buy',    ret12:'+25–45%',ret3:'+15–35%', driver:'Fabs OUTSIDE Taiwan become scarcest asset',risk:'Demand collapse outruns scarcity',names:'INTC, MU'},
-  {sector:'Defense & Aerospace',    sig12:'buy',    sig3:'buy',    ret12:'+25–45%',ret3:'+40–70%', driver:'Indo-Pacific rearmament at scale',        risk:'De-escalation',                    names:'RTX, LMT, NOC'},
-  {sector:'Utilities',              sig12:'buy',    sig3:'monitor',ret12:'+10–20%',ret3:'+5–12%',  driver:'Defensive bid (measured in Hormuz war)',  risk:'Rate environment',                 names:'NEE, DUK, SO'},
-  {sector:'Korea/Japan Substitutes',sig12:'monitor',sig3:'buy',    ret12:'−10–+5%',ret3:'+10–30%', driver:'Only credible substitute capacity',        risk:'Inside the blast radius',          names:'EWY, EWJ'},
-  {sector:'Gold & Havens',          sig12:'monitor',sig3:'monitor',ret12:'+8–18%', ret3:'+5–12%',  driver:'Haven bid (weaker than folklore — measured)',risk:'2026 war: gold managed +0.9%',   names:'GLD, IAU'},
-  {sector:'Foundry (Taiwan)',       sig12:'avoid',  sig3:'avoid',  ret12:'−55–75%',ret3:'−30–55%', driver:'The asset IS the chokepoint',              risk:'None favourable in blockade',      names:'TSM, UMC'},
-  {sector:'Fabless Designers',      sig12:'avoid',  sig3:'avoid',  ret12:'−45–65%',ret3:'−25–45%', driver:'No fabs; cannot manufacture their product',risk:'US fab ramp too slow to matter',   names:'NVDA, AMD, AVGO'},
-  {sector:'Semi Equipment',         sig12:'avoid',  sig3:'monitor',ret12:'−35–55%',ret3:'−10–25%', driver:'Anchor customer goes dark',                risk:'Buildout demand cushions later',   names:'ASML, LRCX, AMAT'},
-  {sector:'Big Tech / Devices',     sig12:'avoid',  sig3:'avoid',  ret12:'−30–50%',ret3:'−15–35%', driver:'No chips, no devices (the "golden screw")',risk:'Inventory buffers run out',        names:'AAPL, MSFT, DELL'},
-  {sector:'Autos',                  sig12:'avoid',  sig3:'monitor',ret12:'−25–40%',ret3:'−10–25%', driver:'Bloomberg: lagging-edge output −35% / −62%',risk:'2021 replay, worse',              names:'TM, GM, F'},
-  {sector:'Container Shipping',     sig12:'avoid',  sig3:'monitor',ret12:'−5–20%', ret3:'−5–15%',  driver:'THE CARGO DISAPPEARS (unlike Red Sea)',    risk:'Bloomberg: COSCO rev −63–68%',     names:'ZIM'},
-  {sector:'China Equity',           sig12:'avoid',  sig3:'avoid',  ret12:'−25–45%',ret3:'−20–40%', driver:'Sanctions, capital flight, decoupling',    risk:'Aggressor is not a winner',        names:'FXI, MCHI'},
-  {sector:'Broad Market (S&P)',     sig12:'avoid',  sig3:'monitor',ret12:'−25–40%',ret3:'−10–25%', driver:'Semis and tech ARE the index',             risk:'Sharpest contrast w/ Hormuz',      names:'SPY, QQQ'},
+  {sector:'Memory / Non-TW Fabs',   sig12:'buy',    sig3:'buy',    ret12:'+25-45%',ret3:'+15-35%', driver:'Fabs OUTSIDE Taiwan become the scarcest asset',risk:'Demand collapse outruns scarcity',names:'INTC, MU'},
+  {sector:'Defense & Aerospace',    sig12:'buy',    sig3:'buy',    ret12:'+25-45%',ret3:'+40-70%', driver:'Indo-Pacific rearmament at scale',            risk:'Durable de-escalation',           names:'RTX, LMT, NOC'},
+  {sector:'Utilities',              sig12:'buy',    sig3:'monitor',ret12:'+10-20%',ret3:'+5-12%',  driver:'Defensive bid (MEASURED in the 2026 war)',    risk:'Rate environment',                names:'NEE, DUK, SO'},
+  {sector:'Korea/Japan Substitutes',sig12:'monitor',sig3:'buy',    ret12:'-10-+5%',ret3:'+10-30%', driver:'Only credible substitute capacity',           risk:'Also inside the blast radius',    names:'EWY, EWJ'},
+  {sector:'Gold & Havens',          sig12:'monitor',sig3:'monitor',ret12:'+8-18%', ret3:'+5-12%',  driver:'Haven bid, weaker than folklore',             risk:'2026 war: gold managed +0.9%',    names:'GLD, IAU'},
+  {sector:'Foundry (Taiwan)',       sig12:'avoid',  sig3:'avoid',  ret12:'-55-75%',ret3:'-30-55%', driver:'The asset IS the chokepoint',                 risk:'None favourable in a blockade',   names:'TSM, UMC'},
+  {sector:'Fabless Designers',      sig12:'avoid',  sig3:'avoid',  ret12:'-45-65%',ret3:'-25-45%', driver:'No fabs; cannot make the product at all',     risk:'US fab ramp too slow to matter',  names:'NVDA, AMD, AVGO'},
+  {sector:'Semi Equipment',         sig12:'avoid',  sig3:'monitor',ret12:'-35-55%',ret3:'-10-25%', driver:'Anchor customer goes dark',                   risk:'Buildout demand cushions later',  names:'ASML, LRCX, AMAT'},
+  {sector:'Big Tech / Devices',     sig12:'avoid',  sig3:'avoid',  ret12:'-30-50%',ret3:'-15-35%', driver:'No chips, no devices',                        risk:'Inventory buffers run out',       names:'AAPL, MSFT, DELL'},
+  {sector:'Autos',                  sig12:'avoid',  sig3:'monitor',ret12:'-25-40%',ret3:'-10-25%', driver:'Bloomberg: lagging-edge output -35% / -62%',  risk:'A worse replay of 2021',          names:'TM, GM, F'},
+  {sector:'Container Shipping',     sig12:'avoid',  sig3:'monitor',ret12:'-5-20%', ret3:'-5-15%',  driver:'THE CARGO DISAPPEARS (unlike the Red Sea)',   risk:'Bloomberg: COSCO rev -63-68%',    names:'ZIM'},
+  {sector:'China Equity',           sig12:'avoid',  sig3:'avoid',  ret12:'-25-45%',ret3:'-20-40%', driver:'Sanctions, capital flight, decoupling',       risk:'The aggressor is not a winner',   names:'FXI, MCHI'},
+  {sector:'Broad Market (S&P)',     sig12:'avoid',  sig3:'monitor',ret12:'-25-40%',ret3:'-10-25%', driver:'Semis and big tech ARE the index',            risk:'Sharpest contrast with Hormuz',   names:'SPY, QQQ'},
 ];
+
 /* Portfolio impact multipliers — maps sector to scenario impact estimates */
 STRUCT_DATA['hormuz-iran'].SECTOR_IMPACT = {
   'XOM':{12:0.38, 36:0.90,sector:'Energy'},  'CVX':{12:0.35,36:0.85,sector:'Energy'},
@@ -2053,30 +2139,31 @@ STRUCT_DATA['hormuz-iran'].SECTOR_IMPACT = {
   'PFE':{12:0.14,36:0.22,sector:'Healthcare'},'JNJ':{12:0.12,36:0.20,sector:'Healthcare'},
   'CCJ':{12:0.15,36:0.65,sector:'Nuclear'},
 };
-
-/* TAIWAN portfolio multipliers — DERIVED from computeExposure() single-name runs
-   under the Quarantine/Blockade case (12M column); 3Yr = 55% of it, tracking the
-   capacity-recovery decay in timeline.semiCapacityOffline. Not hand-tuned. */
+/* TAIWAN portfolio multipliers — DERIVED from computeExposure() single-name runs under
+   the Quarantine/Blockade case (12M column); 3Yr = 55% of it, tracking the capacity
+   recovery in timeline.semiCapacityOffline. Generated from the engine, not hand-tuned. */
 STRUCT_DATA['taiwan-strait'].SECTOR_IMPACT = {
   'TSM':{12:-0.65,36:-0.36,sector:'Foundry'},      'UMC':{12:-0.65,36:-0.36,sector:'Foundry'},
   'NVDA':{12:-0.66,36:-0.36,sector:'Fabless'},     'AMD':{12:-0.59,36:-0.32,sector:'Fabless'},
   'AVGO':{12:-0.59,36:-0.32,sector:'Fabless'},     'QCOM':{12:-0.59,36:-0.32,sector:'Fabless'},
-  'INTC':{12:+0.46,36:+0.25,sector:'Non-TW Fab'},  'MU':{12:+0.35,36:+0.19,sector:'Non-TW Fab'},
+  'INTC':{12:0.46, 36:0.25, sector:'Non-TW Fab'},  'MU':{12:0.35,36:0.19,sector:'Non-TW Fab'},
   'SMH':{12:-0.55,36:-0.30,sector:'Semis'},        'ASML':{12:-0.47,36:-0.26,sector:'Semi Equip'},
-  'LRCX':{12:-0.47,36:-0.26,sector:'Semi Equip'},  'EWT':{12:-0.61,36:-0.34,sector:'Taiwan'},
-  'FXI':{12:-0.33,36:-0.18,sector:'China'},        'MCHI':{12:-0.33,36:-0.18,sector:'China'},
-  'EWY':{12:-0.06,36:+0.05,sector:'Korea'},        'EWJ':{12:-0.06,36:+0.02,sector:'Japan'},
-  'AAPL':{12:-0.38,36:-0.21,sector:'Big Tech'},    'MSFT':{12:-0.38,36:-0.21,sector:'Big Tech'},
-  'DELL':{12:-0.38,36:-0.21,sector:'Big Tech'},    'TM':{12:-0.31,36:-0.17,sector:'Autos'},
-  'GM':{12:-0.31,36:-0.17,sector:'Autos'},         'F':{12:-0.31,36:-0.17,sector:'Autos'},
-  'ZIM':{12:-0.09,36:-0.05,sector:'Container'},    'RTX':{12:+0.35,36:+0.42,sector:'Defense'},
-  'LMT':{12:+0.35,36:+0.42,sector:'Defense'},      'NOC':{12:+0.35,36:+0.42,sector:'Defense'},
-  'XOM':{12:-0.08,36:-0.04,sector:'Energy'},       'CVX':{12:-0.08,36:-0.04,sector:'Energy'},
-  'DAL':{12:-0.18,36:-0.10,sector:'Aviation'},     'UAL':{12:-0.18,36:-0.10,sector:'Aviation'},
-  'GLD':{12:+0.14,36:+0.08,sector:'Haven'},        'GDX':{12:+0.14,36:+0.08,sector:'Haven'},
-  'NEE':{12:+0.15,36:+0.09,sector:'Utilities'},    'SPY':{12:-0.33,36:-0.18,sector:'Broad Market'},
-  'QQQ':{12:-0.33,36:-0.18,sector:'Broad Market'}, 'VWO':{12:-0.26,36:-0.14,sector:'EM'},
+  'LRCX':{12:-0.47,36:-0.26,sector:'Semi Equip'},  'AMAT':{12:-0.47,36:-0.26,sector:'Semi Equip'},
+  'EWT':{12:-0.61,36:-0.34,sector:'Taiwan'},       'FXI':{12:-0.33,36:-0.18,sector:'China'},
+  'MCHI':{12:-0.33,36:-0.18,sector:'China'},       'EWY':{12:-0.06,36:0.05,sector:'Korea'},
+  'EWJ':{12:-0.06,36:0.02,sector:'Japan'},         'AAPL':{12:-0.38,36:-0.21,sector:'Big Tech'},
+  'MSFT':{12:-0.38,36:-0.21,sector:'Big Tech'},    'DELL':{12:-0.38,36:-0.21,sector:'Big Tech'},
+  'TM':{12:-0.31,36:-0.17,sector:'Autos'},         'GM':{12:-0.31,36:-0.17,sector:'Autos'},
+  'F':{12:-0.31,36:-0.17,sector:'Autos'},          'ZIM':{12:-0.09,36:-0.05,sector:'Container'},
+  'RTX':{12:0.35,36:0.42,sector:'Defense'},        'LMT':{12:0.35,36:0.42,sector:'Defense'},
+  'NOC':{12:0.35,36:0.42,sector:'Defense'},        'XOM':{12:-0.08,36:-0.04,sector:'Energy'},
+  'CVX':{12:-0.08,36:-0.04,sector:'Energy'},       'DAL':{12:-0.18,36:-0.10,sector:'Aviation'},
+  'UAL':{12:-0.18,36:-0.10,sector:'Aviation'},     'GLD':{12:0.14,36:0.08,sector:'Haven'},
+  'GDX':{12:0.14,36:0.08,sector:'Haven'},          'NEE':{12:0.15,36:0.09,sector:'Utilities'},
+  'SPY':{12:-0.33,36:-0.18,sector:'Broad Market'}, 'QQQ':{12:-0.33,36:-0.18,sector:'Broad Market'},
+  'VWO':{12:-0.26,36:-0.14,sector:'EM'},
 };
+
 /* Ticker seed prices */
 // TICKER_SEEDS — stripped to price-tracking data only (ticker strip removed Fix 2.2)
 // tickerData still used by: fetchEIABrent (BRENT), dashboard-live.js (all watchlist symbols)
@@ -4610,7 +4697,7 @@ function _spGetStress(countryName) {
 }
 
 function _spGetCountryData(countryName) {
-  // Country data — structure-aware via SD()
+  // Try index.html's country data structures
   if (typeof SD === 'function') {
     const row = SD('CONTINENTAL_ROWS').find(r => r.country === countryName);
     if (row) return { cpi: row.cpi, gdp: row.gdp, oilDep: row.oilDep || 60, fxVol: row.fxVol || 15 };
@@ -4661,15 +4748,14 @@ function eqGetSector(sym) {
     SPY:'sp500',  VOO:'sp500',  IVV:'sp500',  QQQ:'sp500',
     EEM:'em',     VWO:'em',     IEMG:'em',
     DXY:'dxy',    UUP:'dxy',
-    // v4.3 — Taiwan-structure complex. Without these, TSM/NVDA fell through to the
-    // 'sp500' default and the AI payload described the wrong exposure.
+    // v4.3 — the Taiwan-structure complex. Without these, TSM/NVDA/EWT fell through
+    // to the 'sp500' default and the AI payload described the wrong exposure.
     TSM:'semis',  UMC:'semis',  NVDA:'semis', AMD:'semis',  AVGO:'semis',
     QCOM:'semis', TXN:'semis',  INTC:'semis', MU:'semis',   SMH:'semis',
     ASML:'semis', LRCX:'semis', AMAT:'semis', KLAC:'semis',
     EWT:'em',     FXI:'em',     MCHI:'em',    EWY:'em',     EWJ:'em',
     AAPL:'bigtech', MSFT:'bigtech', DELL:'bigtech',
-    TM:'autos',   GM:'autos',   F:'autos',
-    ZIM:'shipping',
+    TM:'autos',   GM:'autos',   F:'autos',    ZIM:'shipping',
   };
   return map[sym] || 'sp500'; // default to S&P 500 multiplier
 }
@@ -5464,18 +5550,18 @@ function setStructure(id) {
   if (cta) cta.href = '/exposure-desk.html?structure=' + id;
   styleStructureBtns();
   if (id === 'taiwan-strait') enterTaiwan(); else restoreHormuz();
-  /* v4.3 — DEEP TAB RE-RENDER. setScenario()→updateCharts() already re-inits every
-     chart (radar, heatmap, continental, risk bubbles) and they now read through SD().
+  /* v4.3 — DEEP TAB RE-RENDER. setScenario()->updateCharts() re-inits every chart
+     (radar, heatmap, continental, risk bubbles) and those now read through SD().
      The TABLES and the portfolio result are not scenario-driven, so they need an
-     explicit rebuild here or Continental/Sectors/Portfolio would keep showing the
-     previous structure's rows — the exact bug this sweep exists to fix. */
+     explicit rebuild here — otherwise Continental/Sectors/Portfolio keep showing the
+     previous structure's rows, which is the exact bug this sweep exists to fix. */
   try {
     if (typeof buildContinentalTable === 'function') buildContinentalTable();
     if (typeof buildSectorTable === 'function') buildSectorTable();
     if (typeof hydrateSectorPrices === 'function') hydrateSectorPrices();
-    // Portfolio: only recompute if the user has already run it (results present).
     const pr = document.getElementById('portfolioResults');
-    if (pr && portfolioRows.length && !/Add holdings above/.test(pr.textContent||'')
+    if (pr && typeof portfolioRows !== 'undefined' && portfolioRows.length
+        && !/Add holdings above/.test(pr.textContent||'')
         && typeof calcPortfolioImpact === 'function') calcPortfolioImpact();
   } catch(e) { console.warn('[structure] deep re-render:', e); }
   setScenario(scenario);
