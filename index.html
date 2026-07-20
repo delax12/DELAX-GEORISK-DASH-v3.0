@@ -2543,6 +2543,7 @@ function toggleColorBlind() {
   btn.setAttribute('aria-pressed', isColorBlind ? 'true' : 'false');
   btn.style.background = isColorBlind ? 'rgba(86,180,233,.15)' : '';
   updateCharts();
+  if (typeof postStructureState === 'function') postStructureState();   // keep the globe in sync
   showToast(isColorBlind ? '👁 Color-blind safe palette enabled' : '👁 Standard palette restored');
 }
 
@@ -5637,6 +5638,68 @@ function reviewStampHTML(S){
     color:${amber?'#f5a623':'#5a7299'};white-space:nowrap">${txt}</span>`;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GEO INTEL BRIDGE (v4.6) — the dashboard is the single source of truth.
+   ──────────────────────────────────────────────────────────────────────────────
+   The globe runs in an iframe and used to carry its own 64-country stress table and
+   its own base/esc/de scenario names, so it could contradict the platform outright:
+   under TAIWAN it showed Taiwan calm and growing while the structure put East Asia at
+   the epicentre. It is now a pure renderer. We post structure + scenario + the active
+   structure's own regional stress series; it projects country stress from that.
+
+   Contract (one-way, parent -> frame):
+     { type:'STRUCTURE_STATE', structureId, structureName, tier, scenarioId,
+       scenarioLabels{}, scenarioProbs{}, regionalStress{ region: number[] },
+       timeHorizon, weights }
+   ══════════════════════════════════════════════════════════════════════════════ */
+function buildStructureStatePayload() {
+  const S = RISK_STRUCTURES[ACTIVE_STRUCTURE] || RISK_STRUCTURES['hormuz-iran'];
+  const regions = SD('HEATMAP_REGIONS') || [];
+  const raw = SD('HEATMAP_RAW') || [];
+  const regionalStress = {};
+  regions.forEach((r, i) => { if (raw[i]) regionalStress[r] = raw[i].slice(); });
+  const labels = {}, probs = {};
+  S.scenarios.forEach(sc => { labels[sc.id] = sc.label; probs[sc.id] = sc.probability; });
+  return {
+    type: 'STRUCTURE_STATE',
+    structureId: S.id,
+    structureName: S.meta.short || S.meta.name,
+    tier: S.meta.calibration,
+    scenarioId: scenario,
+    scenarioLabels: labels,
+    scenarioProbs: probs,
+    regionalStress,
+    timeHorizon: 0,
+    weights: null,
+  };
+}
+
+let _geoIntelReady = false;
+function postStructureState() {
+  const f = document.getElementById('geointelFrame');
+  if (!f || !f.contentWindow) return;
+  try { f.contentWindow.postMessage(buildStructureStatePayload(), window.location.origin); }
+  catch (e) { console.warn('[geointel] post failed:', e.message); }
+  // Keep the frame's own header label honest too.
+  const lbl = document.getElementById('geointelFrameScenario');
+  if (lbl && RISK_STRUCTURES[ACTIVE_STRUCTURE]) {
+    const sc = RISK_STRUCTURES[ACTIVE_STRUCTURE].scenarios.find(x => x.id === scenario);
+    lbl.textContent = (RISK_STRUCTURES[ACTIVE_STRUCTURE].meta.short || '') + ' · ' + ((sc && sc.label) || scenario);
+  }
+}
+
+/* The frame announces itself when its script has run; post immediately on receipt so
+   there is no race between iframe load and the first structure/scenario change. */
+window.addEventListener('message', (e) => {
+  if (e.origin !== window.location.origin) return;
+  if (e.data && e.data.type === 'GEOINTEL_READY') { _geoIntelReady = true; postStructureState(); }
+});
+document.addEventListener('DOMContentLoaded', () => {
+  const f = document.getElementById('geointelFrame');
+  if (f) f.addEventListener('load', () => postStructureState());
+});
+
 function buildStructureBar() {
   const wrap = document.getElementById('structureBtns');
   if (!wrap || !window.RISK_STRUCTURES) return;
@@ -5740,6 +5803,7 @@ function setStructure(id) {
         && typeof calcPortfolioImpact === 'function') calcPortfolioImpact();
   } catch(e) { console.warn('[structure] deep re-render:', e); }
   setScenario(scenario);
+  postStructureState();            // GEO Intel globe follows the active structure
 }
 
 

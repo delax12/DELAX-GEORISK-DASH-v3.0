@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>DELAX INTEL | Global Risk Intelligence Platform v1.0</title>
+<title>DELAX GEO-RISK · Intel Globe</title>
 
 <!-- ══════════════════════════════════════
      DEPENDENCIES
@@ -1180,7 +1180,7 @@ input  { cursor: pointer; }
           <div class="ai-dot" id="cd-ai-dot" style="display:none"></div>
           🤖 AI INTELLIGENCE BRIEFING
         </div>
-        <div id="cd-ai-loading" style="display:none"><div class="ai-dot"></div> GEMINI ANALYZING…</div>
+        <div id="cd-ai-loading" style="display:none"><div class="ai-dot"></div> ANALYZING…</div>
         <div id="cd-ai-body"></div>
         <div id="cd-ai-placeholder">Click any country on the globe for an AI-generated briefing: conflict exposure · investment signals · key risks.</div>
       </div>
@@ -1317,7 +1317,7 @@ input  { cursor: pointer; }
     <div class="sp-header">
       <div>
         <div class="sp-country-name" id="sp-country-name">—</div>
-        <div class="sp-subtitle" id="sp-subtitle">AI Investor Insights · Gemini Intelligence</div>
+        <div class="sp-subtitle" id="sp-subtitle">AI Investor Insights</div>
       </div>
       <button class="sp-close" onclick="closeStockPopup()" aria-label="Close">✕</button>
     </div>
@@ -1465,12 +1465,119 @@ function riskLabel(stress) {
 }
 
 /* Scenario multipliers */
+/* ══════════════════════════════════════════════════════════════════════════════
+   PROJECTION LAYER (v1.1) — the globe is a RENDERER, not a model.
+   ──────────────────────────────────────────────────────────────────────────────
+   Before this change this file carried its own 64-country stress table and its own
+   base/esc/de scenario vocabulary. It could therefore CONTRADICT the platform: under
+   the TAIWAN structure it reported Taiwan at stress 2.5 and GDP +3.2% while the
+   structure put East Asia at the epicentre. Two models on one screen is worse than
+   one incomplete model.
+
+   Now: the parent dashboard owns structure, scenario and regional stress, and posts
+   them in. Country stress is DERIVED:
+
+       stress(country) = regionalStress(region, horizon) x exposureWeight(country)
+
+   regionalStress comes straight from the active structure's own regional series, so
+   switching to TAIWAN lights up East Asia automatically — no hand-authored numbers.
+   exposureWeight is the only judgment left, it is small, it is documented, and it is
+   RELATIVE (1.0 = moves with its region).
+
+   Standalone fallback: opened directly, with no parent, the file still renders using
+   the legacy table so the page never breaks.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Platform scenario ids. base/esc/de are kept ONLY as inbound aliases so older
+   handlers and any deep links keep working; the platform vocabulary is canonical. */
 const SCENARIO_MULT = {
-  base: { oil:1.0, cpi:1.0, gdp:1.0, stress:1.0, fx:1.0 },
-  esc:  { oil:1.35,cpi:1.45,gdp:1.6, stress:1.4, fx:1.5 },
-  de:   { oil:0.70,cpi:0.60,gdp:0.55,stress:0.65,fx:0.55 },
+  baseline:    { oil:1.0, cpi:1.0, gdp:1.0, stress:1.0, fx:1.0 },
+  pessimistic: { oil:1.35,cpi:1.45,gdp:1.6, stress:1.4, fx:1.5 },
+  optimistic:  { oil:0.70,cpi:0.60,gdp:0.55,stress:0.65,fx:0.55 },
 };
-let scenario = 'base';
+SCENARIO_MULT.base = SCENARIO_MULT.baseline;
+SCENARIO_MULT.esc  = SCENARIO_MULT.pessimistic;
+SCENARIO_MULT.de   = SCENARIO_MULT.optimistic;
+const SCEN_ALIAS = { base:'baseline', esc:'pessimistic', de:'optimistic',
+                     baseline:'baseline', pessimistic:'pessimistic', optimistic:'optimistic' };
+
+/* State posted in by the parent dashboard. Null until the first message. */
+let STRUCTURE_STATE = null;
+
+/* This file's region taxonomy -> the structure's regional-stress keys. */
+const REGION_TO_STRUCT = {
+  'Middle East':'Mid. East', 'North Africa':'Africa', 'Sub-Saharan Africa':'Africa',
+  'Europe':'Europe', 'North America':'N. America', 'South America':'S. America',
+  'East Asia':'E. Asia', 'Southeast Asia':'E. Asia', 'South Asia':'S. Asia',
+  'Central Asia':'S. Asia', 'Oceania':'Oceania',
+};
+
+/* Relative exposure inside a region. 1.0 = tracks its region exactly. Only countries
+   that are structurally distinctive deviate, and each deviation states its reason.
+   These are JUDGMENT, not measurements — the absolute level always comes from the
+   model, this only shapes the distribution within a region. */
+const EXPOSURE_WEIGHT = {
+  'hormuz-iran': {
+    // Strait-adjacent producers and the most import-dependent economies feel it hardest.
+    'Iran':1.35,'Iraq':1.30,'Saudi Arabia':1.25,'United Arab Emirates':1.20,'Kuwait':1.25,
+    'Qatar':1.20,'Yemen':1.30,'Lebanon':1.25,'Syria':1.25,'Israel':1.10,'Jordan':1.10,
+    'Egypt':1.15,'Pakistan':1.20,'Sri Lanka':1.20,'Bangladesh':1.15,'India':1.10,
+    'Japan':1.15,'South Korea':1.15,'Singapore':1.15,   // heavy crude importers via Hormuz
+    'United States of America':0.75,'Canada':0.60,'Norway':0.65,'Brazil':0.80, // domestic supply
+    'Russia':0.55,                                                            // beneficiary of scarcity
+  },
+  'taiwan-strait': {
+    // Chip-chain position is the exposure lever, not oil.
+    'Taiwan':1.45,'China':1.30,'South Korea':1.20,'Japan':1.20,
+    'United States of America':1.15,'Netherlands':1.20,   // ASML: the tool chokepoint
+    'Singapore':1.15,'Malaysia':1.15,'Vietnam':1.10,'Philippines':1.05, // assembly/test
+    'Germany':1.10,'Mexico':1.05,                          // auto manufacturing exposure
+    'Saudi Arabia':0.55,'United Arab Emirates':0.55,'Kuwait':0.50,'Qatar':0.50,
+    'Iran':0.50,'Iraq':0.50,'Nigeria':0.60,'Angola':0.60,  // no oil channel in this structure
+    'Russia':0.70,
+  },
+};
+
+/* Regional stress for a country, at the current time horizon, from the ACTIVE structure. */
+function regionStressFor(name) {
+  const c = COUNTRIES[name]; if (!c) return null;
+  if (!STRUCTURE_STATE || !STRUCTURE_STATE.regionalStress) return null;
+  const key = REGION_TO_STRUCT[c.region];
+  const series = STRUCTURE_STATE.regionalStress[key];
+  if (!series || !series.length) return null;
+  const i = Math.max(0, Math.min(series.length - 1, Math.round(timeHorizon || 0)));
+  return series[i];
+}
+
+/* ── COMPRESSIVE PROJECTION ───────────────────────────────────────────────────
+   Naive multiplication (rs x weight) saturates: East Asia year-1 stress under TAIWAN
+   is 9.4, so any weight above ~1.06 pins the entire region at the 10 ceiling and the
+   map goes flat — no country ordering, no scenario response. Instead a weight moves a
+   country through the HEADROOM it actually has: toward the ceiling if it is more
+   exposed than its region, toward zero if less. Monotone, bounded, and it preserves
+   ordering at the top of the scale where this structure spends most of its time.     */
+const SPREAD = 1.0;     // how far a country may diverge from its region
+const SCEN_K = 0.85;    // how strongly the scenario shifts the projection
+function applyWeight(rs, w) {
+  return w >= 1 ? rs + (w - 1) * (10 - rs) * SPREAD
+                : rs * (1 - (1 - w) * SPREAD);
+}
+function applyScenarioShift(base, m) {
+  return m >= 1 ? base + (m - 1) * (10 - base) * SCEN_K
+                : base * (1 - (1 - m) * SCEN_K);
+}
+
+/* PROJECTED country stress. This is the only stress the renderers may use. */
+function cstress(name) {
+  const c = COUNTRIES[name]; if (!c) return 0;
+  const rs = regionStressFor(name);
+  if (rs == null) return c.stress;                       // standalone fallback
+  const sid = (STRUCTURE_STATE && STRUCTURE_STATE.structureId) || 'hormuz-iran';
+  const w = (EXPOSURE_WEIGHT[sid] && EXPOSURE_WEIGHT[sid][name]) || 1.0;
+  return Math.max(0, Math.min(10, applyWeight(rs, w)));
+}
+
+let scenario = 'baseline';
 let activeLayer = 'macro';
 let timeHorizon = 0;
 let selectedCountry = null;
@@ -1478,14 +1585,20 @@ let weights = { energy:30, inflation:25, fx:20, trade:15, fin:10 };
 let geoJsonData = null;
 let globeInstance = null;
 
-/* Working copy of countries (modified by scenario) */
+/* Country stress for rendering — PROJECTED from the active structure (see the
+   projection layer above), then scaled by the scenario multiplier.
+   NOTE ON DECAY: when a structure's regional series is present, cstress() has already
+   indexed it by time horizon (the series IS the decay path, per structure), so we must
+   NOT apply the legacy synthetic decay on top or the horizon would be counted twice.
+   The legacy decay is kept ONLY for the standalone/no-parent fallback path. */
 function getCountryStress(name) {
   const c = COUNTRIES[name];
   if (!c) return 0;
-  const m = SCENARIO_MULT[scenario];
-  const base = c.stress * m.stress;
-  // Time horizon decay
-  const decay = Math.max(0, 1 - (timeHorizon/36)*0.65);
+  const m = SCENARIO_MULT[scenario] || SCENARIO_MULT.baseline;
+  const projected = regionStressFor(name) != null;
+  if (projected) return Math.max(0, Math.min(10, applyScenarioShift(cstress(name), m.stress)));
+  const base = cstress(name) * m.stress;
+  const decay = Math.max(0, 1 - (timeHorizon/36)*0.65);   // fallback only
   return Math.min(10, base * decay);
 }
 
@@ -1599,7 +1712,7 @@ function buildShockImpactList() {
   const sm = SCENARIO_MULT[scenario];
   const impacts = Object.entries(COUNTRIES)
     .map(([name,data]) => ({
-      name, impact: data.stress * sm.stress * (data.oilDep>0 ? data.oilDep/100 : 0.05)
+      name, impact: cstress(name) * sm.stress * (data.oilDep>0 ? data.oilDep/100 : 0.05)
     }))
     .sort((a,b) => b.impact - a.impact)
     .slice(0,10);
@@ -2078,7 +2191,7 @@ function setLayer(layer, el) {
     const sm = SCENARIO_MULT[scenario];
     if (layer === 'macro')   return stressColor(getCountryStress(name));
     if (layer === 'market')  { const dep=Math.abs(c.oilDep)/100; return stressColor(Math.min(10, dep*(sm.oil-1)*8+dep*3)); }
-    if (layer === 'geo')     return stressColor(Math.min(10, c.stress*sm.stress*(c.oilDep>0?1.2:0.5)));
+    if (layer === 'geo')     return stressColor(Math.min(10, cstress(name)*sm.stress*(c.oilDep>0?1.2:0.5)));
     if (layer === 'debt')    return stressColor(debtScore(name));
     if (layer === 'cb')      return cbColor(name);
     if (layer === 'climate') return stressColor(climateScore(name));
@@ -2209,7 +2322,7 @@ async function fetchAIBriefing(countryName) {
     } else {
       html2 = '<div style="color:var(--text-mid);font-size:8px;line-height:1.65">'+raw.replace(/\*\*/g,'')+'</div>';
     }
-    html2 += '<div style="font-size:7px;color:var(--text-dim);margin-top:4px">🤖 Gemini · '+scenario.toUpperCase()+' · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>';
+    html2 += '<div style="font-size:7px;color:var(--text-dim);margin-top:4px">🤖 AI · '+scenario.toUpperCase()+' · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>';
 
     aiCountryCache[key] = html2;
     loading.style.display = 'none';
@@ -2289,7 +2402,7 @@ function openCountryPanel(name) {
 const cdCharts = {};
 function buildCountryCharts(name, c, sm) {
   // Stress history (90 days simulated)
-  const stressBase = c.stress * sm.stress;
+  const stressBase = cstress(name) * sm.stress;
   const stressHist = Array.from({length:30}, (_,i) => {
     const t = 1-(i/30)*0.4;
     return parseFloat((stressBase*t*(0.9+Math.random()*0.2)).toFixed(2));
@@ -2774,7 +2887,7 @@ async function openStockPopup(countryName) {
 
   // Show popup immediately in loading state
   if (nameEl) nameEl.textContent = countryName;
-  if (sub)    sub.textContent = 'AI Investor Insights · Gemini × Finnhub';
+  if (sub)    sub.textContent = 'AI Investor Insights · Live market data';
   body.innerHTML = '<div class="sp-loading"><div class="sp-load-dot"></div>GENERATING INVESTOR INSIGHTS…</div>';
   popup.classList.add('visible');
   if (backdrop) backdrop.classList.add('visible');
@@ -2866,7 +2979,7 @@ async function openStockPopup(countryName) {
   if (aiData && aiData.theme) {
     out += '<div class="sp-section">' +
       '<div class="sp-sect-hdr">MACRO THEME</div>' +
-      '<div class="sp-ai-insight"><strong>Gemini · ' + scenario.toUpperCase() + ':</strong> ' + escHtml(aiData.theme) + '</div>' +
+      '<div class="sp-ai-insight"><strong>AI · ' + scenario.toUpperCase() + ':</strong> ' + escHtml(aiData.theme) + '</div>' +
       '</div>';
   }
 
@@ -2906,7 +3019,7 @@ async function openStockPopup(countryName) {
 
   // Footer
   out += '<div style="font-size:7px;color:var(--text-dim);text-align:right;padding-top:4px">' +
-    '🤖 Gemini AI · Finnhub Live · ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + '</div>';
+    '🤖 AI · Live market data · ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + '</div>';
 
   body.innerHTML = out;
   stockInsightCache[cacheKey] = out;
@@ -3020,6 +3133,67 @@ async function fetchLiveAPIs() {
     updateSidebarMetrics();
   } catch(e) { /* non-fatal */ }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PARENT BRIDGE — one-way, parent is authoritative.
+   The dashboard posts { type:'STRUCTURE_STATE', ... }; this file re-projects and
+   re-renders. It never mutates its own model in response, and never posts state
+   back. (Two-way is deliberately deferred: click-to-country is the only case that
+   would need it, and it is not needed for Phase 1.)
+   ══════════════════════════════════════════════════════════════════════════════ */
+function applyStructureState(s) {
+  if (!s || s.type !== 'STRUCTURE_STATE') return;
+  STRUCTURE_STATE = s;
+  // Scenario: the parent owns the vocabulary. We only render it.
+  const sid = SCEN_ALIAS[s.scenarioId] || 'baseline';
+  scenario = sid;
+  if (typeof s.timeHorizon === 'number') timeHorizon = s.timeHorizon;
+  if (s.weights && typeof s.weights === 'object') weights = Object.assign({}, weights, s.weights);
+
+  // Relabel the scenario buttons with the ACTIVE STRUCTURE's own scenario names.
+  const btns = document.querySelectorAll('.scen-btn');
+  const labels = s.scenarioLabels || {};
+  const probs  = s.scenarioProbs  || {};
+  const order = ['baseline','pessimistic','optimistic'];
+  btns.forEach((b, i) => {
+    const id = order[i]; if (!id) return;
+    b.dataset.scen = id;
+    const label = labels[id] || id.toUpperCase();
+    const p = probs[id] != null ? ' <span class="scen-prob">P=' + Math.round(probs[id]*100) + '%</span>' : '';
+    b.innerHTML = label.toUpperCase() + p;
+    b.classList.toggle('active', id === sid);
+    b.onclick = null;                      // parent owns scenario; local switching disabled
+    b.style.cursor = 'default';
+    b.title = 'Scenario is controlled from the dashboard above';
+  });
+
+  // Structure name in the header, so the frame never looks like a different product.
+  const hdr = document.getElementById('structureBadge');
+  if (hdr) hdr.textContent = (s.structureName || '') + (s.tier ? ' · ' + String(s.tier).toUpperCase() : '');
+
+  redrawAll();
+}
+
+/* Re-run every renderer that depends on stress/scenario. Guarded individually so one
+   missing function can never take the whole frame down. */
+function redrawAll() {
+  const safe = fn => { try { if (typeof window[fn] === 'function') window[fn](); } catch(e) { console.warn('[geo] '+fn, e.message); } };
+  ['paintGlobe','updateGlobeColors','refreshLayer','renderCountryPanel','updateShockTransmission',
+   'updateMarketTicker','updateChokepoints','renderInsights','updateScenarioBanner','applyLayer',
+   'updateArcs','renderOpportunities'].forEach(safe);
+}
+
+window.addEventListener('message', (e) => {
+  // Same-origin only: the parent frames this file from its own domain.
+  if (e.origin !== window.location.origin) return;
+  const d = e.data;
+  if (d && d.type === 'STRUCTURE_STATE') applyStructureState(d);
+});
+
+// Tell the parent we are ready, so it can post the current state immediately.
+try { if (window.parent && window.parent !== window)
+  window.parent.postMessage({ type:'GEOINTEL_READY' }, window.location.origin); } catch(e) {}
+
 </script>
 </body>
 </html>
