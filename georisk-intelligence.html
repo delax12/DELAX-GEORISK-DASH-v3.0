@@ -387,7 +387,10 @@ body::before {
 .cd-chart { height: 80px; }
 
 .cd-insights {
-  padding: 10px 12px; flex: 1; min-height: 250px; overflow-y: auto;
+  padding: 10px 12px;
+  flex-shrink: 0;
+  max-height: 110px;
+  overflow-y: auto;
 }
 .cd-insight-item {
   padding: 6px 0; border-bottom: 1px solid var(--border);
@@ -633,12 +636,39 @@ input  { cursor: pointer; }
   display:none; z-index:60; max-height:70px; overflow-y:auto;
 }
 
-/* ══ AI COUNTRY BRIEFING (right panel) ══ */
+/* ══ AI COUNTRY BRIEFING (right panel) — primary content block ══ */
 #cd-ai-wrap {
-  padding:10px 12px; border-top:1px solid var(--border);
-  flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  border-left: 3px solid var(--purple);
+  background: rgba(208,170,255,.06);
+  min-height: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
 }
-.cd-ai-hdr { font-size:8px; color:var(--amber); letter-spacing:.14em; text-transform:uppercase; display:flex; align-items:center; gap:6px; font-weight:700; }
+.cd-ai-hdr {
+  font-size: 9px;
+  color: var(--purple);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+.cd-ai-hdr .new-badge {
+  font-size: 7px;
+  background: var(--purple);
+  color: #0a0a12;
+  padding: 1px 5px;
+  border-radius: 1px;
+  letter-spacing: .08em;
+  animation: pulse-anim 1.4s ease 3;
+}
 .ai-dot { width:6px; height:6px; border-radius:50%; background:var(--amber); animation:pulse-anim 1.2s infinite; }
 #cd-ai-loading { font-size:9px; color:var(--amber); display:flex; align-items:center; gap:6px; font-weight:700; }
 #cd-ai-body    { font-size:9px; color:var(--text-mid); line-height:1.75; display:none; }
@@ -648,6 +678,36 @@ input  { cursor: pointer; }
 .score-meter { height:4px; border-radius:2px; background:var(--bg3); overflow:hidden; margin-bottom:2px; }
 .score-fill  { height:100%; border-radius:2px; transition:width .6s ease; }
 .score-val   { font-family:var(--orb); font-size:13px; font-weight:700; }
+
+/* Chart tabs (collapsed dual-chart) */
+.cd-chart-tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 12px; flex-shrink: 0;
+}
+.cd-chart-tab {
+  font-size: 8px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 7px 12px; cursor: pointer; color: var(--text-dim);
+  border-bottom: 2px solid transparent; background: none; font-family: var(--mono);
+}
+.cd-chart-tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+.cd-chart-tab:hover { color: var(--text-hi); }
+
+/* Secondary stock signals button */
+.cd-stock-btn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  background: rgba(255,184,48,.08);
+  border: 1px solid var(--border-hi);
+  border-radius: 2px;
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .1em;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all .15s;
+}
+.cd-stock-btn:hover { background: rgba(255,184,48,.15); border-color: var(--amber); }
 
 /* ══ OPPORTUNITY SCANNER ══ */
 #opp-panel {
@@ -1150,22 +1210,7 @@ input  { cursor: pointer; }
           <div class="cd-metric-sub">% of GDP</div>
         </div>
       </div>
-      <!-- Mini chart: Stress history -->
-      <div class="cd-chart-area">
-        <div class="cd-chart-title">90-DAY STRESS INDEX TREND</div>
-        <div class="cd-chart" id="cd-stress-chart"></div>
-      </div>
-      <!-- Mini chart: CPI trend -->
-      <div class="cd-chart-area">
-        <div class="cd-chart-title">CPI TRAJECTORY (12M)</div>
-        <div class="cd-chart" id="cd-cpi-chart"></div>
-      </div>
-      <!-- Model Insights -->
-      <div class="cd-insights" style="max-height:100px;overflow-y:auto">
-        <div class="panel-title">Model Insights</div>
-        <div id="cd-insights-body"></div>
-      </div>
-      <!-- Investability Score bar -->
+      <!-- Investability Score bar (moved up) -->
       <div id="cd-score-bar" style="display:none">
         <div class="score-label">INVESTABILITY SCORE</div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -1174,15 +1219,33 @@ input  { cursor: pointer; }
         </div>
         <div id="cd-score-label" style="font-size:7px;color:var(--text-dim);margin-top:2px"></div>
       </div>
-      <!-- AI Briefing — auto on country click -->
+      <!-- AI Briefing — now primary, immediately visible -->
       <div id="cd-ai-wrap">
         <div class="cd-ai-hdr">
           <div class="ai-dot" id="cd-ai-dot" style="display:none"></div>
           🤖 AI INTELLIGENCE BRIEFING
+          <span class="new-badge" id="cd-ai-new" style="display:none">NEW ANALYSIS</span>
         </div>
         <div id="cd-ai-loading" style="display:none"><div class="ai-dot"></div> ANALYZING…</div>
         <div id="cd-ai-body"></div>
         <div id="cd-ai-placeholder">Click any country on the globe for an AI-generated briefing: conflict exposure · investment signals · key risks.</div>
+        <button class="cd-stock-btn" id="cd-stock-btn" onclick="if(selectedCountry) openStockPopup(selectedCountry)" style="display:none">
+          📈 STOCK SIGNALS / INVESTOR NOTES
+        </button>
+      </div>
+      <!-- Single tabbed chart area (replaces two stacked charts) -->
+      <div class="cd-chart-tabs">
+        <button class="cd-chart-tab active" data-chart="stress" onclick="switchCountryChart('stress',this)">STRESS TREND</button>
+        <button class="cd-chart-tab" data-chart="cpi" onclick="switchCountryChart('cpi',this)">CPI TRAJECTORY</button>
+      </div>
+      <div class="cd-chart-area" style="border-bottom:1px solid var(--border)">
+        <div class="cd-chart" id="cd-stress-chart"></div>
+        <div class="cd-chart" id="cd-cpi-chart" style="display:none"></div>
+      </div>
+      <!-- Model Insights (capped) -->
+      <div class="cd-insights">
+        <div class="panel-title">Model Insights</div>
+        <div id="cd-insights-body"></div>
       </div>
     </div>
   </div>
@@ -2272,7 +2335,14 @@ async function fetchAIBriefing(countryName) {
   const body     = document.getElementById('cd-ai-body');
   const ph       = document.getElementById('cd-ai-placeholder');
   const dot      = document.getElementById('cd-ai-dot');
+  const newBadge = document.getElementById('cd-ai-new');
   if (!loading || !body) return;
+
+  const showNewBadge = () => {
+    if (!newBadge) return;
+    newBadge.style.display = 'inline';
+    setTimeout(() => { if (newBadge) newBadge.style.display = 'none'; }, 4500);
+  };
 
   const key = countryName + '_' + scenario;
   if (aiCountryCache[key]) {
@@ -2280,6 +2350,7 @@ async function fetchAIBriefing(countryName) {
     loading.style.display = 'none';
     body.style.display = 'block';
     body.innerHTML = aiCountryCache[key];
+    showNewBadge();
     return;
   }
 
@@ -2287,6 +2358,7 @@ async function fetchAIBriefing(countryName) {
   body.style.display = 'none';
   loading.style.display = 'flex';
   if (dot) dot.style.display = 'inline-block';
+  if (newBadge) newBadge.style.display = 'none';
 
   try {
     const c = COUNTRIES[countryName] || {};
@@ -2328,6 +2400,7 @@ async function fetchAIBriefing(countryName) {
     loading.style.display = 'none';
     body.style.display = 'block';
     body.innerHTML = html2;
+    showNewBadge();
 
   } catch(err) {
     loading.style.display = 'none';
@@ -2342,13 +2415,14 @@ function openCountryPanel(name) {
   document.getElementById('country-detail').style.display = 'flex';
   selectedCountry = name;
 
-  // Open stock insights popup on every country click
-  openStockPopup(name);
+  // Stock popup is gated — user must click the button inside AI briefing
+  const stockBtn = document.getElementById('cd-stock-btn');
+  if (stockBtn) stockBtn.style.display = 'block';
 
   // On mobile: auto-open right panel so metrics are visible
   if (window.innerWidth <= 768) toggleMobPanel('right');
 
-  // Fire AI briefing
+  // Fire AI briefing (primary content)
   fetchAIBriefing(name);
 
   // Investability score
@@ -2398,6 +2472,25 @@ function openCountryPanel(name) {
   }
 }
 
+/* Chart tab switcher for country panel */
+function switchCountryChart(which, btn) {
+  document.querySelectorAll('.cd-chart-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const stressEl = document.getElementById('cd-stress-chart');
+  const cpiEl = document.getElementById('cd-cpi-chart');
+  if (!stressEl || !cpiEl) return;
+  if (which === 'cpi') {
+    stressEl.style.display = 'none';
+    cpiEl.style.display = 'block';
+    // force echarts resize after show
+    if (cdCharts['cd-cpi-chart']) setTimeout(() => cdCharts['cd-cpi-chart'].resize(), 30);
+  } else {
+    cpiEl.style.display = 'none';
+    stressEl.style.display = 'block';
+    if (cdCharts['cd-stress-chart']) setTimeout(() => cdCharts['cd-stress-chart'].resize(), 30);
+  }
+}
+
 /* Mini ECharts in country panel */
 const cdCharts = {};
 function buildCountryCharts(name, c, sm) {
@@ -2416,6 +2509,15 @@ function buildCountryCharts(name, c, sm) {
     return parseFloat((cpiBase*(0.85+i*0.015+Math.random()*0.05)).toFixed(1));
   });
   renderMiniChart('cd-cpi-chart', cpiHist, '#ff6b35', 'CPI %');
+
+  // Default to Stress tab after rebuild
+  const stressEl = document.getElementById('cd-stress-chart');
+  const cpiEl = document.getElementById('cd-cpi-chart');
+  if (stressEl) stressEl.style.display = 'block';
+  if (cpiEl) cpiEl.style.display = 'none';
+  document.querySelectorAll('.cd-chart-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.chart === 'stress');
+  });
 }
 
 function renderMiniChart(id, data, color, name) {
