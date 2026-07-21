@@ -1133,13 +1133,22 @@ input  { cursor: pointer; }
       <div id="layer-badge-wrap">
         <div class="badge badge-live">LIVE SIM</div>
         <div class="badge badge-sim" id="activeBadge" style="margin-left:4px">MACRO LAYER</div>
+        <button onclick="toggleNLQuery()" style="margin-left:6px; background:rgba(0,212,255,.1); border:1px solid var(--cyan); color:var(--cyan); font-size:8px; padding:2px 6px; border-radius:2px; cursor:pointer;">🔍 ASK</button>
       </div>
     </div>
     <!-- NL Query -->
-    <div id="nl-wrap">
-      <input id="nl-input" type="text" placeholder="🔍 Ask: Which countries gain from high oil prices?"
-        onkeydown="if(event.key==='Enter')runNLQuery()"/>
-      <button id="nl-btn" onclick="runNLQuery()">ANALYZE</button>
+    <div id="nl-wrap" style="display:none; flex-direction:column; gap:4px;">
+      <div style="display:flex; gap:4px; align-items:center;">
+        <input id="nl-input" type="text" placeholder="🔍 Ask: Which countries gain from high oil prices?"
+          onkeydown="if(event.key==='Enter')runNLQuery()"/>
+        <button id="nl-btn" onclick="runNLQuery()">ANALYZE</button>
+      </div>
+      <div style="display:flex; gap:4px; flex-wrap:wrap;">
+        <button class="tl-btn" style="font-size:7px; padding:2px 6px;" onclick="document.getElementById('nl-input').value='Which countries gain from high oil prices?'; runNLQuery();">Oil beneficiaries</button>
+        <button class="tl-btn" style="font-size:7px; padding:2px 6px;" onclick="document.getElementById('nl-input').value='Show Taiwan Strait risk impact'; runNLQuery();">Taiwan risk</button>
+        <button class="tl-btn" style="font-size:7px; padding:2px 6px;" onclick="document.getElementById('nl-input').value='Top opportunities in escalation'; runNLQuery();">Escalation opps</button>
+        <button class="tl-btn" style="font-size:7px; padding:2px 6px;" onclick="document.getElementById('nl-input').value='Food crisis impact on Ethiopia'; runNLQuery();">Food crisis</button>
+      </div>
       <div id="nl-result"></div>
     </div>
     <!-- Tooltip -->
@@ -1152,9 +1161,10 @@ input  { cursor: pointer; }
       display:flex;align-items:center;gap:8px;overflow:hidden;
     ">
       <span style="font-weight:700;flex-shrink:0">⚠ ALERT:</span>
-      <div id="alertScrollText" style="white-space:nowrap;animation:alert-scroll 20s linear infinite">
+      <div id="alertScrollText" style="white-space:nowrap;animation:alert-scroll 20s linear infinite; flex:1;">
         Brent crude above $120 threshold · EM currency basket under pressure · Hormuz transit risk elevated · VIX > 28 signals elevated volatility
       </div>
+      <span onclick="document.getElementById('alert-strip').style.display='none';" style="cursor:pointer; font-weight:700; margin-left:8px; flex-shrink:0;">✕</span>
     </div>
     <style>
     @keyframes alert-scroll {
@@ -1367,7 +1377,9 @@ input  { cursor: pointer; }
     </div>
 
     <div id="shock-right">
-      <div class="shock-impact-title">MOST IMPACTED COUNTRIES</div>
+      <div class="shock-impact-title">MOST IMPACTED COUNTRIES 
+        <span onclick="toggleImpactView(this)" style="cursor:pointer; font-size:7px; color:var(--amber); margin-left:8px;">↔ BENEFITED</span>
+      </div>
       <!-- Populated by JS -->
       <div id="shock-impact-list"></div>
     </div>
@@ -1647,6 +1659,7 @@ let selectedCountry = null;
 let weights = { energy:30, inflation:25, fx:20, trade:15, fin:10 };
 let geoJsonData = null;
 let globeInstance = null;
+let impactViewMode = 'risk'; // 'risk' or 'benefited'
 
 /* Country stress for rendering — PROJECTED from the active structure (see the
    projection layer above), then scaled by the scenario multiplier.
@@ -1773,24 +1786,51 @@ function updateShockNodes() {
 /* Shock impact list for bottom-right */
 function buildShockImpactList() {
   const sm = SCENARIO_MULT[scenario];
-  const impacts = Object.entries(COUNTRIES)
-    .map(([name,data]) => ({
-      name, impact: cstress(name) * sm.stress * (data.oilDep>0 ? data.oilDep/100 : 0.05)
-    }))
-    .sort((a,b) => b.impact - a.impact)
-    .slice(0,10);
+  let impacts;
+  if (impactViewMode === 'benefited') {
+    // Simple benefited logic: prioritize oil exporters and positive contributors
+    impacts = Object.entries(COUNTRIES)
+      .filter(([name,data]) => data.oilDep < 0 || ['United States of America','Russia','Saudi Arabia','Qatar','Norway'].includes(name))
+      .map(([name,data]) => ({
+        name, impact: Math.abs(data.oilDep) * sm.oil * 0.5 + (10 - cstress(name)) * 0.5
+      }))
+      .sort((a,b) => b.impact - a.impact)
+      .slice(0,10);
+  } else {
+    impacts = Object.entries(COUNTRIES)
+      .map(([name,data]) => ({
+        name, impact: cstress(name) * sm.stress * (data.oilDep>0 ? data.oilDep/100 : 0.05)
+      }))
+      .sort((a,b) => b.impact - a.impact)
+      .slice(0,10);
+  }
   const max = impacts[0]?.impact||1;
   const list = document.getElementById('shock-impact-list');
   if (!list) return;
   list.innerHTML = impacts.map(item => {
     const pct = (item.impact/max)*100;
-    const color = item.impact/max>0.75?'var(--red)':item.impact/max>0.4?'var(--amber)':'var(--yellow)';
-    return `<div class="shock-impact-row">
+    const color = impactViewMode === 'benefited' ? 'var(--green)' : (item.impact/max>0.75?'var(--red)':item.impact/max>0.4?'var(--amber)':'var(--yellow)');
+    return `<div class="shock-impact-row" onclick="openCountryPanel('${item.name}'); if(typeof flyToCountry === 'function') flyToCountry('${item.name}');" style="cursor:pointer;">
       <span class="shock-country-name">${item.name.length>14?item.name.slice(0,13)+'…':item.name}</span>
       <div class="shock-bar-wrap"><div class="shock-bar" style="width:${pct}%;background:${color}"></div></div>
       <span class="shock-impact-val" style="color:${color}">${item.impact.toFixed(1)}</span>
     </div>`;
   }).join('');
+}
+
+function toggleImpactView(el) {
+  impactViewMode = (impactViewMode === 'risk') ? 'benefited' : 'risk';
+  el.textContent = (impactViewMode === 'risk') ? '↔ BENEFITED' : '↔ IMPACTED';
+  const titleEl = document.querySelector('#shock-right .shock-impact-title');
+  if (titleEl) titleEl.innerHTML = (impactViewMode === 'risk') ? 'MOST IMPACTED COUNTRIES <span onclick="toggleImpactView(this)" style="cursor:pointer; font-size:7px; color:var(--amber); margin-left:8px;">↔ BENEFITED</span>' : 'MOST BENEFITED COUNTRIES <span onclick="toggleImpactView(this)" style="cursor:pointer; font-size:7px; color:var(--green); margin-left:8px;">↔ IMPACTED</span>';
+  buildShockImpactList();
+}
+
+function toggleNLQuery() {
+  const wrap = document.getElementById('nl-wrap');
+  if (wrap) {
+    wrap.style.display = (wrap.style.display === 'none' || wrap.style.display === '') ? 'flex' : 'none';
+  }
 }
 
 /* Update shock engine message with dynamic GDELT + market alerts */
@@ -3150,6 +3190,39 @@ document.addEventListener('DOMContentLoaded', () => {
   // Shock impact
   buildShockImpactList();
   updateShockNodes();
+
+  // Shock chain click delegation for interactivity
+  const shockChain = document.querySelector('.shock-chain');
+  if (shockChain) {
+    shockChain.addEventListener('click', function(e) {
+      const node = e.target.closest('.shock-node-inner');
+      if (node) {
+        const nodeNameEl = node.querySelector('.shock-node-name');
+        const nodeName = nodeNameEl ? nodeNameEl.textContent.replace(/\s+/g, ' ').trim() : '';
+        // Visual feedback
+        node.classList.add('active');
+        setTimeout(() => node.classList.remove('active'), 1500);
+        // Update banner with node-specific insight
+        const alertText = document.getElementById('alertScrollText');
+        if (alertText) {
+          if (nodeName.includes('FOOD')) {
+            alertText.textContent = 'Food crisis spiking — Ethiopia, Yemen, Somalia most exposed. Consider hedging ag equities.';
+          } else if (nodeName.includes('OIL')) {
+            alertText.textContent = 'Oil spike active — Beneficiaries: Saudi Arabia, Russia, Norway. Importers under pressure.';
+          } else if (nodeName.includes('INFLATION')) {
+            alertText.textContent = 'Inflation surge — Watch central bank tightening and consumer stocks.';
+          } else {
+            alertText.textContent = nodeName + ' step active — reviewing affected countries...';
+          }
+        }
+        // Optionally filter country list for related (basic example)
+        if (nodeName.includes('FOOD') || nodeName.includes('EM')) {
+          // Rebuild with focus - simple demo
+          setTimeout(() => buildShockImpactList(), 300);
+        }
+      }
+    });
+  }
 
   // Clock
   updateClock();
