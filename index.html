@@ -2770,7 +2770,14 @@ function setScenario(s) {
     const ck = `heatmap_${scenario}`;
     if (narrativeCache[ck]) fetchHeatmapNarrative(); else showHeatmapNarrativePrompt();
   }
-  // Sync GEO Intel iframe header label
+  // ── GEO INTEL ──────────────────────────────────────────────────────────────
+  // syncGeoIntelScenario() only rewrites a text label on the iframe CHROME; it does
+  // not talk to the frame. So before this line was added, changing scenario updated
+  // every chart on the dashboard and left the globe rendering the previous scenario
+  // — with a label above it claiming otherwise. The frame is a renderer; it only
+  // knows what we post. Structure switches already posted (see setStructure); this
+  // closes the other half.
+  postStructureState();
   syncGeoIntelScenario();
 }
 
@@ -2947,7 +2954,7 @@ function toggleTransparency() {
 
 /* ═════════════════════════════════════════
    WHAT-IF AI ANALYSIS
-   Calls /api/whatif → Anthropic Claude API
+   Calls /api/whatif for AI analysis
    Passes live dashboard state as context:
    - Current scenario + KPI values
    - Live EIA Brent price + date
@@ -3629,7 +3636,7 @@ function setAlertFallback() {
    AUTO AI NEWS SUMMARY
    Fires automatically after each RSS fetch.
    Sends top headlines to /api/analyze
-   (type:'newssummary') → Gemini scores them
+   (type:'newssummary') → the AI chain scores them
    by hotness and returns a 1-sentence
    Bloomberg-style alert that replaces the
    alert banner text. No user click needed.
@@ -5653,12 +5660,56 @@ function reviewStampHTML(S){
        scenarioLabels{}, scenarioProbs{}, regionalStress{ region: number[] },
        timeHorizon, weights }
    ══════════════════════════════════════════════════════════════════════════════ */
+/* Region vocabularies drifted across the data blocks — HEATMAP_REGIONS says
+   'Mid. East' / 'E. Asia', GDP_REGIONS says 'Middle East' / 'East Asia', and
+   INFLATION_BY_REGION mixes the two. The frame cannot be expected to guess. We
+   normalise to the HEATMAP_REGIONS vocabulary before posting, so the frame joins
+   stress, CPI and GDP on one key set. */
+const _GEO_REGION_CANON = {
+  'n. america':'N. America','north america':'N. America',
+  'europe':'Europe',
+  'mid. east':'Mid. East','middle east':'Mid. East','middle east (non-iran)':'Mid. East',
+  'e. asia':'E. Asia','east asia':'E. Asia','east asia (epicentre)':'E. Asia','china':'E. Asia',
+  's. asia':'S. Asia','south asia':'S. Asia',
+  'africa':'Africa','sub-saharan africa':'Africa','north africa':'Africa',
+  's. america':'S. America','south america':'S. America',
+  'oceania':'Oceania','central asia':'S. Asia',
+};
+function _geoCanonRegion(r) { return _GEO_REGION_CANON[String(r || '').toLowerCase().trim()] || null; }
+
 function buildStructureStatePayload() {
   const S = RISK_STRUCTURES[ACTIVE_STRUCTURE] || RISK_STRUCTURES['hormuz-iran'];
   const regions = SD('HEATMAP_REGIONS') || [];
   const raw = SD('HEATMAP_RAW') || [];
   const regionalStress = {};
-  regions.forEach((r, i) => { if (raw[i]) regionalStress[r] = raw[i].slice(); });
+  regions.forEach((r, i) => { if (raw[i]) regionalStress[_geoCanonRegion(r) || r] = raw[i].slice(); });
+
+  /* ── REGIONAL MACRO (added for the globe's de-fork) ──────────────────────────
+     The frame used to read `cpi` and `gdp` off a hand-authored 64-country table
+     that was fitted to HORMUZ, so under TAIWAN it reported Taiwan at CPI 2.1% and
+     GDP +3.2% while this dashboard put East Asia at -6.8%. Those two numbers came
+     from the same product and disagreed by ten points of GDP.
+
+     We already hold per-structure, per-scenario regional series for exactly these
+     two quantities. Posting them lets the frame DERIVE country macro the same way
+     it already derives stress, instead of carrying its own fork.
+
+     Units are deltas, not levels, and the frame renders them as such:
+       cpi -> excess CPI, points above trend, by year  (INFLATION_BY_REGION)
+       gdp -> GDP drag,   percentage points, by year   (GDP_DATA yr1..yr3)         */
+  const infl = (SD('INFLATION_BY_REGION') || {})[scenario] || {};
+  const regionalCpi = {};
+  Object.keys(infl).forEach(r => { const k = _geoCanonRegion(r); if (k) regionalCpi[k] = infl[r].slice(); });
+
+  const gdpRegions = SD('GDP_REGIONS') || [];
+  const gdpBlock   = (SD('GDP_DATA') || {})[scenario] || {};
+  const regionalGdp = {};
+  gdpRegions.forEach((r, i) => {
+    const k = _geoCanonRegion(r); if (!k) return;
+    const path = [gdpBlock.yr1, gdpBlock.yr2, gdpBlock.yr3].map(a => (a && a[i] != null) ? a[i] : null);
+    if (path.some(v => v != null)) regionalGdp[k] = path;
+  });
+
   const labels = {}, probs = {};
   S.scenarios.forEach(sc => { labels[sc.id] = sc.label; probs[sc.id] = sc.probability; });
   return {
@@ -5670,7 +5721,19 @@ function buildStructureStatePayload() {
     scenarioLabels: labels,
     scenarioProbs: probs,
     regionalStress,
-    timeHorizon: 0,
+    regionalCpi,
+    regionalGdp,
+    /* All three series are indexed by YEAR, not by month. Stated explicitly because
+       the frame's horizon slider is in months and silently used the month number as
+       an array index — at +12M it was reading year 10. */
+    horizonUnit: 'year',
+    /* v3.1 calibrated pre-war Brent. The frame was matching historical analogues
+       against a $78 anchor that corresponds to no measured period. */
+    brentAnchor: 70,
+    liveBrent: (typeof liveBrentPrice === 'number' && liveBrentPrice > 0) ? liveBrentPrice : null,
+    /* null, not 0: the frame owns its own horizon slider. Posting 0 on every
+       scenario change snapped the user's timelapse back to NOW mid-session. */
+    timeHorizon: null,
     weights: null,
   };
 }

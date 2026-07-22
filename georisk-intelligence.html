@@ -290,6 +290,18 @@ body::before {
   display: flex; align-items: center; justify-content: space-between;
 }
 .scen-btn:hover { border-color: var(--amber); color: var(--text-hi); }
+.cd-risk-badge.risk-uncovered {
+  background: rgba(38,52,74,.5); border-color: #35476a; color: #7d92b3;
+}
+.ticker-structure {
+  font-family: var(--mono, monospace); font-size: 7px; letter-spacing: .14em;
+  text-transform: uppercase; white-space: nowrap; padding: 2px 7px; border-radius: 3px;
+  border: 1px solid var(--cyan, #00d4ff); color: var(--cyan, #00d4ff);
+  background: rgba(0,212,255,.08); margin-left: 8px; flex: 0 0 auto;
+}
+@media (max-width: 768px) {
+  .ticker-structure { font-size: 6px; letter-spacing: .08em; padding: 2px 5px; margin-left: 5px; }
+}
 .scen-btn.active.base  { background:rgba(0,212,255,.08);  border-color:var(--cyan);  color:var(--cyan); }
 .scen-btn.active.esc   { background:rgba(255,61,74,.08);  border-color:var(--red);   color:var(--red); }
 .scen-btn.active.de    { background:rgba(0,230,118,.08);  border-color:var(--green); color:var(--green); }
@@ -936,6 +948,10 @@ input  { cursor: pointer; }
     <div class="ticker-status">
       <div class="pulse-dot"></div> LIVE SIM
     </div>
+    <!-- Named by applyStructureState() from the parent's STRUCTURE_STATE payload.
+         Without this element the frame never says WHICH structure it is drawing,
+         which is exactly how a Taiwan session can read as a Hormuz session. -->
+    <div class="ticker-structure" id="structureBadge">HORMUZ · CALIBRATED</div>
     <div class="ticker-track-wrap">
       <div class="ticker-track" id="tickerTrack">
         <!-- Populated by JS -->
@@ -1028,14 +1044,18 @@ input  { cursor: pointer; }
     <div class="panel-section">
       <div class="panel-title">Scenario</div>
       <div class="scenario-btns">
-        <div class="scen-btn base active" data-scen="base" onclick="setScenario('base',this)">
-          BASE CASE <span class="scen-prob">P=50%</span>
+        <!-- Platform vocabulary in the markup, not base/esc/de. These are relabelled
+             with the ACTIVE structure's own scenario names by applyStructureState()
+             as soon as the parent posts; the text below is only what a cold or
+             standalone load shows before the first message arrives. -->
+        <div class="scen-btn base active" data-scen="baseline" onclick="setScenario('baseline',this)">
+          BASELINE <span class="scen-prob">P=50%</span>
         </div>
-        <div class="scen-btn esc" data-scen="esc" onclick="setScenario('esc',this)">
-          ESCALATION <span class="scen-prob">P=28%</span>
+        <div class="scen-btn esc" data-scen="pessimistic" onclick="setScenario('pessimistic',this)">
+          PESSIMISTIC <span class="scen-prob">P=28%</span>
         </div>
-        <div class="scen-btn de" data-scen="de" onclick="setScenario('de',this)">
-          DE-ESCALATION <span class="scen-prob">P=22%</span>
+        <div class="scen-btn de" data-scen="optimistic" onclick="setScenario('optimistic',this)">
+          OPTIMISTIC <span class="scen-prob">P=22%</span>
         </div>
       </div>
     </div>
@@ -1043,14 +1063,14 @@ input  { cursor: pointer; }
     <!-- KEY MARKETS -->
     <div class="panel-section">
       <div class="panel-title">Key Markets</div>
-      <div class="metric-row"><span class="metric-label">BRENT CRUDE</span><span class="metric-val up" id="m-brent">$121.88</span></div>
-      <div class="metric-row"><span class="metric-label">WTI CRUDE</span><span class="metric-val up" id="m-wti">$118.20</span></div>
-      <div class="metric-row"><span class="metric-label">NAT GAS (LNG)</span><span class="metric-val up" id="m-lng">$9.42</span></div>
-      <div class="metric-row"><span class="metric-label">VIX</span><span class="metric-val warn" id="m-vix">28.4</span></div>
-      <div class="metric-row"><span class="metric-label">DXY (USD IDX)</span><span class="metric-val" id="m-dxy">104.82</span></div>
-      <div class="metric-row"><span class="metric-label">GOLD</span><span class="metric-val up" id="m-gold">$2,318</span></div>
-      <div class="metric-row"><span class="metric-label">US 10Y YIELD</span><span class="metric-val" id="m-10y">4.38%</span></div>
-      <div class="metric-row"><span class="metric-label">EM CREDIT SPREAD</span><span class="metric-val dn" id="m-spread">+385bp</span></div>
+      <div class="metric-row"><span class="metric-label">BRENT CRUDE</span><span class="metric-val" id="m-brent">—</span></div>
+      <div class="metric-row"><span class="metric-label">WTI CRUDE</span><span class="metric-val" id="m-wti">—</span></div>
+      <div class="metric-row"><span class="metric-label">NAT GAS (LNG)</span><span class="metric-val" id="m-lng">—</span></div>
+      <div class="metric-row"><span class="metric-label">VIX</span><span class="metric-val" id="m-vix">—</span></div>
+      <div class="metric-row"><span class="metric-label">DXY (USD IDX)</span><span class="metric-val" id="m-dxy">—</span></div>
+      <div class="metric-row"><span class="metric-label">GOLD</span><span class="metric-val" id="m-gold">—</span></div>
+      <div class="metric-row"><span class="metric-label">US 10Y YIELD</span><span class="metric-val" id="m-10y">—</span></div>
+      <div class="metric-row"><span class="metric-label">EM CREDIT SPREAD</span><span class="metric-val" id="m-spread">—</span></div>
     </div>
 
     <!-- CHOKEPOINTS -->
@@ -1212,13 +1232,13 @@ input  { cursor: pointer; }
         <div class="cd-metric">
           <div class="cd-metric-label">FX Volatility</div>
           <div class="cd-metric-val" id="cd-fxvol" style="color:var(--yellow)">—</div>
-          <div class="cd-metric-sub">30D implied vol</div>
+          <div class="cd-metric-sub">relative index, 0–100</div>
         </div>
-        <div class="cd-metric">
-          <div class="cd-metric-label">Trade Balance</div>
-          <div class="cd-metric-val" id="cd-trade" style="color:var(--green)">—</div>
-          <div class="cd-metric-sub">% of GDP</div>
-        </div>
+        <!-- TRADE BALANCE tile retired. `trade` was a hand-authored, Hormuz-fitted
+             per-country column with no structure-level source in either file, so it
+             could not be moved onto the projection layer with cpi/gdp/fx. Per the
+             house rule — if the model does not produce it, it does not get shown —
+             it is removed rather than carried forward on another structure's fit. -->
       </div>
       <!-- Investability Score bar (moved up) -->
       <div id="cd-score-bar" style="display:none">
@@ -1295,8 +1315,8 @@ input  { cursor: pointer; }
 
         <div class="shock-node">
           <div class="shock-node-inner active">
-            <div class="shock-node-icon">⚔️</div>
-            <div class="shock-node-name">IRAN<br>CONFLICT</div>
+            <div class="shock-node-icon" id="sn-icon-0">⚔️</div>
+            <div class="shock-node-name" id="sn-name-0">IRAN<br>CONFLICT</div>
             <div class="shock-node-val" id="sn-conflict">Active</div>
           </div>
         </div>
@@ -1307,8 +1327,8 @@ input  { cursor: pointer; }
 
         <div class="shock-node">
           <div class="shock-node-inner">
-            <div class="shock-node-icon">🛢️</div>
-            <div class="shock-node-name">OIL<br>SPIKE</div>
+            <div class="shock-node-icon" id="sn-icon-1">🛢️</div>
+            <div class="shock-node-name" id="sn-name-1">OIL<br>SPIKE</div>
             <div class="shock-node-val" id="sn-oil">+56%</div>
           </div>
         </div>
@@ -1319,8 +1339,8 @@ input  { cursor: pointer; }
 
         <div class="shock-node">
           <div class="shock-node-inner">
-            <div class="shock-node-icon">📈</div>
-            <div class="shock-node-name">INFLATION<br>SURGE</div>
+            <div class="shock-node-icon" id="sn-icon-2">📈</div>
+            <div class="shock-node-name" id="sn-name-2">INFLATION<br>SURGE</div>
             <div class="shock-node-val" id="sn-cpi">+3.8pp</div>
           </div>
         </div>
@@ -1331,8 +1351,8 @@ input  { cursor: pointer; }
 
         <div class="shock-node">
           <div class="shock-node-inner">
-            <div class="shock-node-icon">🏦</div>
-            <div class="shock-node-name">CB<br>TIGHTENING</div>
+            <div class="shock-node-icon" id="sn-icon-3">🏦</div>
+            <div class="shock-node-name" id="sn-name-3">CB<br>TIGHTENING</div>
             <div class="shock-node-val" id="sn-rates">+200bp</div>
           </div>
         </div>
@@ -1343,8 +1363,8 @@ input  { cursor: pointer; }
 
         <div class="shock-node">
           <div class="shock-node-inner">
-            <div class="shock-node-icon">📉</div>
-            <div class="shock-node-name">GROWTH<br>SLOWDOWN</div>
+            <div class="shock-node-icon" id="sn-icon-4">📉</div>
+            <div class="shock-node-name" id="sn-name-4">GROWTH<br>SLOWDOWN</div>
             <div class="shock-node-val" id="sn-gdp">-1.9%</div>
           </div>
         </div>
@@ -1355,8 +1375,8 @@ input  { cursor: pointer; }
 
         <div class="shock-node">
           <div class="shock-node-inner">
-            <div class="shock-node-icon">💱</div>
-            <div class="shock-node-name">EM<br>PRESSURE</div>
+            <div class="shock-node-icon" id="sn-icon-5">💱</div>
+            <div class="shock-node-name" id="sn-name-5">EM<br>PRESSURE</div>
             <div class="shock-node-val" id="sn-em">-14% FX</div>
           </div>
         </div>
@@ -1367,8 +1387,8 @@ input  { cursor: pointer; }
 
         <div class="shock-node">
           <div class="shock-node-inner">
-            <div class="shock-node-icon">🚨</div>
-            <div class="shock-node-name">FOOD<br>CRISIS</div>
+            <div class="shock-node-icon" id="sn-icon-6">🚨</div>
+            <div class="shock-node-name" id="sn-name-6">FOOD<br>CRISIS</div>
             <div class="shock-node-val" id="sn-food">+27%</div>
           </div>
         </div>
@@ -1436,6 +1456,9 @@ const CHOKEPOINTS = {
   bab:     { name:'Bab el-Mandeb',       lat:12.58, lng:43.25, status:'risk',   vol:'9% global oil',  disrupted:false },
   malacca: { name:'Strait of Malacca',   lat:3.5,  lng:103.5, status:'open',   vol:'25% global trade',disrupted:false },
   gibraltar:{name:'Strait of Gibraltar', lat:35.98, lng:-5.36, status:'open',  vol:'4% global trade', disrupted:false },
+  /* Added with the TAIWAN structure so flyToChokepoint() resolves for its grid. */
+  taiwan:  { name:'Taiwan Strait',       lat:24.30, lng:119.60,status:'risk',  vol:'>50% container transits', disrupted:true },
+  luzon:   { name:'Luzon Strait',        lat:20.60, lng:121.00,status:'risk',  vol:'N. Pacific routing',      disrupted:false },
 };
 
 const CONFLICT_ZONES = [
@@ -1450,74 +1473,86 @@ const CONFLICT_ZONES = [
 
 /* Country dataset — 60+ countries with full metrics */
 const COUNTRIES = {
-  'Iran':               { region:'Middle East',    stress:4.5, oilDep:45,  cpi:38.0, gdp:-8.2,  fxVol:42, trade:-4.2, pmI:38 },
-  'Iraq':               { region:'Middle East',    stress:8.5, oilDep:82,  cpi:7.4,  gdp:-5.8,  fxVol:28, trade:8.1,  pmi:39 },
-  'Saudi Arabia':       { region:'Middle East',    stress:8.8, oilDep:-90, cpi:3.1,  gdp:-4.2,  fxVol:8,  trade:15.2, pmi:56 },
-  'United Arab Emirates':{ region:'Middle East',  stress:7.5, oilDep:-70, cpi:4.8,  gdp:-2.1,  fxVol:6,  trade:12.4, pmi:54 },
-  'Kuwait':             { region:'Middle East',    stress:7.8, oilDep:-85, cpi:3.8,  gdp:-3.1,  fxVol:7,  trade:18.2, pmi:52 },
-  'Qatar':              { region:'Middle East',    stress:7.0, oilDep:-88, cpi:4.2,  gdp:-1.8,  fxVol:5,  trade:22.1, pmi:55 },
-  'Israel':             { region:'Middle East',    stress:7.5, oilDep:92,  cpi:5.8,  gdp:-4.5,  fxVol:22, trade:-3.8, pmi:44 },
-  'Yemen':              { region:'Middle East',    stress:9.2, oilDep:88,  cpi:28.4, gdp:-12.1, fxVol:65, trade:-18.2,pmi:32 },
-  'Lebanon':            { region:'Middle East',    stress:8.0, oilDep:98,  cpi:210.0,gdp:-6.5,  fxVol:80, trade:-22.4,pmi:30 },
-  'Syria':              { region:'Middle East',    stress:8.5, oilDep:78,  cpi:82.0, gdp:-11.0, fxVol:75, trade:-25.1,pmi:28 },
-  'Jordan':             { region:'Middle East',    stress:6.5, oilDep:95,  cpi:4.2,  gdp:-2.8,  fxVol:12, trade:-14.2,pmi:46 },
-  'Egypt':              { region:'North Africa',   stress:6.8, oilDep:76,  cpi:31.8, gdp:-1.2,  fxVol:38, trade:-8.2, pmi:43 },
-  'Libya':              { region:'North Africa',   stress:7.0, oilDep:-60, cpi:5.2,  gdp:-4.2,  fxVol:40, trade:12.1, pmi:38 },
-  'Algeria':            { region:'North Africa',   stress:6.5, oilDep:-55, cpi:9.8,  gdp:-1.8,  fxVol:18, trade:4.2,  pmi:42 },
-  'Morocco':            { region:'North Africa',   stress:6.2, oilDep:88,  cpi:6.1,  gdp:-1.5,  fxVol:14, trade:-10.2,pmi:44 },
-  'Tunisia':            { region:'North Africa',   stress:5.8, oilDep:82,  cpi:9.4,  gdp:-2.2,  fxVol:22, trade:-12.8,pmi:42 },
-  'Turkey':             { region:'Europe',         stress:4.2, oilDep:90,  cpi:44.2, gdp:3.8,   fxVol:42, trade:-6.8, pmi:48 },
-  'Germany':            { region:'Europe',         stress:3.8, oilDep:95,  cpi:2.8,  gdp:-0.4,  fxVol:8,  trade:4.2,  pmi:44 },
-  'France':             { region:'Europe',         stress:3.6, oilDep:92,  cpi:2.4,  gdp:0.2,   fxVol:7,  trade:-2.1, pmi:43 },
-  'Italy':              { region:'Europe',         stress:3.9, oilDep:94,  cpi:2.2,  gdp:-0.2,  fxVol:9,  trade:1.2,  pmi:42 },
-  'Spain':              { region:'Europe',         stress:3.4, oilDep:88,  cpi:2.9,  gdp:1.8,   fxVol:8,  trade:-2.8, pmi:51 },
-  'United Kingdom':     { region:'Europe',         stress:3.5, oilDep:72,  cpi:3.2,  gdp:-0.1,  fxVol:9,  trade:-4.2, pmi:47 },
-  'Greece':             { region:'Europe',         stress:4.0, oilDep:96,  cpi:3.1,  gdp:1.4,   fxVol:10, trade:-12.4,pmi:46 },
-  'Poland':             { region:'Europe',         stress:3.2, oilDep:78,  cpi:4.8,  gdp:2.8,   fxVol:11, trade:-2.2, pmi:48 },
-  'Ukraine':            { region:'Europe',         stress:4.5, oilDep:85,  cpi:8.5,  gdp:-4.2,  fxVol:35, trade:-8.2, pmi:38 },
-  'Russia':             { region:'Europe',         stress:3.5, oilDep:-80, cpi:8.2,  gdp:3.6,   fxVol:28, trade:8.8,  pmi:50 },
-  'United States of America':{ region:'North America', stress:2.1, oilDep:20, cpi:3.1, gdp:2.4, fxVol:6, trade:-4.2, pmi:52 },
-  'Canada':             { region:'North America',  stress:1.8, oilDep:-30, cpi:2.8,  gdp:2.1,   fxVol:7,  trade:2.8,  pmi:51 },
-  'Mexico':             { region:'North America',  stress:2.3, oilDep:42,  cpi:4.2,  gdp:1.8,   fxVol:15, trade:-2.4, pmi:50 },
-  'China':              { region:'East Asia',      stress:2.8, oilDep:75,  cpi:0.8,  gdp:4.8,   fxVol:8,  trade:2.4,  pmi:50 },
-  'Japan':              { region:'East Asia',      stress:2.9, oilDep:98,  cpi:2.8,  gdp:0.8,   fxVol:9,  trade:-1.2, pmi:48 },
-  'South Korea':        { region:'East Asia',      stress:2.7, oilDep:95,  cpi:2.4,  gdp:2.2,   fxVol:10, trade:1.8,  pmi:50 },
-  'Taiwan':             { region:'East Asia',      stress:2.5, oilDep:97,  cpi:2.1,  gdp:3.2,   fxVol:8,  trade:6.2,  pmi:51 },
-  'India':              { region:'South Asia',     stress:5.4, oilDep:88,  cpi:5.2,  gdp:6.8,   fxVol:12, trade:-8.2, pmi:57 },
-  'Pakistan':           { region:'South Asia',     stress:5.8, oilDep:82,  cpi:24.5, gdp:-0.5,  fxVol:42, trade:-14.2,pmi:40 },
-  'Bangladesh':         { region:'South Asia',     stress:5.2, oilDep:78,  cpi:9.8,  gdp:5.2,   fxVol:18, trade:-8.4, pmi:45 },
-  'Sri Lanka':          { region:'South Asia',     stress:5.0, oilDep:88,  cpi:12.4, gdp:1.8,   fxVol:38, trade:-18.2,pmi:42 },
-  'Nigeria':            { region:'Sub-Saharan Africa', stress:6.2, oilDep:85,  cpi:28.9, gdp:2.8, fxVol:38, trade:-2.2, pmi:42 },
-  'South Africa':       { region:'Sub-Saharan Africa', stress:5.5, oilDep:78,  cpi:5.8, gdp:0.8,  fxVol:22, trade:-2.8, pmi:43 },
-  'Ethiopia':           { region:'Sub-Saharan Africa', stress:6.5, oilDep:92,  cpi:28.4, gdp:5.8, fxVol:45, trade:-12.4,pmi:38 },
-  'Kenya':              { region:'Sub-Saharan Africa', stress:5.8, oilDep:85,  cpi:6.8, gdp:4.2,  fxVol:22, trade:-8.4, pmi:44 },
-  'Ghana':              { region:'Sub-Saharan Africa', stress:5.5, oilDep:80,  cpi:22.8, gdp:2.2, fxVol:42, trade:-8.2, pmi:42 },
-  'Somalia':            { region:'Sub-Saharan Africa', stress:7.0, oilDep:98,  cpi:8.2, gdp:-4.2, fxVol:80, trade:-28.4,pmi:28 },
-  'Sudan':              { region:'Sub-Saharan Africa', stress:6.8, oilDep:82,  cpi:64.0, gdp:-6.8, fxVol:75, trade:-18.4,pmi:30 },
-  'Brazil':             { region:'South America',  stress:2.9, oilDep:18,  cpi:4.2,  gdp:2.8,   fxVol:18, trade:1.8,  pmi:52 },
-  'Argentina':          { region:'South America',  stress:3.1, oilDep:28,  cpi:288.0,gdp:-2.4,  fxVol:55, trade:-2.4, pmi:44 },
-  'Venezuela':          { region:'South America',  stress:4.5, oilDep:-85, cpi:180.0,gdp:-8.4,  fxVol:80, trade:-4.2, pmi:30 },
-  'Colombia':           { region:'South America',  stress:2.8, oilDep:22,  cpi:9.2,  gdp:1.8,   fxVol:18, trade:-4.2, pmi:48 },
-  'Chile':              { region:'South America',  stress:2.5, oilDep:92,  cpi:4.2,  gdp:2.2,   fxVol:14, trade:2.4,  pmi:50 },
-  'Peru':               { region:'South America',  stress:2.8, oilDep:45,  cpi:3.2,  gdp:2.8,   fxVol:15, trade:1.2,  pmi:48 },
-  'Australia':          { region:'Oceania',        stress:1.4, oilDep:12,  cpi:3.4,  gdp:2.4,   fxVol:8,  trade:4.2,  pmi:51 },
-  'New Zealand':        { region:'Oceania',        stress:1.2, oilDep:35,  cpi:3.8,  gdp:1.2,   fxVol:9,  trade:-2.4, pmi:49 },
-  'Indonesia':          { region:'Southeast Asia', stress:3.2, oilDep:65,  cpi:3.8,  gdp:5.2,   fxVol:12, trade:2.4,  pmi:52 },
-  'Malaysia':           { region:'Southeast Asia', stress:3.0, oilDep:55,  cpi:2.4,  gdp:4.2,   fxVol:10, trade:8.4,  pmi:52 },
-  'Thailand':           { region:'Southeast Asia', stress:3.4, oilDep:78,  cpi:1.8,  gdp:2.8,   fxVol:10, trade:2.8,  pmi:49 },
-  'Philippines':        { region:'Southeast Asia', stress:3.5, oilDep:82,  cpi:3.2,  gdp:5.8,   fxVol:12, trade:-8.4, pmi:51 },
-  'Vietnam':            { region:'Southeast Asia', stress:3.0, oilDep:62,  cpi:3.8,  gdp:5.4,   fxVol:8,  trade:4.2,  pmi:53 },
-  'Kazakhstan':         { region:'Central Asia',   stress:1.6, oilDep:-65, cpi:8.2,  gdp:3.8,   fxVol:15, trade:6.8,  pmi:51 },
-  'Uzbekistan':         { region:'Central Asia',   stress:1.8, oilDep:28,  cpi:8.8,  gdp:5.2,   fxVol:18, trade:-4.2, pmi:48 },
-  'Afghanistan':        { region:'South Asia',     stress:7.5, oilDep:92,  cpi:18.2, gdp:-12.4, fxVol:75, trade:-42.1,pmi:28 },
-  'Myanmar':            { region:'Southeast Asia', stress:5.0, oilDep:62,  cpi:14.2, gdp:-4.2,  fxVol:45, trade:-12.4,pmi:35 },
-  'Norway':             { region:'Europe',         stress:1.8, oilDep:-120,cpi:3.8,  gdp:2.4,   fxVol:8,  trade:18.4, pmi:50 },
-  'Oman':               { region:'Middle East',    stress:7.0, oilDep:-72, cpi:1.8,  gdp:-2.4,  fxVol:6,  trade:4.2,  pmi:55 },
-  'Bahrain':            { region:'Middle East',    stress:7.2, oilDep:78,  cpi:2.8,  gdp:-1.8,  fxVol:8,  trade:-4.2, pmi:52 },
+  'Iran':               { region:'Middle East',    stress:4.5, oilDep:-55,  cpi:38.0, gdp:-8.2,  fxVol:42, trade:-4.2 },
+  'Iraq':               { region:'Middle East',    stress:8.5, oilDep:-85,  cpi:7.4,  gdp:-5.8,  fxVol:28, trade:8.1 },
+  'Saudi Arabia':       { region:'Middle East',    stress:8.8, oilDep:-90, cpi:3.1,  gdp:-4.2,  fxVol:8,  trade:15.2 },
+  'United Arab Emirates':{ region:'Middle East',  stress:7.5, oilDep:-70, cpi:4.8,  gdp:-2.1,  fxVol:6,  trade:12.4 },
+  'Kuwait':             { region:'Middle East',    stress:7.8, oilDep:-85, cpi:3.8,  gdp:-3.1,  fxVol:7,  trade:18.2 },
+  'Qatar':              { region:'Middle East',    stress:7.0, oilDep:-88, cpi:4.2,  gdp:-1.8,  fxVol:5,  trade:22.1 },
+  'Israel':             { region:'Middle East',    stress:7.5, oilDep:92,  cpi:5.8,  gdp:-4.5,  fxVol:22, trade:-3.8 },
+  'Yemen':              { region:'Middle East',    stress:9.2, oilDep:88,  cpi:28.4, gdp:-12.1, fxVol:65, trade:-18.2 },
+  'Lebanon':            { region:'Middle East',    stress:8.0, oilDep:98,  cpi:210.0,gdp:-6.5,  fxVol:80, trade:-22.4 },
+  'Syria':              { region:'Middle East',    stress:8.5, oilDep:78,  cpi:82.0, gdp:-11.0, fxVol:75, trade:-25.1 },
+  'Jordan':             { region:'Middle East',    stress:6.5, oilDep:95,  cpi:4.2,  gdp:-2.8,  fxVol:12, trade:-14.2 },
+  'Egypt':              { region:'North Africa',   stress:6.8, oilDep:76,  cpi:31.8, gdp:-1.2,  fxVol:38, trade:-8.2 },
+  'Libya':              { region:'North Africa',   stress:7.0, oilDep:-60, cpi:5.2,  gdp:-4.2,  fxVol:40, trade:12.1 },
+  'Algeria':            { region:'North Africa',   stress:6.5, oilDep:-55, cpi:9.8,  gdp:-1.8,  fxVol:18, trade:4.2 },
+  'Morocco':            { region:'North Africa',   stress:6.2, oilDep:88,  cpi:6.1,  gdp:-1.5,  fxVol:14, trade:-10.2 },
+  'Tunisia':            { region:'North Africa',   stress:5.8, oilDep:82,  cpi:9.4,  gdp:-2.2,  fxVol:22, trade:-12.8 },
+  'Turkey':             { region:'Europe',         stress:4.2, oilDep:90,  cpi:44.2, gdp:3.8,   fxVol:42, trade:-6.8 },
+  'Germany':            { region:'Europe',         stress:3.8, oilDep:95,  cpi:2.8,  gdp:-0.4,  fxVol:8,  trade:4.2 },
+  'France':             { region:'Europe',         stress:3.6, oilDep:92,  cpi:2.4,  gdp:0.2,   fxVol:7,  trade:-2.1 },
+  'Italy':              { region:'Europe',         stress:3.9, oilDep:94,  cpi:2.2,  gdp:-0.2,  fxVol:9,  trade:1.2 },
+  'Spain':              { region:'Europe',         stress:3.4, oilDep:88,  cpi:2.9,  gdp:1.8,   fxVol:8,  trade:-2.8 },
+  'United Kingdom':     { region:'Europe',         stress:3.5, oilDep:72,  cpi:3.2,  gdp:-0.1,  fxVol:9,  trade:-4.2 },
+  'Greece':             { region:'Europe',         stress:4.0, oilDep:96,  cpi:3.1,  gdp:1.4,   fxVol:10, trade:-12.4 },
+  'Poland':             { region:'Europe',         stress:3.2, oilDep:78,  cpi:4.8,  gdp:2.8,   fxVol:11, trade:-2.2 },
+  'Ukraine':            { region:'Europe',         stress:4.5, oilDep:85,  cpi:8.5,  gdp:-4.2,  fxVol:35, trade:-8.2 },
+  'Russia':             { region:'Europe',         stress:3.5, oilDep:-80, cpi:8.2,  gdp:3.6,   fxVol:28, trade:8.8 },
+  'United States of America':{ region:'North America', stress:2.1, oilDep:20, cpi:3.1, gdp:2.4, fxVol:6, trade:-4.2 },
+  'Canada':             { region:'North America',  stress:1.8, oilDep:-30, cpi:2.8,  gdp:2.1,   fxVol:7,  trade:2.8 },
+  'Mexico':             { region:'North America',  stress:2.3, oilDep:42,  cpi:4.2,  gdp:1.8,   fxVol:15, trade:-2.4 },
+  'China':              { region:'East Asia',      stress:2.8, oilDep:75,  cpi:0.8,  gdp:4.8,   fxVol:8,  trade:2.4 },
+  'Japan':              { region:'East Asia',      stress:2.9, oilDep:98,  cpi:2.8,  gdp:0.8,   fxVol:9,  trade:-1.2 },
+  'South Korea':        { region:'East Asia',      stress:2.7, oilDep:95,  cpi:2.4,  gdp:2.2,   fxVol:10, trade:1.8 },
+  'Taiwan':             { region:'East Asia',      stress:2.5, oilDep:97,  cpi:2.1,  gdp:3.2,   fxVol:8,  trade:6.2 },
+  'India':              { region:'South Asia',     stress:5.4, oilDep:88,  cpi:5.2,  gdp:6.8,   fxVol:12, trade:-8.2 },
+  'Pakistan':           { region:'South Asia',     stress:5.8, oilDep:82,  cpi:24.5, gdp:-0.5,  fxVol:42, trade:-14.2 },
+  'Bangladesh':         { region:'South Asia',     stress:5.2, oilDep:78,  cpi:9.8,  gdp:5.2,   fxVol:18, trade:-8.4 },
+  'Sri Lanka':          { region:'South Asia',     stress:5.0, oilDep:88,  cpi:12.4, gdp:1.8,   fxVol:38, trade:-18.2 },
+  'Nigeria':            { region:'Sub-Saharan Africa', stress:6.2, oilDep:-55,  cpi:28.9, gdp:2.8, fxVol:38, trade:-2.2 },
+  'South Africa':       { region:'Sub-Saharan Africa', stress:5.5, oilDep:78,  cpi:5.8, gdp:0.8,  fxVol:22, trade:-2.8 },
+  'Ethiopia':           { region:'Sub-Saharan Africa', stress:6.5, oilDep:92,  cpi:28.4, gdp:5.8, fxVol:45, trade:-12.4 },
+  'Kenya':              { region:'Sub-Saharan Africa', stress:5.8, oilDep:85,  cpi:6.8, gdp:4.2,  fxVol:22, trade:-8.4 },
+  'Ghana':              { region:'Sub-Saharan Africa', stress:5.5, oilDep:80,  cpi:22.8, gdp:2.2, fxVol:42, trade:-8.2 },
+  'Somalia':            { region:'Sub-Saharan Africa', stress:7.0, oilDep:98,  cpi:8.2, gdp:-4.2, fxVol:80, trade:-28.4 },
+  'Sudan':              { region:'Sub-Saharan Africa', stress:6.8, oilDep:82,  cpi:64.0, gdp:-6.8, fxVol:75, trade:-18.4 },
+  'Brazil':             { region:'South America',  stress:2.9, oilDep:-35,  cpi:4.2,  gdp:2.8,   fxVol:18, trade:1.8 },
+  'Argentina':          { region:'South America',  stress:3.1, oilDep:28,  cpi:288.0,gdp:-2.4,  fxVol:55, trade:-2.4 },
+  'Venezuela':          { region:'South America',  stress:4.5, oilDep:-85, cpi:180.0,gdp:-8.4,  fxVol:80, trade:-4.2 },
+  'Colombia':           { region:'South America',  stress:2.8, oilDep:-35,  cpi:9.2,  gdp:1.8,   fxVol:18, trade:-4.2 },
+  'Chile':              { region:'South America',  stress:2.5, oilDep:92,  cpi:4.2,  gdp:2.2,   fxVol:14, trade:2.4 },
+  'Peru':               { region:'South America',  stress:2.8, oilDep:45,  cpi:3.2,  gdp:2.8,   fxVol:15, trade:1.2 },
+  'Australia':          { region:'Oceania',        stress:1.4, oilDep:12,  cpi:3.4,  gdp:2.4,   fxVol:8,  trade:4.2 },
+  'New Zealand':        { region:'Oceania',        stress:1.2, oilDep:35,  cpi:3.8,  gdp:1.2,   fxVol:9,  trade:-2.4 },
+  'Indonesia':          { region:'Southeast Asia', stress:3.2, oilDep:65,  cpi:3.8,  gdp:5.2,   fxVol:12, trade:2.4 },
+  'Malaysia':           { region:'Southeast Asia', stress:3.0, oilDep:55,  cpi:2.4,  gdp:4.2,   fxVol:10, trade:8.4 },
+  'Thailand':           { region:'Southeast Asia', stress:3.4, oilDep:78,  cpi:1.8,  gdp:2.8,   fxVol:10, trade:2.8 },
+  'Philippines':        { region:'Southeast Asia', stress:3.5, oilDep:82,  cpi:3.2,  gdp:5.8,   fxVol:12, trade:-8.4 },
+  'Vietnam':            { region:'Southeast Asia', stress:3.0, oilDep:62,  cpi:3.8,  gdp:5.4,   fxVol:8,  trade:4.2 },
+  'Kazakhstan':         { region:'Central Asia',   stress:1.6, oilDep:-65, cpi:8.2,  gdp:3.8,   fxVol:15, trade:6.8 },
+  'Uzbekistan':         { region:'Central Asia',   stress:1.8, oilDep:28,  cpi:8.8,  gdp:5.2,   fxVol:18, trade:-4.2 },
+  'Afghanistan':        { region:'South Asia',     stress:7.5, oilDep:92,  cpi:18.2, gdp:-12.4, fxVol:75, trade:-42.1 },
+  'Myanmar':            { region:'Southeast Asia', stress:5.0, oilDep:62,  cpi:14.2, gdp:-4.2,  fxVol:45, trade:-12.4 },
+  'Norway':             { region:'Europe',         stress:1.8, oilDep:-120,cpi:3.8,  gdp:2.4,   fxVol:8,  trade:18.4 },
+  'Oman':               { region:'Middle East',    stress:7.0, oilDep:-72, cpi:1.8,  gdp:-2.4,  fxVol:6,  trade:4.2 },
+  'Bahrain':            { region:'Middle East',    stress:7.2, oilDep:-40,  cpi:2.8,  gdp:-1.8,  fxVol:8,  trade:-4.2 },
 };
 
 /* Stress → color mapping */
+/* NOT-COVERED is a THIRD STATE, not a low score.
+   ──────────────────────────────────────────────────────────────────────────────
+   `stressColor(0)` returns calm cyan and `riskLabel(0)` returns 'Minimal Risk'.
+   The globe renders every country in the GeoJSON, but COUNTRIES holds 64 rows, so
+   every other country on Earth — Mauritania, Bolivia, Mongolia, Zambia — fell
+   through to 0 and was painted as the CALMEST PLACE ON THE MAP. Absence of data
+   was being rendered as a favourable reading, which is the same failure as the
+   fabricated charts, except stated with more confidence.
+   `null` now means "we have no reading". It is drawn as inert slate: visibly not
+   part of the scale, so it cannot be mistaken for a good score.                  */
+const UNCOVERED_FILL = 'rgba(38,52,74,.45)';
 function stressColor(stress, alpha=1) {
+  if (stress == null) return UNCOVERED_FILL;
   if (!stress || stress < 1.5) return `rgba(0,212,255,${alpha*0.5})`;
   if (stress < 3)              return `rgba(255,224,64,${alpha*0.7})`;
   if (stress < 5)              return `rgba(245,166,35,${alpha*0.8})`;
@@ -1527,11 +1562,13 @@ function stressColor(stress, alpha=1) {
 }
 
 function stressElevation(stress) {
+  if (stress == null) return 0;      // not covered: flat, no relief, no implied reading
   if (!stress) return 0.005;
   return 0.005 + (stress/10)*0.04;
 }
 
 function riskLabel(stress) {
+  if (stress == null) return ['Not Covered',   'risk-uncovered'];
   if (stress >= 8.5) return ['Extreme Risk',   'risk-extreme'];
   if (stress >= 7.0) return ['Very High Risk', 'risk-high'];
   if (stress >= 5.0) return ['Moderate Risk',  'risk-moderate'];
@@ -1613,6 +1650,144 @@ const EXPOSURE_WEIGHT = {
   },
 };
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   STRUCTURE-KEYED CHROME (v1.2) — every fixed surface that used to name Hormuz.
+   ──────────────────────────────────────────────────────────────────────────────
+   Before this, stress was de-forked but the FURNITURE was not: the shock chain read
+   "IRAN CONFLICT -> OIL SPIKE", the timeline hit "M9 — SPR RESPONSE", the chokepoint
+   grid put Hormuz at the top, and the market panel led with Brent — under TAIWAN as
+   well as under Hormuz. A structure switch that leaves the labels behind is not a
+   structure switch; it is a recolored map with someone else's captions.
+
+   Everything below is keyed by structureId. HORMUZ entries reproduce the previous
+   static markup so calibrated behaviour is unchanged.
+   ══════════════════════════════════════════════════════════════════════════════ */
+function activeStructureId() {
+  return (STRUCTURE_STATE && STRUCTURE_STATE.structureId) || 'hormuz-iran';
+}
+function activeStructureName() {
+  return (STRUCTURE_STATE && STRUCTURE_STATE.structureName) || 'Strait of Hormuz';
+}
+function activeTier() {
+  return (STRUCTURE_STATE && STRUCTURE_STATE.tier) || 'calibrated';
+}
+function activeScenarioLabel() {
+  const L = (STRUCTURE_STATE && STRUCTURE_STATE.scenarioLabels) || {};
+  return L[scenario] || scenario;
+}
+
+const STRUCTURE_CHROME = {
+  'hormuz-iran': {
+    /* Transmission chain: oil is the channel. */
+    chain: [
+      { icon:'⚔️', name:'IRAN<br>CONFLICT' }, { icon:'🛢️', name:'OIL<br>SPIKE' },
+      { icon:'📈', name:'INFLATION<br>SURGE' }, { icon:'🏦', name:'CB<br>TIGHTENING' },
+      { icon:'📉', name:'GROWTH<br>SLOWDOWN' }, { icon:'💱', name:'EM<br>PRESSURE' },
+      { icon:'🌾', name:'FOOD<br>PRICES' },
+    ],
+    /* Chokepoint grid. Hormuz is the structure, so it leads and it is disrupted. */
+    chokepoints: [
+      { key:'hormuz',   label:'HORMUZ',        status:'risk', statusText:'⚠ AT RISK',   vol:'20% global oil'   },
+      { key:'suez',     label:'SUEZ',          status:'risk', statusText:'⚠ PARTIAL',   vol:'12% global trade' },
+      { key:'bab',      label:'BAB EL-MANDEB', status:'risk', statusText:'⚠ MONITORED', vol:'9% global oil'    },
+      { key:'malacca',  label:'MALACCA',       status:'open', statusText:'✓ OPEN',      vol:'25% global trade' },
+    ],
+    /* Timeline phases. SPR is an oil-crisis instrument and belongs only here. */
+    phases: [
+      { month:0,  label:'M0 — CONFLICT ONSET' },    { month:1,  label:'M1 — INITIAL SHOCK' },
+      { month:3,  label:'M3 — ESCALATION PEAK' },   { month:6,  label:'M6 — SUPPLY DISRUPTION' },
+      { month:9,  label:'M9 — SPR RESPONSE' },      { month:12, label:'M12 — MARKET ADAPTATION' },
+      { month:18, label:'M18 — DIPLOMACY WINDOW' }, { month:24, label:'M24 — RESOLUTION PHASE' },
+      { month:30, label:'M30 — RECONSTRUCTION' },   { month:36, label:'M36 — NEW EQUILIBRIUM' },
+    ],
+    /* Sidebar Key Markets. Oil leads because oil IS the transmission channel here. */
+    marketRows: ['BRENT','WTI','NG','VIX','DXY','GOLD','US10Y','EMCS'],
+    /* Live equity symbols to poll. Oil majors + defense primes. */
+    equities: ['XOM','LMT','RTX','DAL','SPY','GLD','VIX'],
+    /* Historical analogues that are actually analogues for an oil chokepoint. */
+    analogKind: 'oil',
+  },
+  'taiwan-strait': {
+    /* Transmission chain: leading-edge logic is the channel. There is no oil leg —
+       leaving one in was the single most visible way this frame contradicted the
+       structure it claimed to be drawing. */
+    chain: [
+      { icon:'⚔️', name:'TAIWAN<br>BLOCKADE' }, { icon:'💾', name:'CHIP<br>SUPPLY CUT' },
+      { icon:'🏭', name:'FACTORY<br>STOPPAGE' }, { icon:'📦', name:'ORDER BOOK<br>UNFILLABLE' },
+      { icon:'📉', name:'OUTPUT<br>COLLAPSE' }, { icon:'💱', name:'ASIA FX<br>PRESSURE' },
+      { icon:'📈', name:'GOODS<br>PRICES' },
+    ],
+    /* Malacca and the Taiwan approaches lead. Hormuz is not the story here and is
+       shown OPEN rather than deleted, so the user can see it was considered. */
+    chokepoints: [
+      { key:'taiwan',  label:'TAIWAN STRAIT', status:'risk', statusText:'⚠ CONTESTED', vol:'>50% container transits' },
+      { key:'malacca', label:'MALACCA',       status:'risk', statusText:'⚠ MONITORED', vol:'25% global trade' },
+      { key:'luzon',   label:'LUZON STRAIT',  status:'risk', statusText:'⚠ MONITORED', vol:'N. Pacific routing'     },
+      { key:'hormuz',  label:'HORMUZ',        status:'open', statusText:'✓ OPEN',      vol:'no channel here'  },
+    ],
+    /* No SPR: there is no strategic reserve of leading-edge logic. That is precisely
+       the point of this structure and the reason its damage runs through OUTPUT. */
+    phases: [
+      { month:0,  label:'M0 — BLOCKADE ONSET' },      { month:1,  label:'M1 — INVENTORY DRAWDOWN' },
+      { month:3,  label:'M3 — FAB INVENTORY EXHAUSTED' }, { month:6, label:'M6 — LINE STOPPAGES' },
+      { month:9,  label:'M9 — ALLOCATION RATIONING' }, { month:12, label:'M12 — SUBSTITUTION ATTEMPTS' },
+      { month:18, label:'M18 — CAPACITY REBUILD BEGINS' }, { month:24, label:'M24 — TRAILING-EDGE RECOVERY' },
+      { month:30, label:'M30 — PARTIAL RESTORATION' }, { month:36, label:'M36 — NEW EQUILIBRIUM' },
+    ],
+    /* Oil is not a channel in this structure, so Brent/WTI/NG do not lead the panel.
+       The rows kept are structure-neutral macro that stay meaningful under any
+       structure; the chip-specific names are picked up live in `equities`.        */
+    marketRows: ['VIX','DXY','GOLD','US10Y','EMCS'],
+    equities: ['TSM','ASML','NVDA','AMD','SPY','GLD','VIX'],
+    analogKind: 'supply-chain',
+  },
+};
+function chrome() { return STRUCTURE_CHROME[activeStructureId()] || STRUCTURE_CHROME['hormuz-iran']; }
+
+/* Repaint the shock-propagation chain labels for the active structure. */
+function applyStructureChrome() {
+  const C = chrome();
+  (C.chain || []).forEach((n, i) => {
+    const ic = document.getElementById('sn-icon-' + i);
+    const nm = document.getElementById('sn-name-' + i);
+    if (ic) ic.textContent = n.icon;
+    if (nm) nm.innerHTML  = n.name;
+  });
+  // Header badge — named by the parent, re-asserted here so a local redraw keeps it.
+  const hdr = document.getElementById('structureBadge');
+  if (hdr) hdr.textContent = activeStructureName() + ' · ' + String(activeTier()).toUpperCase();
+  applyMarketRows();
+}
+
+/* Sidebar Key Markets — structure-keyed rows. Rows not in the active structure's
+   list are hidden outright rather than shown with a stale number: under TAIWAN a
+   Brent row is not merely irrelevant, it invites the reader to price the wrong
+   channel.                                                                        */
+const MARKET_ROW_IDS = { BRENT:'m-brent', WTI:'m-wti', NG:'m-lng', VIX:'m-vix',
+                         DXY:'m-dxy', GOLD:'m-gold', US10Y:'m-10y', EMCS:'m-spread' };
+function applyMarketRows() {
+  const keep = new Set(chrome().marketRows || []);
+  Object.entries(MARKET_ROW_IDS).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    const row = el && el.closest ? el.closest('.metric-row') : null;
+    if (row) row.style.display = keep.has(k) ? '' : 'none';
+  });
+}
+
+/* Chokepoint grid — rebuilt per structure. This function was DISPATCHED by the
+   Phase 1 redrawAll but never written; the phantom is now real.                   */
+function updateChokepoints() {
+  const grid = document.querySelector('.chokepoint-grid');
+  if (!grid) return;
+  grid.innerHTML = (chrome().chokepoints || []).map(cp => `
+    <div class="choke-card${cp.status === 'risk' ? ' disrupted' : ''}" id="chk-${cp.key}"
+         onclick="flyToChokepoint('${cp.key}')">
+      <div class="choke-name">${cp.label}</div>
+      <div class="choke-status ${cp.status}" id="cs-${cp.key}">${cp.statusText}</div>
+      <div class="choke-vol">${cp.vol}</div>
+    </div>`).join('');
+}
+
 /* Regional stress for a country, at the current time horizon, from the ACTIVE structure. */
 function regionStressFor(name) {
   const c = COUNTRIES[name]; if (!c) return null;
@@ -1642,9 +1817,100 @@ function applyScenarioShift(base, m) {
                 : base * (1 - (1 - m) * SCEN_K);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   MACRO PROJECTION (v1.2) — cpi / gdp / fx follow stress onto the projection layer.
+   ──────────────────────────────────────────────────────────────────────────────
+   Phase 1 de-forked STRESS and left everything else. All 64 COUNTRIES rows still
+   carried Hormuz-fitted `cpi`, `gdp`, `fxVol`, `trade`, and those fields are live
+   consumers: the country panel, buildCountryInsights, investabilityScore,
+   buildOpportunityList and the AI prompt all read them. So under TAIWAN, clicking
+   Taiwan lit East Asia correctly and then reported CPI 2.1% and GDP +3.2% — a
+   growing, calm economy at the epicentre of the structure being modelled.
+
+   The parent already owns per-structure, per-scenario regional series for both
+   quantities and now posts them. Country macro is derived the same way stress is:
+
+       cpi(country) = regionalCpi(region, horizon) x exposureWeight
+       gdp(country) = regionalGdp(region, horizon) x exposureWeight
+
+   UNITS CHANGED, DELIBERATELY. The old fields were absolute LEVELS (Iran "38.0%"
+   CPI, "-8.2%" GDP) which were never measurements — they were fitted outputs of one
+   structure wearing the costume of national statistics. What this platform actually
+   models is the SHOCK, so the panel now shows the shock: excess CPI in points above
+   trend, and GDP drag in points. That is both honest about what is known and the
+   only version that can be derived rather than authored.
+
+   `trade` has NO structure-level source in either file. Per the house rule — if the
+   model does not produce it, it does not get shown — the trade tile is retired
+   rather than kept on Hormuz-fitted numbers. `fxVol` is kept as a RELATIVE
+   stress-scaled indicator, explicitly labelled as such, not as an implied vol quote.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Horizon index into a per-YEAR series. The slider is in MONTHS (0-36) and used to
+   be fed straight into a 10-element per-year array, so +12M read year 10 and
+   anything past that clamped to the tail. The parent now declares `horizonUnit`. */
+function horizonIndex(len) {
+  if (!len) return 0;
+  const unit = (STRUCTURE_STATE && STRUCTURE_STATE.horizonUnit) || 'year';
+  const raw  = unit === 'year' ? (timeHorizon || 0) / 12 : (timeHorizon || 0);
+  return Math.max(0, Math.min(len - 1, Math.round(raw)));
+}
+
+function regionSeriesValue(name, bag) {
+  const c = COUNTRIES[name]; if (!c) return null;
+  if (!STRUCTURE_STATE || !STRUCTURE_STATE[bag]) return null;
+  const key = REGION_TO_STRUCT[c.region];
+  const series = STRUCTURE_STATE[bag][key];
+  if (!series || !series.length) return null;
+  const v = series[horizonIndex(series.length)];
+  return (typeof v === 'number') ? v : null;
+}
+
+/* Exposure weight applied to a DELTA (not to a 0-10 bounded score), so the
+   compressive headroom transform used for stress is not appropriate here — a
+   simple proportional scale is correct and monotone for signed quantities. */
+function weightFor(name) {
+  const sid = activeStructureId();
+  return (EXPOSURE_WEIGHT[sid] && EXPOSURE_WEIGHT[sid][name]) || 1.0;
+}
+
+/* Excess CPI, POINTS ABOVE TREND, for the active structure/scenario/horizon. */
+function cCpiExcess(name) {
+  const v = regionSeriesValue(name, 'regionalCpi');
+  if (v == null) return null;
+  const m = SCENARIO_MULT[scenario] || SCENARIO_MULT.baseline;
+  // The parent's series is already scenario-keyed, so no scenario multiplier here.
+  return v * weightFor(name) * (m ? 1 : 1);
+}
+
+/* GDP drag, POINTS, for the active structure/scenario/horizon. Negative = drag. */
+function cGdpDrag(name) {
+  const v = regionSeriesValue(name, 'regionalGdp');
+  if (v == null) return null;
+  return v * weightFor(name);
+}
+
+/* Relative FX stress, 0-100, scaled off projected stress rather than a
+   hand-authored implied-vol number. Labelled as an INDEX in the panel so it is not
+   read as a tradeable vol quote. */
+function cFxStress(name) {
+  const s = getCountryStress(name);
+  if (s == null) return null;
+  const c = COUNTRIES[name];
+  const emTilt = (c && Math.abs(c.oilDep) > 60) ? 1.15 : 1.0;
+  return Math.max(0, Math.min(100, s * 9 * emTilt));
+}
+
+/* True when the active structure actually supplies macro series. Under a standalone
+   open (no parent) this is false and the macro tiles show as unavailable rather than
+   falling back to the retired Hormuz-fitted columns. */
+function macroProjected(name) {
+  return cCpiExcess(name) != null || cGdpDrag(name) != null;
+}
+
 /* PROJECTED country stress. This is the only stress the renderers may use. */
 function cstress(name) {
-  const c = COUNTRIES[name]; if (!c) return 0;
+  const c = COUNTRIES[name]; if (!c) return null;   // uncovered != zero stress
   const rs = regionStressFor(name);
   if (rs == null) return c.stress;                       // standalone fallback
   const sid = (STRUCTURE_STATE && STRUCTURE_STATE.structureId) || 'hormuz-iran';
@@ -1663,13 +1929,28 @@ let impactViewMode = 'risk'; // 'risk' or 'benefited'
 
 /* Country stress for rendering — PROJECTED from the active structure (see the
    projection layer above), then scaled by the scenario multiplier.
+
    NOTE ON DECAY: when a structure's regional series is present, cstress() has already
    indexed it by time horizon (the series IS the decay path, per structure), so we must
    NOT apply the legacy synthetic decay on top or the horizon would be counted twice.
-   The legacy decay is kept ONLY for the standalone/no-parent fallback path. */
+   The legacy decay is kept ONLY for the standalone/no-parent fallback path.
+
+   NOTE ON SCENARIO (resolved against the parent, not assumed): the horizon fix above
+   raised the obvious follow-up question — if the horizon was double-counted, is the
+   SCENARIO double-counted too? It is not, and the reason is specific. The parent builds
+   `regionalStress` from STRUCT_DATA[structure].HEATMAP_RAW, which is a single
+   region x horizon matrix per structure with NO scenario dimension: the same array is
+   posted under baseline, pessimistic and optimistic. (Confirmed both at the payload
+   builder and at the parent's own heatmap renderer, which reads the identical array.)
+   So unlike the decay, the scenario is NOT already in the series. applyScenarioShift()
+   below is the ONLY place scenario enters country stress, and removing it would make
+   the scenario buttons a no-op on the globe. It stays, deliberately.
+
+   If the parent ever moves to a scenario-keyed regional series, this shift must be
+   stripped the same way the decay was — that is the trigger to watch for.           */
 function getCountryStress(name) {
   const c = COUNTRIES[name];
-  if (!c) return 0;
+  if (!c) return null;                              // uncovered != zero stress
   const m = SCENARIO_MULT[scenario] || SCENARIO_MULT.baseline;
   const projected = regionStressFor(name) != null;
   if (projected) return Math.max(0, Math.min(10, applyScenarioShift(cstress(name), m.stress)));
@@ -1698,23 +1979,25 @@ const TICK_SYMBOLS = [
   { id:'DXY',   label:'USD IDX',  price:104.82, prev:104.82, unit:'',        live:false },
   { id:'EMCS',  label:'EM SPREAD',price:385,    prev:385,    unit:'bp',      live:false },
 ];
-let tickerData = TICK_SYMBOLS.map(t=>({...t}));
+/* Every row starts STALE. A row only loses that flag when a fetch confirms it, so a
+   failed or slow provider degrades to a dash instead of to the 2026 seed value. */
+let tickerData = TICK_SYMBOLS.map(t=>({...t, stale:true}));
 
-function jitterMarkets() {
-  const smult = SCENARIO_MULT[scenario];
-  tickerData = tickerData.map(t => {
-    // BATCH A FIX (May 2026): don't jitter live-fetched symbols.
-    // WTI/BRENT come from EIA via fetchLiveAPIs(); equities come from
-    // Finnhub via fetchFinnhubTicker(). Both mark their rows live:true.
-    // Random-walking those values overwrites true prices between refreshes.
-    if (t.live) return t;
-    const vol = t.id==='VIX'?0.018:t.id==='BRENT'||t.id==='WTI'?0.006:
-                t.id==='GOLD'?0.003:t.id==='EMCS'?0.008:0.004;
-    const drift = t.id==='BRENT'||t.id==='WTI'||t.id==='NG'?0.0002*(smult.oil-1):
-                  t.id==='VIX'?0.0003*(smult.stress-1):0;
-    const pct = (Math.random()-0.499)*vol + drift;
-    return { ...t, prev:t.price, price: parseFloat((t.price*(1+pct)).toFixed(t.price>100?1:3)) };
-  });
+/* ── MARKET REFRESH ────────────────────────────────────────────────────────────
+   WAS `jitterMarkets`, and it random-walked every row not flagged `live`: VIX, EM
+   spread, nat gas, DXY, gold, S&P. A prior fix had exempted live-fetched rows, but
+   that only holds while the fetch succeeds. /api/eia-oil has been intermittently
+   timing out at 8s (5 occurrences since 8 Jun, most recent 21 Jul 14:34), and on
+   those runs BRENT and WTI stay on their 2026 seed values — $121.88 and $118.20 —
+   and then drift, under a green LIVE dot, because the drift did not care whether
+   the fetch had landed.
+
+   A moving number carries an implicit claim that something moved. Nothing had.
+   There is no jitter now: a row shows a real value or it shows a dash. `stale` is
+   set on any row that was never confirmed live, and updateTicker() renders that as
+   an em dash rather than a plausible-looking invention.                           */
+function refreshMarkets() {
+  tickerData = tickerData.map(t => (t.live ? t : { ...t, stale: true }));
   updateTicker();
   updateSidebarMetrics();
   updateShockNodes();
@@ -1723,14 +2006,22 @@ function jitterMarkets() {
 function updateTicker() {
   const track = document.getElementById('tickerTrack');
   if (!track) return;
-  const html = [...tickerData,...tickerData].map(t=>{
+  /* Structure-filtered. The ticker used to scroll BRENT and WTI under every
+     structure, so a TAIWAN session had crude prices tracking across the top of a
+     screen whose model has no oil channel — the most-read strip in the frame
+     naming the wrong conflict. Rows are kept only if the active structure lists
+     them as a market row or a live equity. */
+  const keep = new Set([...(chrome().marketRows||[]), ...(chrome().equities||[])]);
+  const rows = tickerData.filter(t => keep.has(t.id) || keep.has(t.label));
+  const html = [...rows,...rows].map(t=>{
     const delta = t.price - t.prev;
-    const pct = (Math.abs(delta)/t.prev*100).toFixed(2);
-    const dir = Math.abs(delta) < 0.001 ? 'flat' : delta>0?'up':'dn';
-    const arrow = dir==='up'?'▲':dir==='dn'?'▼':'—';
+    const pct = t.stale ? '' : (Math.abs(delta)/t.prev*100).toFixed(2);
+    const dir = t.stale ? 'flat' : Math.abs(delta) < 0.001 ? 'flat' : delta>0?'up':'dn';
+    const arrow = t.stale ? '' : dir==='up'?'▲':dir==='dn'?'▼':'—';
     const pfx = t.unit.startsWith('$')?t.unit+' ':'';
     const sfx = !t.unit.startsWith('$')&&t.unit?' '+t.unit:'';
-    const dispPrice = t.price>1000 ? t.price.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0}) :
+    const dispPrice = t.stale ? '—'
+                    : t.price>1000 ? t.price.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0}) :
                       t.price>10   ? t.price.toFixed(2) : t.price.toFixed(3);
     const liveDot = t.live
       ? '<span style="width:4px;height:4px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);display:inline-block;margin-left:2px;vertical-align:middle"></span>'
@@ -1758,29 +2049,49 @@ function updateSidebarMetrics() {
     const el = document.getElementById(id);
     if (el) { el.textContent = val; el.className = 'metric-val ' + (cls||''); }
   };
-  if(b) set('m-brent', `$${b.price.toFixed(2)}`, b.price>120?'up':b.price<90?'dn':'');
-  if(w) set('m-wti',   `$${w.price.toFixed(2)}`, w.price>115?'up':'');
-  if(n) set('m-lng',   `$${n.price.toFixed(2)}`, n.price>8?'up':'');
-  if(v) set('m-vix',   v.price.toFixed(1),       v.price>25?'warn':v.price>35?'dn':'');
-  if(d) set('m-dxy',   d.price.toFixed(2),       '');
-  if(g) set('m-gold',  `$${g.price.toLocaleString('en',{maximumFractionDigits:0})}`, g.price>2000?'up':'');
-  if(y) set('m-10y',   `${y.price.toFixed(2)}%`, '');
-  if(s) set('m-spread',`+${Math.round(s.price)}bp`, s.price>350?'dn':'warn');
+  // A dash where there is no confirmed value. The seeded 2026 numbers were being
+  // shown with up/down colour, which reads as a live quote to anyone glancing at it.
+  const live = t => t && !t.stale;
+  if(b) set('m-brent', live(b)?`$${b.price.toFixed(2)}`:'—', live(b)?(b.price>120?'up':b.price<90?'dn':''):'');
+  if(w) set('m-wti',   live(w)?`$${w.price.toFixed(2)}`:'—', live(w)?(w.price>115?'up':''):'');
+  if(n) set('m-lng',   live(n)?`$${n.price.toFixed(2)}`:'—', live(n)?(n.price>8?'up':''):'');
+  if(v) set('m-vix',   live(v)?v.price.toFixed(1):'—',       live(v)?(v.price>25?'warn':v.price>35?'dn':''):'');
+  if(d) set('m-dxy',   live(d)?d.price.toFixed(2):'—',       '');
+  if(g) set('m-gold',  live(g)?`$${g.price.toLocaleString('en',{maximumFractionDigits:0})}`:'—', live(g)?(g.price>2000?'up':''):'');
+  if(y) set('m-10y',   live(y)?`${y.price.toFixed(2)}%`:'—', '');
+  if(s) set('m-spread',live(s)?`+${Math.round(s.price)}bp`:'—', live(s)?(s.price>350?'dn':'warn'):'');
 }
 
 function updateShockNodes() {
   const sm = SCENARIO_MULT[scenario];
-  const brent = tickerData.find(t=>t.id==='BRENT')?.price||121;
-  const oilChg = ((brent/78)-1)*100;
   const sn = id => document.getElementById(id);
-  if(sn('sn-oil'))     sn('sn-oil').textContent   = `+${oilChg.toFixed(0)}%`;
+  const oilStructure = activeStructureId() === 'hormuz-iran';
+  /* Was ((brent/78)-1): $78 matches no measured period. The calibrated pre-war
+     anchor is $70, posted by the parent. And the seeded row was being used even
+     when no live price had landed, so the node showed a confident percentage
+     computed from a number nobody had fetched. Under a non-oil structure the oil
+     node is not an oil node at all — see STRUCTURE_CHROME.chain. */
+  const bRow   = tickerData.find(t => t.id === 'BRENT');
+  const anchor = (STRUCTURE_STATE && STRUCTURE_STATE.brentAnchor) || 70;
+  if (sn('sn-oil')) {
+    if (!oilStructure)            sn('sn-oil').textContent = 'n/a';
+    else if (!bRow || bRow.stale) sn('sn-oil').textContent = '—';
+    else                          sn('sn-oil').textContent = `+${(((bRow.price/anchor)-1)*100).toFixed(0)}%`;
+  }
   if(sn('sn-cpi'))     sn('sn-cpi').textContent   = `+${(3.8*sm.cpi).toFixed(1)}pp`;
   if(sn('sn-rates'))   sn('sn-rates').textContent = `+${Math.round(200*sm.stress)}bp`;
   if(sn('sn-gdp'))     sn('sn-gdp').textContent   = `${(-1.9*sm.gdp).toFixed(1)}%`;
   if(sn('sn-em'))      sn('sn-em').textContent    = `-${(14*sm.fx).toFixed(0)}% FX`;
   if(sn('sn-food'))    sn('sn-food').textContent  = `+${Math.round(27*sm.cpi)}%`;
-  document.getElementById('shock-scenario-label').textContent =
-    scenario==='base'?'⚡ BASE SCENARIO':scenario==='esc'?'🔴 ESCALATION ACTIVE':'🟢 DE-ESCALATION';
+  /* Keyed base/esc/de while `scenario` had already moved to the platform
+     vocabulary, so this fell to the final ternary and labelled every scenario
+     "DE-ESCALATION" — including the pessimistic one. It now shows the ACTIVE
+     STRUCTURE's own scenario label. */
+  const slEl = document.getElementById('shock-scenario-label');
+  if (slEl) {
+    const mark = scenario === 'pessimistic' ? '🔴' : scenario === 'optimistic' ? '🟢' : '⚡';
+    slEl.textContent = mark + ' ' + String(activeScenarioLabel()).toUpperCase();
+  }
 }
 
 /* Shock impact list for bottom-right */
@@ -2294,7 +2605,9 @@ function setLayer(layer, el) {
     const sm = SCENARIO_MULT[scenario];
     if (layer === 'macro')   return stressColor(getCountryStress(name));
     if (layer === 'market')  { const dep=Math.abs(c.oilDep)/100; return stressColor(Math.min(10, dep*(sm.oil-1)*8+dep*3)); }
-    if (layer === 'geo')     return stressColor(Math.min(10, cstress(name)*sm.stress*(c.oilDep>0?1.2:0.5)));
+    if (layer === 'geo')     { const g = cstress(name);
+                               return g == null ? UNCOVERED_FILL
+                                 : stressColor(Math.min(10, g*sm.stress*(c.oilDep>0?1.2:0.5))); }
     if (layer === 'debt')    return stressColor(debtScore(name));
     if (layer === 'cb')      return cbColor(name);
     if (layer === 'climate') return stressColor(climateScore(name));
@@ -2313,14 +2626,34 @@ function setScenario(sc, el) {
   updateShockNodes();
   updateSidebarMetrics();
   if (selectedCountry) openCountryPanel(selectedCountry);
-  // Update alert scroll text
-  const texts = {
-    base: 'Brent crude above $120 threshold · EM currency basket under pressure · Hormuz transit risk elevated · VIX > 28 signals elevated volatility',
-    esc:  '🔴 ESCALATION: Oil spike to $165+ projected · Hormuz closure imminent · EM sovereign stress rising · Global recession P=55%',
-    de:   '🟢 DE-ESCALATION: Ceasefire signals emerging · Oil retreat to $95 expected · Supply chains normalizing · Risk-on rotation anticipated',
-  };
-  document.getElementById('alertScrollText').textContent = texts[sc];
+  updateAlertScroll();
   updateShockEngineMessage();
+}
+
+/* ── ALERT SCROLL ──────────────────────────────────────────────────────────────
+   Was keyed base/esc/de while `scenario` had already moved to the platform
+   vocabulary baseline/pessimistic/optimistic, so the lookup missed on every
+   scenario and wrote the literal string "undefined" into the banner. Now keyed to
+   the platform vocabulary AND to the active structure, so the banner cannot
+   describe Hormuz while the dashboard is running Taiwan.                        */
+const ALERT_SCROLL = {
+  'hormuz-iran': {
+    baseline:    'Armed truce holding · strait open but transit below pre-war · war-risk premiums sticky · EM importers still absorbing the 2026 pass-through',
+    pessimistic: '🔴 RE-ESCALATION: truce collapses from a worse base · second closure risk · EM sovereign funding stress · insurance markets repricing',
+    optimistic:  '🟢 NORMALISATION: MOU holding · mines cleared · war-risk premiums decaying · transit volumes rebuilding toward pre-war',
+  },
+  'taiwan-strait': {
+    baseline:    'Blockade case · leading-edge logic supply interrupted · fabless order books unfillable · autos and capital goods rationing chips',
+    pessimistic: '🔴 INVASION CASE: US drawn in · leading-edge capacity offline · semiconductor supply shock propagating into every electronics-bearing sector',
+    optimistic:  '🟢 GRAY-ZONE: coercion without interruption · shipments continue under harassment · insurance and routing costs elevated, volumes intact',
+  },
+};
+function updateAlertScroll() {
+  const el = document.getElementById('alertScrollText');
+  if (!el) return;
+  const sid = activeStructureId();
+  const set = ALERT_SCROLL[sid] || ALERT_SCROLL['hormuz-iran'];
+  el.textContent = set[scenario] || set.baseline;
 }
 
 function flyToChokepoint(key) {
@@ -2349,7 +2682,9 @@ function updateTimeHorizon(val) {
 /* Investability Score: composite 0–100 */
 function investabilityScore(name) {
   const c = COUNTRIES[name];
-  if (!c) return { score:0, label:'No data', color:'var(--text-dim)' };
+  // Not covered: no score at all. Returning 0 here rendered an empty bar that reads
+  // as "worst possible", which is a different lie from the calm-cyan one.
+  if (!c) return { score:null, label:'Not covered', color:'var(--text-dim)' };
   const sm = SCENARIO_MULT[scenario];
   const stress  = getCountryStress(name);
   const debt    = debtScore(name);
@@ -2370,6 +2705,40 @@ function investabilityScore(name) {
 
 const aiCountryCache = {};
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   COUNTRY BRIEFING (v2)
+   ──────────────────────────────────────────────────────────────────────────────
+   The old version produced a red CONFLICT EXPOSURE header sitting directly above
+   "What This Means: The client is asking how the Iran war will affect their
+   investments, specifically in the context of Mauritania…" — meta-commentary in
+   place of analysis, under a label that did not match it, about a country the
+   platform does not cover. Three separate faults stacked:
+
+   1. PROMPT NESTING. This function wrote a full 3-paragraph analyst prompt and
+      passed it in `query` to /api/whatif, which wrapped it in its own advisor
+      template as CLIENT QUESTION and instructed the model to "explain what the
+      client is really asking". Two templates, and the server's won. The prompt was
+      the bug, not the output — the model did exactly what it was told.
+      FIX: the client no longer writes a template at all. It sends STRUCTURED
+      FIELDS and `mode:'country-brief'`; the server owns the whole prompt. One
+      prompt, one owner.
+
+   2. RENDERER MISMATCH. It split on blank lines and stamped CONFLICT EXPOSURE /
+      ECONOMIC RISK / INVESTOR ACTION onto paragraphs 0, 1, 2 of a response that
+      had four differently-named sections, so labels landed on unrelated text.
+      FIX: the endpoint returns `sections` parsed against the labels it asked for.
+      This renders whatever comes back and falls back to plain prose when the shape
+      is unexpected. It never blind-indexes.
+
+   3. ZEROED PAYLOAD. It shipped `Stress 0.0/10 | Oil dep 0% | CPI 0.0%` for any
+      country outside the 64-row table, and the model reasoned from those zeros in
+      confident prose. FIX: see the coverage guard below — for an uncovered
+      country this function does not fire at all.
+
+   Also fixed here: the prompt hard-coded "Iran War 2026" regardless of structure,
+   asked for Buy/Hold/Underweight/Hedge in violation of the platform's stance
+   vocabulary, and sent the jittered Brent seed as `oilPrice`.
+   ══════════════════════════════════════════════════════════════════════════════ */
 async function fetchAIBriefing(countryName) {
   const loading  = document.getElementById('cd-ai-loading');
   const body     = document.getElementById('cd-ai-body');
@@ -2384,7 +2753,25 @@ async function fetchAIBriefing(countryName) {
     setTimeout(() => { if (newBadge) newBadge.style.display = 'none'; }, 4500);
   };
 
-  const key = countryName + '_' + scenario;
+  /* ── COVERAGE GUARD (2.4) ───────────────────────────────────────────────────
+     No briefing for a country we do not model. An AI briefing is the most
+     authoritative-sounding surface in the product; firing it on an empty row is
+     how "no data" became "0.0/10, indicating a low level of concern". */
+  if (!COUNTRIES[countryName]) {
+    if (ph) ph.style.display = 'none';
+    loading.style.display = 'none';
+    body.style.display = 'block';
+    body.innerHTML =
+      '<div style="border-left:2px solid #35476a;padding:6px 0 6px 8px">' +
+      '<div style="color:#7d92b3;font-size:7px;letter-spacing:.15em;font-weight:700;margin-bottom:3px">NOT COVERED</div>' +
+      '<div style="color:var(--text-mid);font-size:8px;line-height:1.65">' +
+      countryName + ' is not in this structure\'s modelled universe, so there is no ' +
+      'stress reading, no macro projection and no briefing for it. This is an absence ' +
+      'of coverage, not a low-risk assessment.</div></div>';
+    return;
+  }
+
+  const key = countryName + '_' + activeStructureId() + '_' + scenario + '_' + Math.round(timeHorizon || 0);
   if (aiCountryCache[key]) {
     if (ph) ph.style.display = 'none';
     loading.style.display = 'none';
@@ -2401,40 +2788,54 @@ async function fetchAIBriefing(countryName) {
   if (newBadge) newBadge.style.display = 'none';
 
   try {
-    const c = COUNTRIES[countryName] || {};
-    const sm = SCENARIO_MULT[scenario];
-    const brent = (tickerData.find(t => t.id === 'BRENT') || {}).price || 121;
+    const c   = COUNTRIES[countryName];
     const inv = investabilityScore(countryName);
 
-    const prompt = 'You are a Bloomberg Intelligence analyst. Write a 3-paragraph briefing for ' + countryName + ' in the Iran War 2026 ' + scenario + ' scenario.\n' +
-      'Data: Stress ' + getCountryStress(countryName).toFixed(1) + '/10 | Oil dep ' + (c.oilDep||0) + '% | CPI ' + (c.cpi||0).toFixed(1) + '% | GDP ' + (c.gdp||0).toFixed(1) + '% | Investability ' + inv.score + '/100\n' +
-      'Paragraph 1 (CONFLICT EXPOSURE): How is this country specifically exposed?\n' +
-      'Paragraph 2 (ECONOMIC RISK): Top 2 quantified risks for investors.\n' +
-      'Paragraph 3 (INVESTOR ACTION): Specific signal — Buy/Hold/Underweight/Hedge with one-line rationale.\n' +
-      'Be specific, quantitative. Max 3 sentences per paragraph.';
-
+    /* Structured fields only. No prose template leaves the client. */
     const res = await fetch('/api/whatif', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ query:prompt, scenario, oilPrice:brent }),
+      body: JSON.stringify({
+        mode: 'country-brief',
+        country: countryName,
+        region: c.region,
+        structureId: activeStructureId(),
+        scenario,
+        scenarioLabel: activeScenarioLabel(),
+        metrics: {
+          stress:        getCountryStress(countryName),
+          cpiExcess:     cCpiExcess(countryName),
+          gdpDrag:       cGdpDrag(countryName),
+          investability: inv.score,
+          oilDep:        (activeStructureId() === 'hormuz-iran') ? c.oilDep : null,
+        },
+      }),
     });
     const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || 'API error');
+    if (!res.ok || data.error) throw new Error(data.error || 'unavailable');
 
-    const raw = (data.analysis || data.narrative || '').trim();
-    const paras = raw.split(/\n\n+/).filter(Boolean);
-    const sects = ['CONFLICT EXPOSURE','ECONOMIC RISK','INVESTOR ACTION'];
-    const cols  = ['var(--red)','var(--amber)','var(--green)'];
+    const raw = (data.analysis || '').trim();
+    const sections = Array.isArray(data.sections) ? data.sections : [];
+    const COLORS = ['var(--red)','var(--amber)','var(--cyan)','var(--text-dim)'];
+
     let html2 = '';
-    if (paras.length >= 3) {
-      paras.slice(0,3).forEach((p,i) => {
-        html2 += '<div style="margin-bottom:7px">' +
-          '<div style="color:'+cols[i]+';font-size:7px;letter-spacing:.15em;font-weight:700;margin-bottom:2px">'+sects[i]+'</div>' +
-          '<div style="color:var(--text-mid);font-size:8px;line-height:1.65">'+p.replace(/\*\*/g,'').replace(/^\d\.\s*/,'')+'</div></div>';
-      });
+    if (sections.length) {
+      /* Labels come FROM the response. They cannot land on the wrong content. */
+      html2 = sections.map((s, i) =>
+        '<div style="margin-bottom:7px">' +
+        '<div style="color:' + COLORS[Math.min(i, COLORS.length-1)] + ';font-size:7px;' +
+        'letter-spacing:.15em;font-weight:700;margin-bottom:2px">' +
+        String(s.label).toUpperCase() + '</div>' +
+        '<div style="color:var(--text-mid);font-size:8px;line-height:1.65">' +
+        String(s.body).replace(/\*\*/g,'') + '</div></div>'
+      ).join('');
     } else {
-      html2 = '<div style="color:var(--text-mid);font-size:8px;line-height:1.65">'+raw.replace(/\*\*/g,'')+'</div>';
+      /* Unexpected shape: render it as prose. Do not invent structure for it. */
+      html2 = '<div style="color:var(--text-mid);font-size:8px;line-height:1.65">' +
+              raw.replace(/\*\*/g,'') + '</div>';
     }
-    html2 += '<div style="font-size:7px;color:var(--text-dim);margin-top:4px">🤖 AI · '+scenario.toUpperCase()+' · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>';
+    html2 += '<div style="font-size:7px;color:var(--text-dim);margin-top:4px">' +
+             activeStructureName().toUpperCase() + ' · ' + activeScenarioLabel().toUpperCase() +
+             ' · ' + new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + '</div>';
 
     aiCountryCache[key] = html2;
     loading.style.display = 'none';
@@ -2445,7 +2846,7 @@ async function fetchAIBriefing(countryName) {
   } catch(err) {
     loading.style.display = 'none';
     body.style.display = 'block';
-    body.innerHTML = '<div style="color:var(--text-dim);font-size:8px">⚠ Briefing unavailable — ' + err.message + '</div>';
+    body.innerHTML = '<div style="color:var(--text-dim);font-size:8px">Briefing unavailable — ' + err.message + '</div>';
   }
 }
 
@@ -2455,61 +2856,103 @@ function openCountryPanel(name) {
   document.getElementById('country-detail').style.display = 'flex';
   selectedCountry = name;
 
-  // Stock popup is gated — user must click the button inside AI briefing
-  const stockBtn = document.getElementById('cd-stock-btn');
-  if (stockBtn) stockBtn.style.display = 'block';
-
-  // On mobile: auto-open right panel so metrics are visible
   if (window.innerWidth <= 768) toggleMobPanel('right');
 
-  // Fire AI briefing (primary content)
-  fetchAIBriefing(name);
-
-  // Investability score
-  const inv = investabilityScore(name);
-  const scoreBar = document.getElementById('cd-score-bar');
-  if (scoreBar) {
-    scoreBar.style.display = 'block';
-    const fill = document.getElementById('cd-score-fill');
-    const val  = document.getElementById('cd-score-val');
-    const lbl  = document.getElementById('cd-score-label');
-    if (fill) { fill.style.width = inv.score + '%'; fill.style.background = inv.color; }
-    if (val)  { val.textContent = inv.score + '/100'; val.style.color = inv.color; }
-    if (lbl)  lbl.textContent = inv.label + ' · ' + scenario.charAt(0).toUpperCase() + scenario.slice(1) + ' scenario';
-  }
-
-  const sm = SCENARIO_MULT[scenario];
-  const stress = getCountryStress(name);
-  const [riskLbl, riskCls] = riskLabel(stress);
-  const sc = stressColor(stress,1).replace(/,[\d.]+\)$/, ',1)');
+  const s = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const col = (id, v) => { const el = document.getElementById(id); if (el) el.style.color = v; };
 
   document.getElementById('cd-name').textContent = name;
   document.getElementById('cd-region').textContent = c ? c.region : '—';
 
-  const rb = document.getElementById('cd-risk-badge');
-  rb.textContent = riskLbl; rb.className = `cd-risk-badge ${riskCls}`;
+  /* ── UNCOVERED (2.4) ────────────────────────────────────────────────────────
+     COUNTRIES holds 64 rows; the globe renders every country in the GeoJSON. The
+     old code fell through to `{}` and reported 0.0/10, 0% and 'Minimal Risk' —
+     presenting an uncovered country to an investor as the calmest place on the
+     map. Every tile now reads as unknown, the score bar is hidden rather than
+     drawn empty, and the panel says plainly that this is missing coverage. This
+     is the `unpriced` honesty tier applied to geography instead of to a
+     structure.                                                                  */
+  if (!c) {
+    const rbU = document.getElementById('cd-risk-badge');
+    const [lblU, clsU] = riskLabel(null);
+    rbU.textContent = lblU; rbU.className = 'cd-risk-badge ' + clsU;
 
-  const s = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-  if (c) {
-    const adjStress = stress;
-    const adjCpi   = (c.cpi * sm.cpi).toFixed(1);
-    const adjGdp   = (c.gdp * sm.gdp).toFixed(1);
-    const adjFxVol = (c.fxVol * sm.fx).toFixed(0);
+    ['cd-stress','cd-oildep','cd-cpi','cd-gdp','cd-fxvol'].forEach(id => { s(id, '—'); col(id, 'var(--text-dim)'); });
+    const bar = document.getElementById('cd-score-bar'); if (bar) bar.style.display = 'none';
+    const stockBtn = document.getElementById('cd-stock-btn'); if (stockBtn) stockBtn.style.display = 'none';
 
-    s('cd-stress', adjStress.toFixed(1)+'/10');
-    s('cd-oildep', Math.abs(c.oilDep)+'%');
-    s('cd-cpi',    adjCpi+'%');
-    s('cd-gdp',    (adjGdp>0?'+':'')+adjGdp+'%');
-    s('cd-fxvol',  adjFxVol+'%');
-    s('cd-trade',  (c.trade>0?'+':'')+c.trade+'%');
+    drawOrRetire('cd-stress-chart', null, '#ff3d4a', '');
+    drawOrRetire('cd-cpi-chart',    null, '#ff6b35', '');
 
-    document.getElementById('cd-stress').style.color = sc;
-    document.getElementById('cd-gdp').style.color = c.gdp*sm.gdp < 0 ? 'var(--red)':'var(--green)';
-    document.getElementById('cd-oildep').style.color = c.oilDep > 0 ? 'var(--amber)':'var(--green)';
+    const ib = document.getElementById('cd-insights-body');
+    if (ib) ib.innerHTML = '<div class="cd-insight-item"><strong>Outside modelled universe</strong> ' +
+      name + ' is not one of the ' + Object.keys(COUNTRIES).length + ' countries this structure ' +
+      'projects. No stress score, macro projection or stance is produced for it. Treat this as ' +
+      'missing coverage, not as a low-risk reading.</div>';
 
-    buildCountryCharts(name, c, sm);
-    buildCountryInsights(name, c, sm, adjStress, adjCpi, adjGdp);
+    fetchAIBriefing(name);   // renders the NOT COVERED card; makes no request
+    return;
   }
+
+  const stockBtn = document.getElementById('cd-stock-btn');
+  if (stockBtn) stockBtn.style.display = 'block';
+
+  fetchAIBriefing(name);
+
+  const inv = investabilityScore(name);
+  const scoreBar = document.getElementById('cd-score-bar');
+  if (scoreBar) {
+    if (inv.score == null) { scoreBar.style.display = 'none'; }
+    else {
+      scoreBar.style.display = 'block';
+      const fill = document.getElementById('cd-score-fill');
+      const val  = document.getElementById('cd-score-val');
+      const lbl  = document.getElementById('cd-score-label');
+      if (fill) { fill.style.width = inv.score + '%'; fill.style.background = inv.color; }
+      if (val)  { val.textContent = inv.score + '/100'; val.style.color = inv.color; }
+      if (lbl)  lbl.textContent = inv.label + ' · ' + activeScenarioLabel();
+    }
+  }
+
+  const stress = getCountryStress(name);
+  const [riskLbl, riskCls] = riskLabel(stress);
+  const rb = document.getElementById('cd-risk-badge');
+  rb.textContent = riskLbl; rb.className = 'cd-risk-badge ' + riskCls;
+
+  s('cd-stress', stress == null ? '—' : stress.toFixed(1) + '/10');
+  col('cd-stress', stressColor(stress, 1).replace(/,[\d.]+\)$/, ',1)'));
+
+  /* ── DERIVED MACRO (3.1) ────────────────────────────────────────────────────
+     cpi / gdp / fxVol used to be read off the Hormuz-fitted country table, which
+     is why TAIWAN reported Taiwan at CPI 2.1% and GDP +3.2% while the dashboard
+     put East Asia at -6.8%. They now come from the active structure's own
+     regional series, projected the same way stress is.
+
+     These are DELTAS, and the tiles say so: excess CPI in points above trend, GDP
+     effect in points. The old absolute levels were never measurements.           */
+  const cpiX = cCpiExcess(name);
+  const gdpD = cGdpDrag(name);
+  const fxS  = cFxStress(name);
+
+  s('cd-cpi',   cpiX == null ? '—' : (cpiX > 0 ? '+' : '') + cpiX.toFixed(1) + 'pp');
+  s('cd-gdp',   gdpD == null ? '—' : (gdpD > 0 ? '+' : '') + gdpD.toFixed(1) + 'pp');
+  s('cd-fxvol', fxS  == null ? '—' : Math.round(fxS) + '/100');
+  col('cd-cpi', cpiX == null ? 'var(--text-dim)' : cpiX > 0 ? 'var(--orange)' : 'var(--green)');
+  col('cd-gdp', gdpD == null ? 'var(--text-dim)' : gdpD < 0 ? 'var(--red)'    : 'var(--green)');
+  col('cd-fxvol', fxS == null ? 'var(--text-dim)' : 'var(--yellow)');
+
+  /* Petroleum position is only a channel under an oil structure. Under TAIWAN it
+     is shown as not-applicable rather than as a number with no bearing. */
+  if (activeStructureId() === 'hormuz-iran') {
+    s('cd-oildep', Math.abs(c.oilDep) + '%');
+    col('cd-oildep', c.oilDep > 0 ? 'var(--amber)' : 'var(--green)');
+  } else {
+    s('cd-oildep', 'n/a');
+    col('cd-oildep', 'var(--text-dim)');
+  }
+
+  buildCountryCharts(name);
+  buildCountryInsights(name, c, stress, cpiX, gdpD);
 }
 
 /* Chart tab switcher for country panel */
@@ -2533,31 +2976,69 @@ function switchCountryChart(which, btn) {
 
 /* Mini ECharts in country panel */
 const cdCharts = {};
-function buildCountryCharts(name, c, sm) {
-  // Stress history (90 days simulated)
-  const stressBase = cstress(name) * sm.stress;
-  const stressHist = Array.from({length:30}, (_,i) => {
-    const t = 1-(i/30)*0.4;
-    return parseFloat((stressBase*t*(0.9+Math.random()*0.2)).toFixed(2));
-  }).reverse();
+function buildCountryCharts(name) {
+  /* ── WAS FABRICATED ──────────────────────────────────────────────────────────
+     Both charts were generated from a random number generator on every panel open:
+     a 30-point "stress history" and a 12-point "CPI trajectory". Opening a country
+     twice in a row drew two different histories. They were not smoothed estimates
+     or illustrative sketches — they were noise, rendered in the same chart style as
+     the real series, on a platform whose stated differentiator is knowing what it
+     does and does not know.
 
-  renderMiniChart('cd-stress-chart', stressHist, '#ff3d4a', 'Stress');
+     A disclaimer under a random number generator is not an honesty tier, so they
+     are not disclaimed. They are now derived from the ACTIVE STRUCTURE's own
+     horizon series — the same series the globe and the heatmap read — or, when the
+     structure supplies none, the chart is removed and the panel says so.
+     What is drawn is a forward PROJECTION, and it is labelled as one; this
+     platform has no country-level history to plot and will not imply otherwise. */
+  const stressPath = projectedPath(name, 'stress');
+  const cpiPath    = projectedPath(name, 'cpi');
 
-  // CPI trajectory (12 months)
-  const cpiBase = c.cpi * sm.cpi;
-  const cpiHist = Array.from({length:12}, (_,i) => {
-    return parseFloat((cpiBase*(0.85+i*0.015+Math.random()*0.05)).toFixed(1));
-  });
-  renderMiniChart('cd-cpi-chart', cpiHist, '#ff6b35', 'CPI %');
+  drawOrRetire('cd-stress-chart', stressPath, '#ff3d4a', 'Projected stress');
+  drawOrRetire('cd-cpi-chart',    cpiPath,    '#ff6b35', 'Excess CPI (pts)');
 
-  // Default to Stress tab after rebuild
   const stressEl = document.getElementById('cd-stress-chart');
-  const cpiEl = document.getElementById('cd-cpi-chart');
+  const cpiEl    = document.getElementById('cd-cpi-chart');
   if (stressEl) stressEl.style.display = 'block';
-  if (cpiEl) cpiEl.style.display = 'none';
+  if (cpiEl)    cpiEl.style.display = 'none';
   document.querySelectorAll('.cd-chart-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.chart === 'stress');
   });
+}
+
+/* Walk the active structure's own regional series across its full horizon and
+   project it onto the country, using exactly the projection the globe uses. */
+function projectedPath(name, kind) {
+  const c = COUNTRIES[name]; if (!c) return null;
+  if (!STRUCTURE_STATE) return null;
+  const bag = kind === 'stress' ? 'regionalStress' : 'regionalCpi';
+  const series = (STRUCTURE_STATE[bag] || {})[REGION_TO_STRUCT[c.region]];
+  if (!series || !series.length) return null;
+  const w = weightFor(name);
+  const m = SCENARIO_MULT[scenario] || SCENARIO_MULT.baseline;
+  return series.map(v => {
+    if (typeof v !== 'number') return null;
+    if (kind === 'stress') {
+      return parseFloat(Math.max(0, Math.min(10, applyScenarioShift(applyWeight(v, w), m.stress))).toFixed(2));
+    }
+    return parseFloat((v * w).toFixed(2));   // CPI series is already scenario-keyed
+  }).filter(v => v != null);
+}
+
+/* Draw the chart, or remove it and say why. Never draw an empty axis — an empty
+   chart still reads as "we measured this and it was flat". */
+function drawOrRetire(id, data, color, label) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (!data || data.length < 2) {
+    if (cdCharts[id]) { try { cdCharts[id].dispose(); } catch(e) {} delete cdCharts[id]; }
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;'
+      + 'font-size:7px;color:var(--text-dim);text-align:center;line-height:1.6;padding:6px">'
+      + 'No projection available<br>for this country under<br>the active structure</div>';
+    return;
+  }
+  el.innerHTML = '';
+  renderMiniChart(id, data, color, label);
 }
 
 function renderMiniChart(id, data, color, name) {
@@ -2582,63 +3063,98 @@ function renderMiniChart(id, data, color, name) {
   });
 }
 
-/* AI-generated insights per country */
+/* ══════════════════════════════════════════════════════════════════════════════
+   COUNTRY INSIGHT CARDS — structure-keyed.
+   ──────────────────────────────────────────────────────────────────────────────
+   Every template here was written for an oil shock and fired under any structure.
+   The visible symptom: clicking Taiwan while running the TAIWAN structure produced
+   "Energy Dependency Risk — Taiwan imports 97% of its oil. With Brent at $121/bbl…"
+   Taiwan's oil dependency is real; it is simply not the channel being modelled, and
+   the Brent figure was the jittered seed. Templates are now selected by the ACTIVE
+   structure's channel, and they read the derived projection rather than the
+   Hormuz-fitted country columns.
+   ══════════════════════════════════════════════════════════════════════════════ */
 const INSIGHT_TEMPLATES = {
-  oil_importer: (name, cpi, oil) =>
-    `<strong>Energy Dependency Risk</strong> ${name} imports ${oil}% of its oil. With Brent at $${(121*(SCENARIO_MULT[scenario].oil)).toFixed(0)}/bbl, energy import bills are rising sharply, adding +${(cpi*0.3).toFixed(1)}pp to domestic inflation.`,
+  oil_importer: (name, cpiX, oil) =>
+    `<strong>Energy Dependency</strong> ${name} imports ${oil}% of its petroleum. Under this
+     structure that import bill is the primary transmission channel${cpiX != null
+     ? `, and the projection puts excess CPI at ${fmtPP(cpiX)} above trend` : ''}.`,
   oil_exporter: (name) =>
-    `<strong>Energy Revenue Upside</strong> As a net oil exporter, ${name} benefits from elevated crude prices. Budget surpluses are expanding. Watch for FX appreciation and SWF deployment.`,
-  em_fx: (name, fxVol) =>
-    `<strong>Currency Pressure</strong> ${name}'s currency shows ${fxVol}% implied volatility. Capital outflows accelerating as USD strengthens. Potential IMF engagement if reserves fall below 3 months import cover.`,
-  food_risk: (name, cpi) =>
-    `<strong>Food Security Alert</strong> With CPI at ${cpi.toFixed(1)}%, food price sensitivity is elevated. ${name} is exposed to fertilizer (gas-based) and shipping cost pass-through. Risk of social instability if prices exceed 2x baseline.`,
-  trade_imbalance: (name, trade) =>
-    `<strong>Trade Balance Stress</strong> Current account deficit of ${Math.abs(trade).toFixed(1)}% of GDP is widening. Requires sustained capital inflows to finance. FX pressure building.`,
+    `<strong>Energy Revenue Upside</strong> As a net petroleum exporter, ${name} sits on the
+     beneficiary side of a supply-side price shock. Watch fiscal balances, FX appreciation
+     and sovereign-fund deployment rather than import-cost stress.`,
+  chip_exposed: (name, gdpD) =>
+    `<strong>Semiconductor Chain Exposure</strong> ${name} sits inside the leading-edge
+     electronics chain — as fabricator, tool supplier, assembly/test, or an end-market whose
+     output stops without chips${gdpD != null ? `. Projected GDP effect ${fmtPP(gdpD)}` : ''}.`,
+  chip_remote: (name) =>
+    `<strong>Indirect Exposure Only</strong> ${name} has no material position in the
+     leading-edge chain. Transmission here is second-order — goods prices, external demand
+     and risk appetite — not a direct supply interruption.`,
+  fx_pressure: (name, fx) =>
+    `<strong>Currency Pressure</strong> ${name} scores ${Math.round(fx)}/100 on this
+     structure's relative FX stress index. Elevated readings mark candidates for capital
+     outflow and reserve drawdown, not a quoted volatility level.`,
   conflict_zone: (name) =>
-    `<strong>Conflict Exposure</strong> ${name} is in or adjacent to an active conflict zone. Infrastructure damage, capital flight, and supply chain disruption are material risks. Regional contagion index elevated.`,
+    `<strong>Conflict Exposure</strong> ${name} is in or adjacent to an active conflict zone.
+     Infrastructure damage, capital flight and supply-chain disruption are material.`,
 };
+function fmtPP(v) { return (v > 0 ? '+' : '') + Number(v).toFixed(1) + 'pp'; }
 
-function buildCountryInsights(name, c, sm, stress, cpi, gdp) {
+function buildCountryInsights(name, c, stress, cpiX, gdpD) {
+  const el = document.getElementById('cd-insights-body');
+  if (!el) return;
   const insights = [];
-  if (c.oilDep > 0) {
-    insights.push(INSIGHT_TEMPLATES.oil_importer(name, parseFloat(cpi), c.oilDep));
+  const sid = activeStructureId();
+
+  if (sid === 'hormuz-iran') {
+    if (c.oilDep > 0) insights.push(INSIGHT_TEMPLATES.oil_importer(name, cpiX, c.oilDep));
+    else              insights.push(INSIGHT_TEMPLATES.oil_exporter(name));
   } else {
-    insights.push(INSIGHT_TEMPLATES.oil_exporter(name));
-  }
-  if (c.fxVol > 20) {
-    insights.push(INSIGHT_TEMPLATES.em_fx(name, (c.fxVol*sm.fx).toFixed(0)));
-  }
-  if (c.cpi > 10 || parseFloat(cpi) > 10) {
-    insights.push(INSIGHT_TEMPLATES.food_risk(name, parseFloat(cpi)));
-  }
-  if (c.trade < -8) {
-    insights.push(INSIGHT_TEMPLATES.trade_imbalance(name, c.trade));
-  }
-  const isConflict = CONFLICT_ZONES.some(z => z.name.includes(name.split(' ')[0]));
-  if (isConflict) {
-    insights.push(INSIGHT_TEMPLATES.conflict_zone(name));
+    // Chip-chain position, taken from the structure's own exposure weights rather
+    // than from an oil column that has no meaning under this structure.
+    const w = weightFor(name);
+    if (w >= 1.05) insights.push(INSIGHT_TEMPLATES.chip_exposed(name, gdpD));
+    else           insights.push(INSIGHT_TEMPLATES.chip_remote(name));
   }
 
-  document.getElementById('cd-insights-body').innerHTML =
-    insights.slice(0,3).map(t => `<div class="cd-insight-item">${t}</div>`).join('');
+  const fx = cFxStress(name);
+  if (fx != null && fx >= 55) insights.push(INSIGHT_TEMPLATES.fx_pressure(name, fx));
+
+  if (CONFLICT_ZONES.some(z => z.name.includes(name.split(' ')[0])))
+    insights.push(INSIGHT_TEMPLATES.conflict_zone(name));
+
+  el.innerHTML = insights.slice(0, 3).map(t => `<div class="cd-insight-item">${t}</div>`).join('');
 }
 
 /* ═══════════════════════════════════════
    ALERT ENGINE
    Monitor thresholds, fire alerts dynamically
    ═══════════════════════════════════════ */
-const alertMessages = [
-  { type:'danger', title:'⚠ BRENT > $120', text:'Energy import costs spiking. EM central banks face stagflation dilemma.' },
-  { type:'warn',   title:'⚡ VIX > 28',     text:'Volatility index elevated. Risk-off sentiment accelerating. USD bid.' },
-  { type:'warn',   title:'⚡ EM SPREAD +385bp', text:'EM credit spreads at crisis levels. Funding stress for frontier markets.' },
-  { type:'info',   title:'ℹ HORMUZ RISK',  text:'Hormuz transit insurance surcharges +280%. Rerouting via Cape +15 days.' },
-  { type:'danger', title:'⚠ DXY > 104',    text:'USD strength pressuring EM FX. EGP, PKR, TRY under most stress.' },
-];
+/* Structure-keyed. The static list named Brent, Hormuz transit insurance and Cape
+   rerouting, and fired identically under TAIWAN — a structure with no oil channel. */
+const ALERT_SETS = {
+  'hormuz-iran': [
+    { type:'danger', title:'⚠ STRAIT TRANSIT',  text:'Transit volumes remain below pre-war despite the truce. War-risk premiums sticky.' },
+    { type:'warn',   title:'⚡ VOLATILITY',      text:'Equity volatility elevated versus trend. Risk-off rotation, USD bid.' },
+    { type:'warn',   title:'⚡ EM CREDIT',       text:'EM credit spreads wide. Funding stress concentrated in frontier importers.' },
+    { type:'info',   title:'ℹ INSURANCE',       text:'Hull and cargo war-risk surcharges still repricing off the 2026 closure.' },
+    { type:'danger', title:'⚠ IMPORTER STRESS', text:'Energy-import-dependent EMs absorbing the pass-through with thin reserve cover.' },
+  ],
+  'taiwan-strait': [
+    { type:'danger', title:'⚠ LEADING-EDGE SUPPLY', text:'Advanced-node logic has no substitute at scale. Inventory depth is the only buffer.' },
+    { type:'warn',   title:'⚡ TOOL CHOKEPOINT',    text:'Lithography tooling is a second chokepoint independent of the strait itself.' },
+    { type:'warn',   title:'⚡ CONTAINER VOLUMES',  text:'Container shipping LOSES cargo in a blockade — volumes disappear rather than reroute.' },
+    { type:'info',   title:'ℹ UNPRICED STRUCTURE',  text:'No clean market analogue exists. Treat all figures as exposure, not as observed moves.' },
+    { type:'danger', title:'⚠ DOWNSTREAM OUTPUT',   text:'Autos and capital goods stop on chip absence long before consumer prices respond.' },
+  ],
+};
+function currentAlerts() { return ALERT_SETS[activeStructureId()] || ALERT_SETS['hormuz-iran']; }
 let alertIdx = 0;
 function buildAlertList() {
   const list = document.querySelector('#left-panel .alert-list');
   if (!list) return;
-  list.innerHTML = alertMessages.map(a =>
+  list.innerHTML = currentAlerts().map(a =>
     `<div class="alert-item ${a.type==='warn'?'warn':a.type==='info'?'info':''}">
       <strong>${a.title}</strong>${a.text}
     </div>`
@@ -2679,16 +3195,16 @@ function updateClock() {
    Animates globe month by month through the 36M scenario.
    ═════════════════════════════════════════════════════════ */
 let tlPlaying = false, tlInterval = null, tlSpeed = 400, tlMonth = 0;
-const TL_PHASES = [
-  {month:0,label:'M0 — CONFLICT ONSET'},{month:1,label:'M1 — INITIAL SHOCK'},
-  {month:3,label:'M3 — ESCALATION PEAK'},{month:6,label:'M6 — SUPPLY DISRUPTION'},
-  {month:9,label:'M9 — SPR RESPONSE'},{month:12,label:'M12 — MARKET ADAPTATION'},
-  {month:18,label:'M18 — DIPLOMACY WINDOW'},{month:24,label:'M24 — RESOLUTION PHASE'},
-  {month:30,label:'M30 — RECONSTRUCTION'},{month:36,label:'M36 — NEW EQUILIBRIUM'},
-];
+/* Timeline phases now live in STRUCTURE_CHROME, keyed by structure. The old static
+   table hard-coded "M9 — SPR RESPONSE": a strategic petroleum reserve release is an
+   oil-crisis instrument, and under TAIWAN it named a policy response that does not
+   exist for leading-edge logic. There is no SPR for chips — which is the whole
+   reason that structure's damage runs through output rather than price.           */
 function getPhaseLabel(m) {
-  let l = TL_PHASES[0].label;
-  TL_PHASES.forEach(p => { if (m >= p.month) l = p.label; });
+  const ph = chrome().phases || [];
+  if (!ph.length) return '';
+  let l = ph[0].label;
+  ph.forEach(p => { if (m >= p.month) l = p.label; });
   return l;
 }
 function toggleTimelapse() {
@@ -2735,7 +3251,7 @@ function updateTLDisplay() {
 }
 
 /* ═════════════════════════════════════════════════════════
-   NATURAL LANGUAGE GLOBE QUERY (Gemini)
+   NATURAL LANGUAGE GLOBE QUERY
    ═════════════════════════════════════════════════════════ */
 async function runNLQuery() {
   const inp = document.getElementById('nl-input');
@@ -2747,11 +3263,22 @@ async function runNLQuery() {
   btn.disabled = true; btn.textContent = 'THINKING…';
   res.style.display = 'block'; res.textContent = '🤖 Analyzing…';
   try {
-    const brent = (tickerData.find(t=>t.id==='BRENT')||{}).price||121;
+    /* Two bugs here, not one. The prompt hard-coded "Iran War 2026" regardless of
+       structure — and, more quietly, it asked for strict JSON while /api/whatif
+       wrapped everything in a four-section prose advisor template. It could never
+       receive JSON, so the parse threw on EVERY call and the substring-matching
+       catch below was doing all the work, invisibly. mode:'json' passes the prompt
+       through without a wrapper. */
     const cList = Object.keys(COUNTRIES).join(', ');
-    const prompt = 'You are a geopolitical globe intelligence engine for Iran War 2026 scenario.\nSCENARIO: '+scenario+' | Brent: $'+brent.toFixed(0)+'/bbl\nUSER QUERY: "'+q+'"\nAVAILABLE COUNTRIES: '+cList+'\nRespond ONLY with valid JSON: {"countries":["Name1","Name2"],"summary":"one sentence","flyTo":{"lat":0,"lng":0,"altitude":2.0}}\nCountries must match exact names from the list. Max 8 countries.';
+    const prompt = 'You are a geopolitical globe intelligence engine.\n'
+      + 'ACTIVE RISK STRUCTURE: ' + activeStructureName() + '\n'
+      + 'SCENARIO: ' + activeScenarioLabel() + '\n'
+      + 'USER QUERY: "' + q + '"\n'
+      + 'AVAILABLE COUNTRIES: ' + cList + '\n'
+      + 'Respond ONLY with valid JSON: {"countries":["Name1","Name2"],"summary":"one sentence","flyTo":{"lat":0,"lng":0,"altitude":2.0}}\n'
+      + 'Countries must match exact names from the list. Max 8. Select for relevance to the ACTIVE structure.';
     const r = await fetch('/api/whatif', { method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({query:prompt, scenario, oilPrice:brent}) });
+      body:JSON.stringify({ mode:'json', query:prompt, scenario, structureId:activeStructureId() }) });
     const data = await r.json();
     const raw = (data.analysis||data.narrative||'').trim().replace(/```json|```/g,'').trim();
     let parsed;
@@ -2807,43 +3334,78 @@ function toggleOppScanner() {
 function buildOpportunityList() {
   const list = document.getElementById('opp-list');
   if (!list) return;
-  const sm = SCENARIO_MULT[scenario];
+  const sm  = SCENARIO_MULT[scenario];
+  const sid = activeStructureId();
   const opps = [];
+
+  /* ── STRUCTURE-KEYED ────────────────────────────────────────────────────────
+     Every rule below used to fire under every structure: oil-export revenue, LNG
+     spot premium, Cape-of-Good-Hope rerouting, NATO/Gulf defense procurement. Under
+     TAIWAN the scanner recommended countries for benefiting from a Cape bypass in a
+     conflict that has no Cape leg — the single clearest case of the globe naming a
+     conflict the platform was not running.
+
+     Note the container-shipping sign, which is the correction most often gotten
+     wrong: in a Hormuz closure cargo REROUTES and shipping benefits; in a Taiwan
+     blockade the cargo DISAPPEARS, so container shipping is a loser, not a winner.
+     It therefore appears in no beneficiary rule below.                            */
   Object.entries(COUNTRIES).forEach(([name, c]) => {
     let score = 0; const signals = [];
-    // Oil exporter benefit
-    if (c.oilDep < -30) {
-      const gain = Math.abs(c.oilDep) / 100 * (sm.oil - 1) * 15;
-      score += gain;
-      signals.push('Oil export revenue +' + (Math.abs(c.oilDep) * sm.oil * 0.3).toFixed(0) + '% vs baseline');
+
+    if (sid === 'hormuz-iran') {
+      if (c.oilDep < -30) {
+        score += Math.abs(c.oilDep) / 100 * (sm.oil - 1) * 15;
+        signals.push('Petroleum export revenue rises with the supply-side price shock');
+      }
+      if (['United States of America','Germany','France','United Kingdom','Israel','South Korea','Russia','Italy'].includes(name)) {
+        score += 8 + sm.stress * 2; signals.push('Defense exports — NATO and Gulf procurement');
+      }
+      if (['South Africa','Australia','Egypt','Morocco','Spain'].includes(name)) {
+        score += 4; signals.push('Port and rerouting revenue from Cape bypass traffic');
+      }
+      if (['United States of America','Qatar','Australia','Norway','Canada'].includes(name)) {
+        score += 6 * sm.stress; signals.push('LNG spot premium as buyers replace piped and Gulf supply');
+      }
+      if (['Brazil','Argentina','Australia','Canada','United States of America'].includes(name)) {
+        score += 3; signals.push('Grain and fertiliser exports firm on energy-linked input costs');
+      }
+    } else {
+      /* Taiwan structure: the beneficiaries are substitute CAPACITY and the tool
+         chain, not energy. Kept deliberately narrow — this structure is the
+         `unpriced` tier and a long confident list would contradict that. */
+      if (['South Korea','Japan','United States of America'].includes(name)) {
+        score += 7 + sm.stress * 1.5; signals.push('Substitute leading-edge capacity — the only near-term alternative fabs');
+      }
+      if (['Netherlands','Japan'].includes(name)) {
+        score += 6; signals.push('Lithography and process-tool supply into subsidised rebuild capacity');
+      }
+      if (['Singapore','Malaysia','Vietnam','India','Mexico'].includes(name)) {
+        score += 4 + sm.stress; signals.push('Assembly, test and packaging relocation away from the strait');
+      }
+      if (['Australia','Canada','Chile'].includes(name)) {
+        score += 3; signals.push('Upstream materials demand as capacity is rebuilt outside Taiwan');
+      }
+      if (['United States of America','Germany','France','South Korea','Japan'].includes(name)) {
+        score += 5 + sm.stress * 1.5; signals.push('Defense procurement on a sustained Indo-Pacific posture');
+      }
     }
-    // Defense exporter (US, EU, Israel, South Korea, France)
-    const defExporters = ['United States of America','Germany','France','United Kingdom','Israel','South Korea','Russia','Italy'];
-    if (defExporters.includes(name)) { score += 8 + sm.stress * 2; signals.push('Defense exports surge — NATO/Gulf procurement'); }
-    // Alternative shipping beneficiary
-    const altShip = ['South Africa','Australia','Egypt','Morocco','Spain'];
-    if (altShip.includes(name)) { score += 4; signals.push('Port / rerouting revenues from Cape bypass'); }
-    // LNG exporter
-    const lngExp = ['United States of America','Qatar','Australia','Norway','Canada'];
-    if (lngExp.includes(name)) { score += 6 * sm.stress; signals.push('LNG spot premium as EU replaces piped gas'); }
-    // Food exporter
-    const foodExp = ['Brazil','Argentina','Australia','Canada','United States of America'];
-    if (foodExp.includes(name)) { score += 3; signals.push('Grain/fertilizer exports +' + Math.round(15 * sm.cpi) + '%'); }
-    if (score > 6 && signals.length > 0) {
-      opps.push({ name, score, signal:signals[0],
-        inv: investabilityScore(name).score });
+
+    if (score > 6 && signals.length) {
+      opps.push({ name, score, signal: signals[0], inv: investabilityScore(name).score });
     }
   });
+
   opps.sort((a,b) => b.score - a.score);
   list.innerHTML = opps.slice(0, 12).map(o => {
-    const color = o.inv >= 65 ? 'var(--green)' : o.inv >= 40 ? 'var(--amber)' : 'var(--orange)';
+    const invTxt = o.inv == null ? '—' : o.inv;
+    const color = o.inv == null ? 'var(--text-dim)' : o.inv >= 65 ? 'var(--green)' : o.inv >= 40 ? 'var(--amber)' : 'var(--orange)';
     return '<div class="opp-card" onclick="openCountryPanel(\''+o.name+'\'); flyToCountry(\''+o.name+'\');">' +
       '<div style="display:flex;justify-content:space-between;align-items:center">' +
       '<div class="opp-country">'+o.name+'</div>' +
-      '<div style="font-family:var(--orb);font-size:11px;color:'+color+'">'+o.inv+'</div></div>' +
-      '<div class="opp-signal">▲ '+o.signal+'</div>' +
-      '<div class="opp-reason">Score: '+o.score.toFixed(1)+' · Investability: '+o.inv+'/100</div></div>';
-  }).join('') || '<div style="padding:12px;font-size:9px;color:var(--text-dim);text-align:center">No significant opportunities in '+scenario+' scenario.</div>';
+      '<div style="font-family:var(--orb);font-size:11px;color:'+color+'">'+invTxt+'</div></div>' +
+      '<div class="opp-signal">▲ Beneficiary · '+o.signal+'</div>' +
+      '<div class="opp-reason">Score: '+o.score.toFixed(1)+' · Investability: '+invTxt+'/100</div></div>';
+  }).join('') || '<div style="padding:12px;font-size:9px;color:var(--text-dim);text-align:center">No significant beneficiaries under '+activeScenarioLabel()+'.</div>';
 }
 
 function flyToCountry(name) {
@@ -2877,10 +3439,27 @@ const HISTORICAL_ANALOGS = [
   { year:2008, name:'2008 Financial Crisis', oilSpike:140, gdpImpact:-3.2, duration:18,
     desc:'Credit crunch + oil peak $147 → global recession · EM currencies -25% · Gold safe haven' },
 ];
+/* ── HISTORICAL ANALOGUE ───────────────────────────────────────────────────────
+   Two faults, both structural rather than arithmetic.
+
+   1. It anchored on (brent/78)-1. The v3.1 calibration anchor is the MEASURED
+      pre-war Brent of $70; $78 corresponds to no observed period, so every
+      percentage it produced was measured from a level that never existed.
+   2. It matched on oil-spike percentage under EVERY structure. Under TAIWAN that
+      compared a leading-edge logic blockade to the 1973 oil embargo because two
+      unrelated numbers happened to be close. Numeric proximity is not analogy.
+
+   An analogue is now returned only where the active structure HAS one. TAIWAN is
+   the platform's `unpriced` tier precisely because no clean market analogue exists
+   — asserting one here would contradict the tier on the same screen. It returns
+   null and the caller renders the absence honestly.                              */
 function getHistoricalAnalog() {
-  const brent = (tickerData.find(t=>t.id==='BRENT')||{}).price||121;
-  const oilPct = ((brent/78)-1)*100;
-  let best = HISTORICAL_ANALOGS[0], bestDiff = Infinity;
+  if ((chrome().analogKind || 'oil') !== 'oil') return null;
+  const b = tickerData.find(t => t.id === 'BRENT');
+  if (!b || b.stale) return null;                 // no confirmed price, no match
+  const anchor = (STRUCTURE_STATE && STRUCTURE_STATE.brentAnchor) || 70;
+  const oilPct = ((b.price / anchor) - 1) * 100;
+  let best = null, bestDiff = Infinity;
   HISTORICAL_ANALOGS.forEach(a => {
     const diff = Math.abs(a.oilSpike - oilPct);
     if (diff < bestDiff) { bestDiff = diff; best = a; }
@@ -2966,12 +3545,12 @@ async function fetchFinnhubTicker() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   STOCK INSIGHTS POPUP — Gemini AI + Finnhub live prices
+   STOCK INSIGHTS POPUP — AI narration + live prices
    Opens when any country is clicked.
    Maps country → relevant investable stocks.
-   Calls /api/analyze (Gemini) for AI insights.
+   Calls /api/analyze for AI insights.
    Calls /api/market (Finnhub) for live prices.
-   Falls back to Grok (/api/whatif) if Gemini fails.
+   Falls back to /api/whatif if the primary path fails.
    ════════════════════════════════════════════════════════════ */
 
 /* Country → curated list of investable stocks */
@@ -3071,7 +3650,7 @@ async function openStockPopup(countryName) {
     '\n{' +
     '\n  "theme": "2-sentence macro theme for ' + countryName + ' in this scenario",' +
     '\n  "stocks": [' +
-    '\n    {"sym":"TICKER","signal":"BUY|HOLD|SELL|WATCH","reason":"one sentence, quantitative"},' +
+    '\n    {"sym":"TICKER","signal":"BENEFICIARY|WATCH|EXPOSED","reason":"one sentence, quantitative"},' +
     '\n    ... (include 3-4 stocks)' +
     '\n  ],' +
     '\n  "risk": "one sentence key risk to this view"' +
@@ -3079,7 +3658,7 @@ async function openStockPopup(countryName) {
     '\nReturn JSON only. No markdown. No extra text.';
 
   let aiResult = null;
-  // Try Gemini first via /api/analyze
+  // Primary path
   try {
     const r = await fetch('/api/analyze', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -3091,7 +3670,7 @@ async function openStockPopup(countryName) {
     }
   } catch(e) {}
 
-  // Fallback to Grok/Gemini via /api/whatif
+  // Fallback path
   if (!aiResult) {
     try {
       const r = await fetch('/api/whatif', {
@@ -3139,7 +3718,18 @@ async function openStockPopup(countryName) {
     const pct  = lp ? lp.percentChange : null;
     const dir  = pct != null ? (pct >= 0 ? 'up' : 'dn') : '';
     const chgStr = pct != null ? (pct>=0?'+':'')+pct.toFixed(2)+'%' : '';
-    const signalColor = st.signal==='BUY'?'var(--green)': st.signal==='SELL'?'var(--red)': st.signal==='HOLD'?'var(--amber)':'var(--cyan)';
+    /* House vocabulary: ▲ Beneficiary / ● Watch / ▼ Exposed. Buy/Hold/Sell is not
+       used anywhere else on this platform and reads as a recommendation the product
+       does not make. Legacy values are still mapped so a cached or older response
+       renders rather than falling through to an unstyled label. */
+    const SIGNAL_MAP = {
+      BENEFICIARY:{t:'▲ Beneficiary', c:'var(--green)'}, BUY:{t:'▲ Beneficiary', c:'var(--green)'},
+      EXPOSED:    {t:'▼ Exposed',     c:'var(--red)'},   SELL:{t:'▼ Exposed',    c:'var(--red)'},
+      WATCH:      {t:'● Watch',       c:'var(--amber)'}, HOLD:{t:'● Watch',      c:'var(--amber)'},
+    };
+    const sig = SIGNAL_MAP[String(st.signal||'').toUpperCase()] || { t:'● Watch', c:'var(--amber)' };
+    st.signal = sig.t;
+    const signalColor = sig.c;
     out += '<div class="sp-stock-row">' +
       '<span class="sp-sym">' + escHtml(st.sym) + '</span>' +
       '<span class="sp-name">' + escHtml(stockName) + '</span>' +
@@ -3349,13 +3939,62 @@ function applyStructureState(s) {
   redrawAll();
 }
 
-/* Re-run every renderer that depends on stress/scenario. Guarded individually so one
-   missing function can never take the whole frame down. */
+/* Re-run every renderer that depends on structure / scenario / horizon.
+   ──────────────────────────────────────────────────────────────────────────────
+   PHASE 1 POST-MORTEM. The first version of this function dispatched twelve
+   renderer names through a string table: paintGlobe, updateGlobeColors,
+   refreshLayer, applyLayer, updateArcs, updateShockTransmission,
+   updateMarketTicker, renderCountryPanel, renderInsights, updateScenarioBanner,
+   updateChokepoints, renderOpportunities. NONE of those functions exist in this
+   file. The guard tested `typeof window[fn] === 'function'` and skipped silently,
+   so every redraw was a twelve-way no-op and the globe never repainted on a
+   structure or scenario change. The bridge looked wired and was not.
+
+   Two changes stop that recurring:
+     1. The names below are the REAL renderers, verified to resolve.
+     2. The guard now SEPARATES the two failure modes. A renderer that does not
+        exist is a WIRING bug and gets console.error; a renderer that exists and
+        threw is a RUNTIME bug and gets console.warn. A guard that cannot tell
+        those apart is worse than no guard, because it converts a wiring failure
+        into silence.
+   Gate G2 in the build harness re-checks every name here against the file.       */
 function redrawAll() {
-  const safe = fn => { try { if (typeof window[fn] === 'function') window[fn](); } catch(e) { console.warn('[geo] '+fn, e.message); } };
-  ['paintGlobe','updateGlobeColors','refreshLayer','renderCountryPanel','updateShockTransmission',
-   'updateMarketTicker','updateChokepoints','renderInsights','updateScenarioBanner','applyLayer',
-   'updateArcs','renderOpportunities'].forEach(safe);
+  const run = (label, fn) => {
+    if (typeof fn !== "function") {
+      console.error('[geo][WIRING] renderer not defined: ' + label + ' — redraw is incomplete');
+      return;
+    }
+    try { fn(); } catch (e) { console.warn('[geo][RENDER] ' + label + ' threw: ' + e.message); }
+  };
+
+  // Globe surface — setLayer() re-applies the active layer AND the arc set.
+  run('refreshGlobe',            typeof refreshGlobe            === "function" ? refreshGlobe            : null);
+
+  // Shock propagation panel (was the phantom 'updateShockTransmission').
+  run('updateShockNodes',        typeof updateShockNodes        === "function" ? updateShockNodes        : null);
+  run('buildShockImpactList',    typeof buildShockImpactList    === "function" ? buildShockImpactList    : null);
+  run('updateShockEngineMessage',typeof updateShockEngineMessage=== "function" ? updateShockEngineMessage: null);
+
+  // Ticker + sidebar (was the phantom 'updateMarketTicker').
+  run('updateTicker',            typeof updateTicker            === "function" ? updateTicker            : null);
+  run('updateSidebarMetrics',    typeof updateSidebarMetrics    === "function" ? updateSidebarMetrics    : null);
+
+  // Alerts / opportunities (were 'renderInsights' / 'updateScenarioBanner' / 'renderOpportunities').
+  run('buildAlertList',          typeof buildAlertList          === "function" ? buildAlertList          : null);
+  run('updateAlertScroll',       typeof updateAlertScroll       === "function" ? updateAlertScroll       : null);
+  run('buildOpportunityList',    typeof buildOpportunityList    === "function" ? buildOpportunityList    : null);
+
+  // Structure-keyed chrome: shock-node names, chokepoint cards, timeline phase,
+  // sidebar market rows. 'updateChokepoints' was dispatched but never written;
+  // rather than leave a phantom, it is now real and folded in here.
+  run('updateChokepoints',       typeof updateChokepoints       === "function" ? updateChokepoints       : null);
+  run('applyStructureChrome',    typeof applyStructureChrome    === "function" ? applyStructureChrome    : null);
+
+  // Country panel (was the phantom 'renderCountryPanel'). Only if one is open.
+  if (selectedCountry) {
+    run('openCountryPanel', typeof openCountryPanel === "function"
+      ? () => openCountryPanel(selectedCountry) : null);
+  }
 }
 
 window.addEventListener('message', (e) => {
