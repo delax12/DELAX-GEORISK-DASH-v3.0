@@ -42,6 +42,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-wrap:wrap}
 .brand{font-family:var(--disp);font-weight:800;letter-spacing:.04em;font-size:26px;line-height:.9;text-transform:uppercase}
 .brand small{color:var(--cyan);font-size:.5em;letter-spacing:.3em;display:block;font-weight:600}
+.ed-back{font-family:var(--disp);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);text-decoration:none;border:1px solid var(--cyan);border-radius:3px;
+  padding:3px 10px;background:rgba(45,226,230,.08);white-space:nowrap;transition:background .15s,box-shadow .15s}
+.ed-back:hover,.ed-back:focus-visible{background:rgba(45,226,230,.18);box-shadow:0 0 10px rgba(45,226,230,.25);outline:none}
 .struct{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--dim);letter-spacing:.12em;text-transform:uppercase}
 .struct .live{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 2s infinite}
 @keyframes pulse{50%{opacity:.35}}
@@ -151,8 +155,10 @@ a{color:var(--cyan);text-decoration:none}
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><small>DELAX Geo-Risk</small>Exposure Desk</div>
+    <!-- Brand links home; the Exposure Desk had no route back to the dashboard. -->
+    <a class="brand" href="/" style="text-decoration:none;color:inherit" title="Back to DELAX GEO-RISK dashboard"><small>DELAX Geo-Risk</small>Exposure Desk</a>
     <div class="struct" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <a href="/" class="ed-back" title="Back to the main dashboard">← Dashboard</a>
       <span><span class="live"></span> Active structure: <b id="structName">—</b></span>
       <span id="structSwitch" style="display:inline-flex;gap:5px"></span>
       <span id="tierBadge" style="font-size:.55rem;letter-spacing:.08em;padding:2px 8px;
@@ -222,7 +228,7 @@ a{color:var(--cyan);text-decoration:none}
 
   <footer>
     <span class="prov" id="prov">Live data: connecting…</span><br>
-    <b>Methodology.</b> Your book is repriced against the structure's per-channel shock vectors and sector betas — computed in your browser, no live data needed for the score. Live prices via the DELAX snapshot feed.<br>
+    <a href="/#transparencyPanel" style="color:var(--cyan);text-decoration:none;font-weight:700;border-bottom:1px solid transparent" onmouseover="this.style.borderBottomColor='var(--cyan)'" onmouseout="this.style.borderBottomColor='transparent'">Methodology &amp; model assumptions →</a> Your book is repriced against the structure's per-channel shock vectors and sector betas — computed in your browser, no live data needed for the score. Live prices via the DELAX snapshot feed.<br>
     Illustrative geopolitical stress-testing for research only. Not investment advice.
   </footer>
 </div>
