@@ -63,7 +63,7 @@ else ok('DOMContentLoaded handler ran without throwing');
 
 /* The handler aborts on first throw, so completion is proved by observing the
    callbacks registered at the END of it. initGlobe is the one that matters. */
-const REQUIRED_TIMEOUTS  = ['initGlobe', 'fetchGDELTRings', 'fetchLiveAPIs', 'fetchFinnhubTicker'];
+const REQUIRED_TIMEOUTS  = ['initGlobe', 'fetchGDELTRings', 'fetchLiveAPIs', 'fetchFinnhubTicker', 'fetchDailyMarketRows'];
 const REQUIRED_INTERVALS = ['updateClock', 'refreshMarkets', 'buildShockImpactList', 'updateShockEngineMessage'];
 
 REQUIRED_TIMEOUTS.forEach(n => scheduled.timeouts.includes(n)

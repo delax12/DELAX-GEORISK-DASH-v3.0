@@ -56,6 +56,10 @@
   --left-w:    220px;
   --right-w:   340px;
   --bottom-h:  240px;
+  /* Expanded widths — applied by the panel-expand controller. Capped in vw so the
+     globe always keeps a workable center on any screen. */
+  --left-w-expanded:  min(46vw, 560px);
+  --right-w-expanded: min(48vw, 640px);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -188,6 +192,50 @@ body::before {
 }
 #left-panel::-webkit-scrollbar { width: 3px; }
 #left-panel::-webkit-scrollbar-thumb { background: var(--border-hi); }
+
+/* ── PANEL EXPANSION ───────────────────────────────────────────────────────────
+   Push-and-widen: #app overrides --left-w / --right-w, the grid re-flows, and the
+   globe's 1fr center shrinks to fit. Only one side expands at a time so the globe
+   always keeps a center column. A width transition on #app animates the push; the
+   globe canvas is re-fitted in JS on transitionend (CSS cannot resize WebGL). */
+#app { transition: grid-template-columns .28s cubic-bezier(.4,0,.2,1); }
+#app.left-expanded  { grid-template-columns: var(--left-w-expanded) 1fr var(--right-w); }
+#app.right-expanded { grid-template-columns: var(--left-w) 1fr var(--right-w-expanded); }
+
+/* When a panel is expanded, its cramped 8-9px readouts scale up — this is the part
+   that actually answers the tiny-font complaint; widening alone does not enlarge
+   text. Scoped so only the expanded panel grows. */
+#left-panel.expanded, #right-panel.expanded { font-size: 1.18em; }
+#left-panel.expanded .panel-title, #right-panel.expanded .panel-title { font-size: 11px; }
+#left-panel.expanded .cd-metric-val, #right-panel.expanded .cd-metric-val { font-size: 18px; }
+#left-panel.expanded .cd-metric-label, #right-panel.expanded .cd-metric-label { font-size: 8px; }
+#left-panel.expanded .cd-insight-item, #right-panel.expanded .cd-insight-item,
+#left-panel.expanded #cd-ai-body, #right-panel.expanded #cd-ai-body { font-size: 11px; line-height: 1.8; }
+#right-panel.expanded .cd-chart { height: 140px; }
+
+/* The expand toggle sits in each panel-section .panel-title. */
+.panel-expand-btn {
+  float: right; cursor: pointer; user-select: none;
+  font-size: 11px; line-height: 1; color: var(--text-dim);
+  border: 1px solid var(--border-hi); border-radius: 3px;
+  padding: 1px 5px; background: rgba(0,212,255,.05);
+  transition: color .15s, border-color .15s, background .15s;
+  pointer-events: auto;
+}
+.panel-expand-btn:hover { color: var(--cyan); border-color: var(--cyan); background: rgba(0,212,255,.12); }
+.panel-expand-btn.active { color: var(--cyan); border-color: var(--cyan); background: rgba(0,212,255,.16); }
+
+/* Expand is a desktop affordance. On mobile the panels are already full-screen
+   overlays, so the widen concept does not apply — hide the control and neutralise
+   the grid overrides. */
+@media (max-width: 768px) {
+  .panel-expand-btn { display: none; }
+  #app.left-expanded, #app.right-expanded {
+    grid-template-rows: var(--ticker-h) 1fr;
+    grid-template-columns: 1fr;
+  }
+  #left-panel.expanded, #right-panel.expanded { font-size: inherit; }
+}
 
 /* ── CENTER (GLOBE) ── */
 #globe-wrap {
@@ -974,7 +1022,8 @@ input  { cursor: pointer; }
 
     <!-- LAYER TOGGLES -->
     <div class="panel-section">
-      <div class="panel-title">Data Layers</div>
+      <div class="panel-title">Data Layers<span class="panel-expand-btn" id="expand-left"
+        onclick="togglePanelExpand('left')" title="Expand panel">⤢</span></div>
       <div class="layer-group">
         <div class="layer-btn macro active" data-layer="macro" onclick="setLayer('macro',this)">
           <span class="layer-icon">📊</span> MACRO
@@ -1070,7 +1119,7 @@ input  { cursor: pointer; }
       <div class="metric-row"><span class="metric-label">DXY (USD IDX)</span><span class="metric-val" id="m-dxy">—</span></div>
       <div class="metric-row"><span class="metric-label">GOLD</span><span class="metric-val" id="m-gold">—</span></div>
       <div class="metric-row"><span class="metric-label">US 10Y YIELD</span><span class="metric-val" id="m-10y">—</span></div>
-      <div class="metric-row"><span class="metric-label">EM CREDIT SPREAD</span><span class="metric-val" id="m-spread">—</span></div>
+      <div class="metric-row"><span class="metric-label">EM ETF (EEM)</span><span class="metric-val" id="m-spread">—</span></div>
     </div>
 
     <!-- CHOKEPOINTS -->
@@ -1196,6 +1245,9 @@ input  { cursor: pointer; }
 
   <!-- ══════════ RIGHT PANEL ══════════ -->
   <div id="right-panel">
+    <div class="panel-title" style="border-bottom:1px solid var(--border-hi)">Analysis<span
+      class="panel-expand-btn" id="expand-right" onclick="togglePanelExpand('right')"
+      title="Expand panel">⤢</span></div>
     <!-- Placeholder -->
     <div id="country-placeholder">
       <div class="icon">🌐</div>
@@ -1977,7 +2029,7 @@ const TICK_SYMBOLS = [
   { id:'SPX',   label:'S&P 500',  price:5280,   prev:5280,   unit:'',        live:false },
   { id:'VIX',   label:'VIX',      price:28.4,   prev:28.4,   unit:'',        live:false },
   { id:'DXY',   label:'USD IDX',  price:104.82, prev:104.82, unit:'',        live:false },
-  { id:'EMCS',  label:'EM SPREAD',price:385,    prev:385,    unit:'bp',      live:false },
+  { id:'EMCS',  label:'EM ETF',   price:42.0,   prev:42.0,   unit:'$',       live:false },
 ];
 /* Every row starts STALE. A row only loses that flag when a fetch confirms it, so a
    failed or slow provider degrades to a dash instead of to the 2026 seed value. */
@@ -2023,7 +2075,11 @@ function updateTicker() {
     const dispPrice = t.stale ? '—'
                     : t.price>1000 ? t.price.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0}) :
                       t.price>10   ? t.price.toFixed(2) : t.price.toFixed(3);
-    const liveDot = t.live
+    /* Dot requires a CONFIRMED price (!stale), not just the live flag. The two
+       used to disagree — GLD showed a green dot over a dashed price — because
+       `live` was set without a value landing. Gating on !stale makes the dot mean
+       exactly what it looks like: a real number is showing. */
+    const liveDot = (t.live && !t.stale)
       ? '<span style="width:4px;height:4px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);display:inline-block;margin-left:2px;vertical-align:middle"></span>'
       : '';
     return `<div class="tick-item">
@@ -2059,7 +2115,8 @@ function updateSidebarMetrics() {
   if(d) set('m-dxy',   live(d)?d.price.toFixed(2):'—',       '');
   if(g) set('m-gold',  live(g)?`$${g.price.toLocaleString('en',{maximumFractionDigits:0})}`:'—', live(g)?(g.price>2000?'up':''):'');
   if(y) set('m-10y',   live(y)?`${y.price.toFixed(2)}%`:'—', '');
-  if(s) set('m-spread',live(s)?`+${Math.round(s.price)}bp`:'—', live(s)?(s.price>350?'dn':'warn'):'');
+  // EMCS is the EEM ETF price now, not a bp spread — render as a dollar price.
+  if(s) set('m-spread',live(s)?`$${s.price.toFixed(2)}`:'—', '');
 }
 
 function updateShockNodes() {
@@ -2164,7 +2221,8 @@ function updateShockEngineMessage() {
   
   if (brent && brent.price > 120) alerts.push(`Oil spike to $${brent.price.toFixed(0)}`);
   if (vix && vix.price > 28) alerts.push(`VIX stress ${vix.price.toFixed(1)}`);
-  if (emcs && emcs.price > 350) alerts.push(`EM spreads +${Math.round(emcs.price)}bp`);
+  // (EM-spread bp alert retired: EMCS now carries the EEM ETF price, on which a
+  //  ">350bp" test is meaningless. No substitute spread source exists in-file.)
   
   /* Fallback message if no live data */
   if (alerts.length === 0) {
@@ -2303,9 +2361,58 @@ async function initGlobe() {
   };
   window.addEventListener('resize', syncSize);
   setTimeout(syncSize, 500); // correct any remaining 0-dim after paint
+  /* Global handle so the panel-expand controller can re-fit the WebGL canvas after
+     the grid animates. globe.gl reads its dimensions once; without this the canvas
+     stretches and blurs on expand/collapse. */
+  window.__refitGlobe = syncSize;
 
   // Position camera over Middle East
   globeInstance.pointOfView({ lat:25, lng:45, altitude:2.2 }, 1500);
+}
+
+/* ── PANEL EXPAND CONTROLLER ────────────────────────────────────────────────────
+   One side expanded at a time. Toggling one collapses the other so the globe never
+   loses its center column. After the grid transition finishes, the globe canvas is
+   re-fitted to the new center width — CSS resizes the container but not the WebGL
+   drawing buffer, so this call is what keeps the globe crisp. */
+let _expandedPanel = null;
+function togglePanelExpand(side) {
+  const app = document.getElementById('app');
+  if (!app) return;
+  const panelId = side === 'left' ? 'left-panel' : 'right-panel';
+  const panel = document.getElementById(panelId);
+  const btn   = document.getElementById('expand-' + side);
+  const other = side === 'left' ? 'right' : 'left';
+
+  const willExpand = _expandedPanel !== side;
+
+  // Always clear both first — collapsing the other side is what frees the globe.
+  ['left','right'].forEach(s => {
+    app.classList.remove(s + '-expanded');
+    const p = document.getElementById(s + '-panel');
+    const b = document.getElementById('expand-' + s);
+    if (p) p.classList.remove('expanded');
+    if (b) { b.classList.remove('active'); b.textContent = '⤢'; b.title = 'Expand panel'; }
+  });
+
+  if (willExpand) {
+    app.classList.add(side + '-expanded');
+    if (panel) panel.classList.add('expanded');
+    if (btn) { btn.classList.add('active'); btn.textContent = '⤡'; btn.title = 'Collapse panel'; }
+    _expandedPanel = side;
+  } else {
+    _expandedPanel = null;
+  }
+
+  // Re-fit the globe once the grid animation lands (+ a fallback for browsers that
+  // don't fire transitionend on grid-template-columns).
+  const app2 = app;
+  const done = () => { if (typeof window.__refitGlobe === 'function') window.__refitGlobe(); };
+  app2.addEventListener('transitionend', function te(e) {
+    if (e.propertyName && e.propertyName.indexOf('grid-template') === -1) return;
+    app2.removeEventListener('transitionend', te); done();
+  });
+  setTimeout(done, 340);   // fallback ≈ transition duration + margin
 }
 
 function buildHotspotData() {
@@ -3508,41 +3615,75 @@ window.addEventListener('resize', () => {
 });
 
 /* ════════════════════════════════════════════════════════════
-   FINNHUB LIVE TICKER
-   Replaces simulation for equity symbols.
-   Polls /api/market (Finnhub proxy) every 30s.
+   LIVE TICKER
+   Polls /api/market for all displayable rows. The proxy owns source selection
+   (EIA / Alpha Vantage / FRED / Finnhub) and symbol normalisation.
    ════════════════════════════════════════════════════════════ */
-const FINNHUB_EQUITY_IDS = {
-  'XOM':'XOM','LMT':'LMT','RTX':'RTX','DAL':'DAL','SPY':'SPX','GLD':'GOLD','SPX':'SPX',
-};
+/* FINNHUB_EQUITY_IDS retired: /api/market now normalises symbols server-side, so
+   the client no longer needs a per-symbol id map. See fetchTickerRows / MARKET_QUERY. */
 
-async function fetchFinnhubTicker() {
-  try {
-    // Batch fetch equities via the market proxy
-    const symbols = ['XOM','LMT','RTX','DAL','SPY','GLD','VIX'];
-    const results = await Promise.allSettled(
-      symbols.map(sym =>
-        fetch('/api/market?symbol=' + sym)
-          .then(r => r.ok ? r.json() : null)
-          .then(d => d && d.price ? { sym, price: d.price, change: d.change, pct: d.percentChange } : null)
-          .catch(() => null)
-      )
-    );
-    let updated = false;
-    results.forEach(r => {
-      if (r.status !== 'fulfilled' || !r.value) return;
-      const { sym, price, change, pct } = r.value;
-      const tickId = FINNHUB_EQUITY_IDS[sym];
-      if (!tickId) return;
-      tickerData = tickerData.map(t => {
-        if (t.id !== tickId) return t;
-        updated = true;
-        return { ...t, prev: t.price, price: parseFloat(price.toFixed(2)), live: true, finnhub: true };
-      });
+/* ══════════════════════════════════════════════════════════════════════════════
+   LIVE TICKER (v2) — full-coverage single-source fetch.
+   ──────────────────────────────────────────────────────────────────────────────
+   The old version fetched only 7 equity symbols and dropped VIX on a missing map
+   key, so the strip dashed BRENT, WTI, NAT GAS, DXY, VIX, EM and S&P forever — not
+   because the data was unavailable, but because it was never requested.
+
+   /api/market was upgraded (Jun 2026) to route each of those to a real source:
+   BRENT/WTI -> EIA spot, NG -> Alpha Vantage, DXY -> FRED, VIX/SPX/EMCS -> Finnhub
+   via ^VIX / SPY / EEM. All of them return the SAME uniform payload shape, so the
+   client no longer needs a per-symbol map — the endpoint owns normalisation. We
+   just ask for the row id and store what comes back.
+
+   CADENCE. The commodity/index rows are DAILY series behind a 6h edge cache;
+   polling them every 30s only burns edge requests to redraw an identical number.
+   So there are two fetch tiers: equities on the fast timer, daily series on a slow
+   one. See the schedulers in the boot block.
+
+   HONESTY (unchanged from Batch 2.2). A row goes live ONLY when a price actually
+   lands. A failed or slow fetch leaves it `stale`, which updateTicker() renders as
+   an em dash — never the seed value drifting under a live dot.                    */
+
+/* Rows served through /api/market. The `id` is both our ticker id and the symbol
+   the endpoint keys on — the map is gone because the backend normalises now. */
+const TICKER_FAST = ['XOM','LMT','RTX','DAL','SPY','GOLD','VIX','EMCS'];   // equities/ETFs, 30s
+const TICKER_SLOW = ['BRENT','WTI','NG','DXY'];                            // daily series, 10min
+
+/* The endpoint keys GLD as 'GLD' and S&P as 'SPX'; our row ids are GOLD and SPX.
+   One tiny id->query map, only where the two genuinely differ. */
+const MARKET_QUERY = { GOLD:'GLD', SPX:'SPX', EMCS:'EMCS', SPY:'SPX' };
+
+async function fetchTickerRows(ids) {
+  const results = await Promise.allSettled(
+    ids.map(id => {
+      const q = MARKET_QUERY[id] || id;
+      return fetch('/api/market?symbol=' + encodeURIComponent(q))
+        .then(r => r.ok ? r.json() : null)
+        .then(d => (d && typeof d.price === 'number') ? { id, d } : null)
+        .catch(() => null);
+    })
+  );
+  let updated = false;
+  results.forEach(r => {
+    if (r.status !== 'fulfilled' || !r.value) return;
+    const { id, d } = r.value;
+    tickerData = tickerData.map(t => {
+      if (t.id !== id) return t;
+      updated = true;
+      // stale:false is the affirmative "a price landed" flag the renderer keys on.
+      return { ...t, prev: t.price, price: parseFloat(Number(d.price).toFixed(4)),
+               live: true, stale: false };
     });
-    if (updated) updateTicker();
-  } catch(e) { /* non-fatal — jitter continues */ }
+  });
+  if (updated) { updateTicker(); updateSidebarMetrics(); }
 }
+
+/* Kept as the equity-tier entry point so existing schedulers keep working. */
+async function fetchFinnhubTicker() { return fetchTickerRows(TICKER_FAST); }
+
+/* Daily-cadence tier: BRENT/WTI/NG/DXY. Also the single owner of Brent/WTI now —
+   the old fetchLiveAPIs() EIA path is retired below to stop the two racing. */
+async function fetchDailyMarketRows() { return fetchTickerRows(TICKER_SLOW); }
 
 /* ════════════════════════════════════════════════════════════
    STOCK INSIGHTS POPUP — AI narration + live prices
@@ -3854,15 +3995,22 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(fetchLiveAPIs, 5 * 60 * 1000);
 
   // Finnhub live equity prices — fetch on load + every 30s
+  // Equity tier — on load, then every 30s (intraday-liquid symbols).
   setTimeout(fetchFinnhubTicker, 3000);
   setInterval(fetchFinnhubTicker, 30000);
+  // Daily tier — BRENT/WTI/NG/DXY. On load, then every 10 min: these are daily
+  // series behind a 6h edge cache, so a faster poll only redraws an identical
+  // number and spends edge requests. 10 min keeps them fresh without waste.
+  setTimeout(fetchDailyMarketRows, 4500);
+  setInterval(fetchDailyMarketRows, 10 * 60 * 1000);
 });
 
 /* Fetch live market data from Vercel proxy endpoints */
 async function fetchLiveAPIs() {
   try {
-    const [eiaRes, mktRes] = await Promise.allSettled([
-      fetch('/api/eia-oil').then(r => r.ok ? r.json() : null),
+    /* eia-oil dropped from this call — /api/market owns BRENT/WTI now. This path
+       fetches only the macro bundle for the sidebar 10Y row. */
+    const [mktRes] = await Promise.allSettled([
       fetch('/api/market-data?type=all').then(r => r.ok ? r.json() : null),
     ]);
     // BATCH A FIX (May 2026): route WTI -> WTI ticker, Brent -> BRENT ticker.
@@ -3870,21 +4018,10 @@ async function fetchLiveAPIs() {
     // (which is WTI/RWTC) to the BRENT row, causing the visible mismatch
     // between the main header WTI pill and this iframe's WTI sidebar metric.
     // The /api/eia-oil endpoint now returns nested {wti, brent} objects.
-    if (eiaRes.status === 'fulfilled' && eiaRes.value) {
-      const v = eiaRes.value;
-      if (v.wti && v.wti.price) {
-        tickerData = tickerData.map(t => t.id==='WTI'
-          ? { ...t, prev: t.price, price: v.wti.price, live: true }
-          : t);
-      }
-      if (v.brent && v.brent.price) {
-        tickerData = tickerData.map(t => t.id==='BRENT'
-          ? { ...t, prev: t.price, price: v.brent.price, live: true }
-          : t);
-      }
-      // Note: natgas removed — EIA spot endpoint doesn't return it on this path.
-      // NG ticker continues to be driven by jitter simulation.
-    }
+    /* EIA BRENT/WTI handling retired here. Both now come through
+       /api/market?symbol=BRENT|WTI (same EIA source, same 6h edge cache) on the
+       daily tier, so running this branch too just raced two writers to the same
+       two rows. fetchLiveAPIs now owns only the macro sidebar values below. */
     if (mktRes.status === 'fulfilled' && mktRes.value?.results) {
       const m = mktRes.value.results;
       if (m.macro) {
