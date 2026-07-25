@@ -373,6 +373,38 @@ body::before {
 .cd-risk-badge.risk-uncovered {
   background: rgba(38,52,74,.5); border-color: #35476a; color: #7d92b3;
 }
+.share-card-btn {
+  font-family: var(--mono, monospace); font-size: 9px; font-weight: 700; letter-spacing: .1em;
+  color: var(--cyan); background: rgba(0,229,255,.08);
+  border: 1px solid var(--cyan); border-radius: 3px;
+  padding: 2px 8px; margin-left: 8px; cursor: pointer; flex: 0 0 auto;
+  transition: background .15s, box-shadow .15s;
+}
+.share-card-btn:hover { background: rgba(0,229,255,.18); box-shadow: 0 0 10px rgba(0,229,255,.3); }
+@media (max-width: 768px) { .share-card-btn { font-size: 10px; padding: 3px 9px; margin-left: 5px; } }
+
+/* Preview modal for the generated card. */
+#shareCardModal {
+  position: fixed; inset: 0; z-index: 900; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(1,6,10,.86); backdrop-filter: blur(3px); padding: 20px;
+}
+#shareCardModal.open { display: flex; }
+#shareCardModal .scm-inner {
+  background: var(--bg-panel); border: 1px solid var(--border-hi); border-radius: 6px;
+  padding: 16px; max-width: 680px; width: 100%; box-shadow: 0 0 40px rgba(0,0,0,.6);
+}
+#shareCardModal img { width: 100%; height: auto; border-radius: 4px; display: block; border: 1px solid var(--border); }
+#shareCardModal .scm-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+#shareCardModal .scm-actions button, #shareCardModal .scm-actions a {
+  font-family: var(--mono, monospace); font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  padding: 7px 12px; border-radius: 3px; cursor: pointer; text-decoration: none;
+  border: 1px solid var(--border-hi); background: rgba(0,229,255,.06); color: var(--text-mid);
+  transition: color .15s, border-color .15s, background .15s;
+}
+#shareCardModal .scm-actions .primary { color: var(--cyan); border-color: var(--cyan); background: rgba(0,229,255,.14); }
+#shareCardModal .scm-actions button:hover, #shareCardModal .scm-actions a:hover { color: var(--text-hi); border-color: var(--cyan); }
+#shareCardModal .scm-close { margin-left: auto; }
 .geo-font-ctl { display:flex; gap:2px; margin-left:8px; flex:0 0 auto; }
 .geo-font-ctl button {
   font-family: var(--mono, monospace); font-size: 9px; font-weight:700;
@@ -1057,7 +1089,20 @@ input  { cursor: pointer; }
     <div class="ticker-status">
       <div class="pulse-dot"></div> LIVE SIM
     </div>
-    <!-- Named by applyStructureState() from the parent's STRUCTURE_STATE payload.
+    <!-- Share-card preview modal (populated by generateShareCard). -->
+<div id="shareCardModal" onclick="if(event.target===this)closeShareCard()">
+  <div class="scm-inner">
+    <img id="shareCardImg" alt="DELAX GEO-RISK share card"/>
+    <div class="scm-actions">
+      <a id="shareCardDownload" class="primary" download="delax-georisk-card.png">↓ Download PNG</a>
+      <button id="shareCardCopy" onclick="copyShareCard()">⧉ Copy image</button>
+      <button id="shareCardTweet" onclick="tweetShareCard()">↗ Post to X</button>
+      <button class="scm-close" onclick="closeShareCard()">✕ Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Named by applyStructureState() from the parent's STRUCTURE_STATE payload.
          Without this element the frame never says WHICH structure it is drawing,
          which is exactly how a Taiwan session can read as a Hormuz session. -->
     <div class="ticker-structure" id="structureBadge">HORMUZ · CALIBRATED</div>
@@ -1066,6 +1111,8 @@ input  { cursor: pointer; }
       <button type="button" id="geoFontDown" aria-label="Decrease text size">A−</button>
       <button type="button" id="geoFontUp"   aria-label="Increase text size">A+</button>
     </div>
+    <!-- Share card: exports the current model reading as a branded PNG that travels. -->
+    <button type="button" id="shareCardBtn" class="share-card-btn" title="Export a shareable card of this reading">◆ SHARE</button>
     <div class="ticker-track-wrap">
       <div class="ticker-track" id="tickerTrack">
         <!-- Populated by JS -->
@@ -2460,6 +2507,173 @@ function initGeoFontScale() {
   const dn = document.getElementById('geoFontDown');
   if (up) up.addEventListener('click', () => { scale = clamp(scale + 0.06); apply(); });
   if (dn) dn.addEventListener('click', () => { scale = clamp(scale - 0.06); apply(); });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SHARE CARD — builds a branded 1200x675 PNG of the CURRENT reading and offers
+   download / copy / post. Everything on the card comes from live STRUCTURE_STATE;
+   nothing is invented. If no structure has been posted yet (cold/standalone load)
+   the button explains that rather than emitting an empty card.
+   ══════════════════════════════════════════════════════════════════════════════ */
+let _shareCardBlobUrl = null;
+
+/* Real headline: the three highest-stress regions at the current horizon, taken
+   straight from the posted regionalStress series. No synthesis. */
+function shareCardTopRegions() {
+  const rs = STRUCTURE_STATE && STRUCTURE_STATE.regionalStress;
+  if (!rs) return [];
+  const i = Math.max(0, Math.round(timeHorizon || 0));
+  const rows = Object.keys(rs).map(region => {
+    const series = rs[region] || [];
+    const v = series[Math.min(series.length - 1, i)];
+    return (typeof v === 'number') ? { region, v } : null;
+  }).filter(Boolean).sort((a, b) => b.v - a.v);
+  return rows.slice(0, 3);
+}
+
+/* The epistemic line is the differentiator — it is what makes a screenshot of this
+   look like a serious instrument rather than a hot take. Pulled per structure. */
+function shareCardEpistemic() {
+  const sid = activeStructureId();
+  if (sid === 'hormuz-iran')
+    return 'EMPIRICAL — fitted to the 2026 Hormuz war. The war reached ceasefire; the crisis has not.';
+  if (sid === 'taiwan-strait')
+    return 'UNPRICED — analytical estimate of a never-observed event. The market is not pricing this.';
+  return String(activeTier() || '').toUpperCase();
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function buildShareCardSVG() {
+  const W = 1200, H = 675;
+  const name  = activeStructureName();
+  const tier  = String(activeTier() || '').toUpperCase();
+  const scen  = activeScenarioLabel();
+  const regions = shareCardTopRegions();
+  const epi   = shareCardEpistemic();
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  const tierColor = tier.indexOf('UNPRICED') > -1 ? '#FFB830' : '#00F085';
+
+  const regionRows = regions.map((r, idx) => {
+    const y = 366 + idx * 62;
+    const barW = Math.max(6, Math.min(1, r.v / 10) * 620);
+    const heat = r.v >= 7 ? '#FF5F6B' : r.v >= 4 ? '#FFB830' : '#00E5FF';
+    return `
+      <text x="70" y="${y}" font-family="'IBM Plex Mono',monospace" font-size="26" fill="#C8DCF0" font-weight="700">${esc(r.region)}</text>
+      <rect x="360" y="${y - 22}" width="620" height="14" rx="7" fill="#0d2840"/>
+      <rect x="360" y="${y - 22}" width="${barW}" height="14" rx="7" fill="${heat}"/>
+      <text x="1000" y="${y}" font-family="'IBM Plex Mono',monospace" font-size="26" fill="${heat}" font-weight="700">${r.v.toFixed(1)}</text>`;
+  }).join('');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#04101c"/><stop offset="1" stop-color="#010a12"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00E5FF"/><stop offset="1" stop-color="#7d2bff"/>
+    </linearGradient>
+  </defs>
+  <rect width="${W}" height="${H}" fill="url(#bg)"/>
+  <rect x="0" y="0" width="${W}" height="6" fill="url(#edge)"/>
+  <rect x="0" y="${H-4}" width="${W}" height="4" fill="#0d2840"/>
+
+  <!-- brand -->
+  <text x="70" y="92" font-family="'Bebas Neue',sans-serif" font-size="52" letter-spacing="4" fill="#FFFFFF">DELAX <tspan fill="#00E5FF">GEO-RISK</tspan></text>
+  <text x="70" y="122" font-family="'IBM Plex Mono',monospace" font-size="18" letter-spacing="3" fill="#8BADC8">CROSS-ASSET GEOPOLITICAL RISK INTELLIGENCE</text>
+
+  <!-- structure + tier -->
+  <text x="70" y="214" font-family="'Bebas Neue',sans-serif" font-size="66" letter-spacing="2" fill="#FFFFFF">${esc(String(name).toUpperCase())}</text>
+  <rect x="70" y="238" width="${20 + tier.length * 15}" height="34" rx="4" fill="none" stroke="${tierColor}" stroke-width="2"/>
+  <text x="82" y="262" font-family="'IBM Plex Mono',monospace" font-size="20" letter-spacing="2" fill="${tierColor}" font-weight="700">${esc(tier)}</text>
+  <text x="${110 + tier.length * 15}" y="262" font-family="'IBM Plex Mono',monospace" font-size="20" letter-spacing="1" fill="#C8DCF0">SCENARIO: ${esc(String(scen).toUpperCase())}</text>
+
+  <!-- section label -->
+  <text x="70" y="322" font-family="'IBM Plex Mono',monospace" font-size="18" letter-spacing="3" fill="#8BADC8">REGIONAL STRESS · TOP EXPOSURES (0–10)</text>
+  ${regionRows || '<text x="70" y="366" font-family="\'IBM Plex Mono\',monospace" font-size="24" fill="#8BADC8">No structure loaded — open from the dashboard.</text>'}
+
+  <!-- epistemic line: the differentiator -->
+  <rect x="70" y="556" width="1060" height="2" fill="#1a3a52"/>
+  <text x="70" y="592" font-family="'IBM Plex Mono',monospace" font-size="19" fill="#C8DCF0">${esc(epi)}</text>
+
+  <!-- footer: handle + url + stamp -->
+  <text x="70" y="636" font-family="'IBM Plex Mono',monospace" font-size="20" fill="#00E5FF" font-weight="700">delaxcom.org</text>
+  <text x="360" y="636" font-family="'IBM Plex Mono',monospace" font-size="20" fill="#8BADC8">@DelaxGeoRisk</text>
+  <text x="1130" y="636" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="18" fill="#5a7299">${esc(stamp)}</text>
+</svg>`;
+}
+
+/* Rasterise the SVG to a PNG blob via an offscreen canvas. */
+function renderShareCardPNG() {
+  return new Promise((resolve, reject) => {
+    const svg = buildShareCardSVG();
+    const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200; canvas.height = 675;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#010a12'; ctx.fillRect(0, 0, 1200, 675);
+      ctx.drawImage(img, 0, 0, 1200, 675);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('canvas export failed')), 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVG render failed')); };
+    img.src = url;
+  });
+}
+
+async function generateShareCard() {
+  if (!STRUCTURE_STATE) {
+    alert('Open GEO Intel from the dashboard first — the card is built from the active structure.');
+    return;
+  }
+  const btn = document.getElementById('shareCardBtn');
+  if (btn) { btn.textContent = '◆ …'; btn.disabled = true; }
+  try {
+    const png = await renderShareCardPNG();
+    if (_shareCardBlobUrl) URL.revokeObjectURL(_shareCardBlobUrl);
+    _shareCardBlobUrl = URL.createObjectURL(png);
+    const imgEl = document.getElementById('shareCardImg');
+    const dl    = document.getElementById('shareCardDownload');
+    if (imgEl) imgEl.src = _shareCardBlobUrl;
+    if (dl)    dl.href   = _shareCardBlobUrl;
+    document.getElementById('shareCardModal').classList.add('open');
+  } catch (e) {
+    alert('Could not build the card: ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = '◆ SHARE'; btn.disabled = false; }
+  }
+}
+
+function closeShareCard() {
+  const m = document.getElementById('shareCardModal');
+  if (m) m.classList.remove('open');
+}
+
+async function copyShareCard() {
+  try {
+    const png = await renderShareCardPNG();
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': png })]);
+      const b = document.getElementById('shareCardCopy');
+      if (b) { const t = b.textContent; b.textContent = '✓ Copied'; setTimeout(() => b.textContent = t, 1800); }
+    } else {
+      alert('Copy not supported here — use Download instead.');
+    }
+  } catch (e) { alert('Copy failed — use Download instead.'); }
+}
+
+/* Opens X's composer with pre-filled text; the user attaches the downloaded/copied
+   image. (X does not accept image bytes via URL, so text-intent + image paste is the
+   reliable path.) */
+function tweetShareCard() {
+  const name = activeStructureName();
+  const scen = activeScenarioLabel();
+  const text = `${name} · ${scen} — cross-asset geopolitical risk read via DELAX GEO-RISK. delaxcom.org`;
+  window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'noopener');
 }
 
 function togglePanelExpand(side) {
@@ -4065,6 +4279,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Readability control — restore saved scale, wire A-/A+ steppers.
   initGeoFontScale();
+
+  // Share-card button.
+  const _scb = document.getElementById('shareCardBtn');
+  if (_scb) _scb.addEventListener('click', generateShareCard);
 
   // Set initial active layer
   setLayer('macro', document.querySelector('.layer-btn.macro'));
