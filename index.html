@@ -2691,11 +2691,15 @@ async function fetchEIABrent() {
   }
 }
 
+/* Formerly random-walked the oil PROJECTION curves ±1.5% on EIA failure. Those
+   curves are the user-facing Baseline/Optimistic/Pessimistic chart an investor reads
+   prices off, so the jitter was fabricating movement on a decision surface purely to
+   make failed data look alive — the same pattern removed from the GEO Intel ticker.
+   On EIA failure we now show the STABLE calibrated seed, unchanged, still labelled
+   "model estimate active" by the toast. No jitter; honest static projection. */
 function applyModelJitter() {
-  const j = () => 1 + (Math.random()-0.5)*0.03;
-  ['baseline','optimistic','pessimistic'].forEach(s => {
-    OIL_DATA[s] = OIL_DATA[s].map(v => Math.round(v*j()));
-  });
+  /* intentionally a no-op: keep the calibrated OIL_DATA seed as-is. Name retained
+     so the two existing call sites (404 and catch) need no change. */
 }
 
 /* ═════════════════════════════════════════

@@ -29,7 +29,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed — use POST' });
 
   // Provider chain — tried in order with runtime fallback (not key-presence).
-  // Groq leads: its free tier is far more generous than Gemini's daily cap.
+  // Primary provider leads: its free tier is the most generous; runtime fallback follows.
   const PROVIDERS = [
     { name: 'groq',      key: process.env.GROQ_API_KEY },
     { name: 'gemini',    key: process.env.GEMINI_API_KEY },
