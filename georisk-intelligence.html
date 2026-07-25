@@ -17,6 +17,7 @@
 /* ════════════════════════════════════════════════════
    BLOOMBERG × CYBERPUNK DESIGN SYSTEM
    ════════════════════════════════════════════════════ */
+html { font-size: calc(16px * var(--geo-font-scale, 1)); }
 :root {
   /* ── Backgrounds — kept dark for Bloomberg aesthetic ── */
   --bg0:       #010a12;
@@ -48,6 +49,11 @@
   --text-mid:  #C8DCF0;   /* 9.5:1 — body text, descriptions, reasons */
   --text-dim:  #8BADC8;   /* 4.8:1 — muted labels (passes AA) */
 
+  /* Readability scale. 1rem = 16px * this. Default 1.12 raises the whole panel
+     type ramp ~12% over the old fixed px sizes — the fix for the tiny-font
+     complaint — while the control below lets density-focused users dial it back.
+     Mirrors index.html's --font-scale so the two surfaces behave the same. */
+  --geo-font-scale: 1.12;
   --mono: 'IBM Plex Mono', monospace;
   --orb:  'Orbitron', sans-serif;
   --blk:  'Bebas Neue', sans-serif;
@@ -93,6 +99,19 @@ body::before {
     linear-gradient(rgba(0,212,255,.018) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0,212,255,.018) 1px, transparent 1px);
   background-size: 32px 32px;
+}
+
+/* ── HIGH-CONTRAST MODE ─────────────────────────────────────────────────────────
+   Honours OS-level "increase contrast". The base palette already passes WCAG AA;
+   this lifts the dimmest tiers further and hardens borders for users who ask for it.
+   Invisible to everyone else. */
+@media (prefers-contrast: more) {
+  :root {
+    --text-dim:  #B4CEE6;   /* 4.8:1 -> ~7:1 */
+    --text-mid:  #E2EEFA;
+    --border:    #2f5a7e;
+    --border-hi: #4a7398;
+  }
 }
 
 /* ── MASTER LAYOUT ── */
@@ -168,9 +187,9 @@ body::before {
   border-right: 1px solid var(--border);
   height: var(--ticker-h);
 }
-.tick-sym { font-size: 9px; color: var(--text-mid); letter-spacing: .08em; font-weight: 700; }
-.tick-val { font-size: 12px; color: var(--text-hi); font-weight: 700; }
-.tick-chg { font-size: 9px; font-weight: 700; }
+.tick-sym { font-size: 0.55rem; color: var(--text-mid); letter-spacing: .08em; font-weight: 700; }
+.tick-val { font-size: 0.72rem; color: var(--text-hi); font-weight: 700; }
+.tick-chg { font-size: 0.55rem; font-weight: 700; }
 .tick-chg.up   { color: var(--green); }
 .tick-chg.dn   { color: var(--red); }
 .tick-chg.flat { color: var(--text-mid); }
@@ -192,6 +211,19 @@ body::before {
 }
 #left-panel::-webkit-scrollbar { width: 3px; }
 #left-panel::-webkit-scrollbar-thumb { background: var(--border-hi); }
+
+/* ── READABILITY FLOOR (base, non-expanded) ────────────────────────────────────
+   Raises the most-read panel prose above the old 8px floor by default. Scoped to
+   panel content so globe-overlay micro-labels and chart axis ticks stay compact.
+   Uses rem so the --geo-font-scale control moves these too. */
+#left-panel .panel-title, #right-panel .panel-title { font-size: 0.6rem; }
+#left-panel .cd-metric-val, #right-panel .cd-metric-val { font-size: 0.9rem; }
+#left-panel .cd-metric-label, #right-panel .cd-metric-label { font-size: 0.52rem; }
+#right-panel .cd-insight-item, #right-panel #cd-ai-body,
+#left-panel .cd-insight-item  { font-size: 0.6rem; line-height: 1.7; }
+#right-panel .opp-signal, #right-panel .opp-reason,
+#right-panel .cd-region, #right-panel .cd-name { font-size: 0.58rem; }
+.alert-item { font-size: 0.56rem; line-height: 1.6; }
 
 /* ── PANEL EXPANSION ───────────────────────────────────────────────────────────
    Push-and-widen: #app overrides --left-w / --right-w, the grid re-flows, and the
@@ -341,6 +373,16 @@ body::before {
 .cd-risk-badge.risk-uncovered {
   background: rgba(38,52,74,.5); border-color: #35476a; color: #7d92b3;
 }
+.geo-font-ctl { display:flex; gap:2px; margin-left:8px; flex:0 0 auto; }
+.geo-font-ctl button {
+  font-family: var(--mono, monospace); font-size: 9px; font-weight:700;
+  color: var(--text-dim); background: rgba(0,229,255,.05);
+  border: 1px solid var(--border-hi); border-radius: 3px;
+  padding: 1px 5px; cursor: pointer; line-height: 1.3;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.geo-font-ctl button:hover { color: var(--cyan); border-color: var(--cyan); background: rgba(0,229,255,.12); }
+@media (max-width: 768px) { .geo-font-ctl { margin-left:5px; } .geo-font-ctl button { font-size:10px; padding:2px 6px; } }
 .ticker-structure {
   font-family: var(--mono, monospace); font-size: 7px; letter-spacing: .14em;
   text-transform: uppercase; white-space: nowrap; padding: 2px 7px; border-radius: 3px;
@@ -348,7 +390,7 @@ body::before {
   background: rgba(0,212,255,.08); margin-left: 8px; flex: 0 0 auto;
 }
 @media (max-width: 768px) {
-  .ticker-structure { font-size: 6px; letter-spacing: .08em; padding: 2px 5px; margin-left: 5px; }
+  .ticker-structure { font-size: 7px; letter-spacing: .08em; padding: 2px 5px; margin-left: 5px; }
 }
 .scen-btn.active.base  { background:rgba(0,212,255,.08);  border-color:var(--cyan);  color:var(--cyan); }
 .scen-btn.active.esc   { background:rgba(255,61,74,.08);  border-color:var(--red);   color:var(--red); }
@@ -361,7 +403,7 @@ body::before {
   padding: 5px 0; border-bottom: 1px solid var(--border-hi);
 }
 .metric-row:last-child { border-bottom: none; }
-.metric-label { font-size: 8px; color: var(--text-mid); letter-spacing: .08em; font-weight: 600; }
+.metric-label { font-size: 0.56rem; color: var(--text-mid); letter-spacing: .08em; font-weight: 600; }
 .metric-val   { font-size: 11px; font-weight: 700; color: var(--text-hi); }
 .metric-val.up   { color: var(--green); }
 .metric-val.dn   { color: var(--red); }
@@ -436,14 +478,14 @@ body::before {
   font-family: var(--orb); font-size: 16px; font-weight: 700;
   margin-top: 3px; line-height: 1; color: var(--text-hi);
 }
-.cd-metric-sub { font-size: 8px; color: var(--text-mid); margin-top: 3px; font-weight: 500; }
+.cd-metric-sub { font-size: 0.55rem; color: var(--text-mid); margin-top: 3px; font-weight: 500; }
 
 .cd-chart-area {
   padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.cd-chart-title { font-size: 8px; color: var(--text-mid); letter-spacing: .12em; margin-bottom: 6px; font-weight: 700; }
+.cd-chart-title { font-size: 0.55rem; color: var(--text-mid); letter-spacing: .12em; margin-bottom: 6px; font-weight: 700; }
 .cd-chart { height: 80px; }
 
 .cd-insights {
@@ -799,6 +841,25 @@ input  { cursor: pointer; }
   display: none;
 }
 @media (max-width: 768px) {
+  /* ── MOBILE READABILITY & STACKING ──────────────────────────────────────────
+     Narrow screens congest the horizontal rows. Stack them so labels are not
+     cramped against values, and lift the base scale a touch more. */
+  :root { --geo-font-scale: 1.18; }
+
+  /* Scenario buttons: stack the P=xx% probability under the label instead of
+     squeezing it onto the same line. */
+  .scen-btn { flex-direction: column; align-items: flex-start; gap: 2px; padding: 7px 8px; }
+  .scen-prob { font-size: 8px; opacity: .8; }
+
+  /* Sidebar metric rows: label over value rather than side-by-side. */
+  .metric-row { flex-direction: column; align-items: flex-start; gap: 1px; }
+  .metric-row .metric-val { font-size: 0.72rem; }
+
+  /* Ticker items: a touch more breathing room and a readable floor. */
+  .tick-item { gap: 4px; padding: 0 8px; }
+  .tick-sym, .tick-chg { font-size: 0.6rem; }
+  .tick-val { font-size: 0.74rem; }
+
   /* Collapse grid to single column — globe fills everything */
   #app {
     grid-template-rows: var(--ticker-h) 1fr;
@@ -1000,6 +1061,11 @@ input  { cursor: pointer; }
          Without this element the frame never says WHICH structure it is drawing,
          which is exactly how a Taiwan session can read as a Hormuz session. -->
     <div class="ticker-structure" id="structureBadge">HORMUZ · CALIBRATED</div>
+    <!-- Readability control. Steps --geo-font-scale; persists to localStorage. -->
+    <div class="geo-font-ctl" title="Text size">
+      <button type="button" id="geoFontDown" aria-label="Decrease text size">A−</button>
+      <button type="button" id="geoFontUp"   aria-label="Increase text size">A+</button>
+    </div>
     <div class="ticker-track-wrap">
       <div class="ticker-track" id="tickerTrack">
         <!-- Populated by JS -->
@@ -2376,6 +2442,26 @@ async function initGlobe() {
    re-fitted to the new center width — CSS resizes the container but not the WebGL
    drawing buffer, so this call is what keeps the globe crisp. */
 let _expandedPanel = null;
+/* Readability scale control. Mirrors index.html's slider behaviour with a stepper:
+   clamps 0.9–1.5, persists to localStorage under a geo-specific key. Because panel
+   text is rem-based, setting the root variable rescales all of it live. */
+function initGeoFontScale() {
+  const KEY = 'delax-geo-font';
+  const clamp = v => Math.max(0.9, Math.min(1.5, v));
+  const read  = () => clamp(parseFloat(localStorage.getItem(KEY) || getComputedStyle(document.documentElement).getPropertyValue('--geo-font-scale') || '1.12'));
+  let scale = read();
+  const apply = () => {
+    document.documentElement.style.setProperty('--geo-font-scale', scale.toFixed(3));
+    try { localStorage.setItem(KEY, scale.toFixed(3)); } catch(e) {}
+    if (typeof window.__refitGlobe === 'function') window.__refitGlobe();
+  };
+  apply();
+  const up = document.getElementById('geoFontUp');
+  const dn = document.getElementById('geoFontDown');
+  if (up) up.addEventListener('click', () => { scale = clamp(scale + 0.06); apply(); });
+  if (dn) dn.addEventListener('click', () => { scale = clamp(scale - 0.06); apply(); });
+}
+
 function togglePanelExpand(side) {
   const app = document.getElementById('app');
   if (!app) return;
@@ -3976,6 +4062,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Update shock engine message every 8 seconds (rotate through GDELT/market alerts)
   updateShockEngineMessage();
   setInterval(updateShockEngineMessage, 8000);
+
+  // Readability control — restore saved scale, wire A-/A+ steppers.
+  initGeoFontScale();
 
   // Set initial active layer
   setLayer('macro', document.querySelector('.layer-btn.macro'));

@@ -41,9 +41,18 @@
   --amber:#f5a623; --amber-dim:#c47e10;
   --cyan:#00d4ff; --cyan-dim:#0099cc;
   --green:#00e676; --red:#ff3d4a; --yellow:#ffe040; --purple:#b388ff;
-  --text-pri:#e8edf5; --text-sec:#7a91b3; --text-dim:#5a7299;
+  --text-pri:#e8edf5; --text-sec:#7a91b3; --text-dim:#7189ad; /* was #5a7299 = 3.96:1, failed AA; #7189ad = 5.42:1 */
   --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --display:'Bebas Neue',sans-serif;
   --font-scale:1; /* controlled by font-size slider */
+}
+/* OS-level "increase contrast": brighten the dimmest tiers and harden borders.
+   Base palette already passes AA after the --text-dim fix above; this goes further
+   for users who ask for it, and is invisible otherwise. */
+@media (prefers-contrast: more) {
+  :root {
+    --text-sec:#9cb2d0; --text-dim:#9cb2d0;
+    --border:#3a5578;
+  }
 }
 /* Classic / light theme */
 [data-theme="classic"] {
@@ -458,7 +467,7 @@ body.beginner-mode body.beginner-mode
   position:sticky;top:0;z-index:1;border-radius:4px 4px 0 0}
 .sp-country-name{font-family:var(--display);font-size:26px;color:var(--amber);
   letter-spacing:.1em;line-height:1}
-.sp-subtitle{font-size:9px;color:var(--text-sec);letter-spacing:.1em;margin-top:5px;font-weight:600;text-transform:uppercase}
+.sp-subtitle{font-size:0.62rem;color:var(--text-sec);letter-spacing:.1em;margin-top:5px;font-weight:600;text-transform:uppercase}
 .sp-close{background:rgba(255,255,255,.06);border:1px solid var(--border);
   border-radius:50%;color:var(--text-sec);font-size:16px;cursor:pointer;
   width:28px;height:28px;display:flex;align-items:center;justify-content:center;
@@ -469,22 +478,22 @@ body.beginner-mode body.beginner-mode
   letter-spacing:.12em;padding:24px 0;justify-content:center;font-weight:700;font-family:var(--mono)}
 .sp-load-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);animation:pulse 1.2s infinite}
 .sp-section{margin-bottom:16px}
-.sp-sect-hdr{font-size:9px;color:var(--text-sec);letter-spacing:.16em;text-transform:uppercase;
+.sp-sect-hdr{font-size:0.62rem;color:var(--text-sec);letter-spacing:.16em;text-transform:uppercase;
   margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);font-weight:700;font-family:var(--mono)}
 .sp-stock-row{display:flex;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border-dim);
   gap:8px;border-radius:2px;transition:background .12s}
 .sp-stock-row:hover{background:rgba(0,212,255,.05)}
 .sp-stock-row:last-child{border-bottom:none}
 .sp-sym{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text-pri);min-width:55px}
-.sp-name{font-size:9px;color:var(--text-sec);flex:1;font-weight:500}
+.sp-name{font-size:0.62rem;color:var(--text-sec);flex:1;font-weight:500}
 .sp-price{font-family:var(--mono);font-size:11px;color:var(--cyan);min-width:62px;text-align:right;font-weight:700}
 .sp-chg{font-size:10px;min-width:55px;text-align:right;font-weight:700}
 .sp-chg.up{color:var(--green)}.sp-chg.dn{color:var(--red)}
-.sp-signal{font-size:9px;color:var(--text-sec);line-height:1.65;margin-top:4px;font-weight:500}
+.sp-signal{font-size:0.62rem;color:var(--text-sec);line-height:1.65;margin-top:4px;font-weight:500}
 .sp-signal strong{color:var(--amber);font-weight:700}
 .sp-ai-insight{margin-top:8px;padding:10px 12px;
   background:rgba(179,136,255,.08);border-left:3px solid var(--purple);border-radius:2px;
-  font-size:9px;color:var(--text-sec);line-height:1.7}
+  font-size:0.62rem;color:var(--text-sec);line-height:1.7}
 .sp-ai-insight strong{color:var(--purple);font-size:10px;font-weight:700;display:block;margin-bottom:4px}
 
 /* ══ EQUITIES TAB — Step 15 ══ */
