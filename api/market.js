@@ -1,263 +1,193 @@
-/**
- * /api/market.js — Vercel Serverless Function (Node.js / CommonJS)
- * ─────────────────────────────────────────────────────────────────
- * Live stock / commodity / index price proxy for DELAX GEO-RISK.
- *
- * COMMODITY/INDEX FIX (Jun 2026):
- *   BRENT, WTI, NG/NATGAS and DXY were mapped to Yahoo-style futures/index
- *   tickers (BZ=F, CL=F, NG=F, DX-Y.NYB). Finnhub's free tier cannot quote
- *   those (it serves equities/ETFs only), and the old code deliberately
- *   skipped the Alpha Vantage fallback for futures — so these four symbols
- *   had NO working source and always returned 502.
- *
- *   Now each is routed to a source that actually works, ahead of the
- *   Finnhub/AV equity path:
- *     • BRENT / WTI → EIA v2 petroleum spot (RBRTE / RWTC), daily.
- *     • NG / NATGAS → Alpha Vantage NATURAL_GAS commodity endpoint, daily.
- *     • DXY         → FRED DTWEXBGS (Nominal Broad US Dollar Index), daily.
- *   All three are daily series, so responses are edge-cached 6h — which also
- *   keeps the AV NATURAL_GAS call to ≤4/day, protecting the shared 25/day AV
- *   quota that the snapshot cron also draws on.
- *
- * Prior fixes retained: GLOBAL_QUOTE fallback, c=0→prevClose, no error caching.
- *
- * Sources: Finnhub (equities/ETFs) · Alpha Vantage · EIA · FRED
- */
-'use strict';
+// /api/market.js — DELAX GEO-RISK oil market endpoint
+// Dual benchmark (WTI + Brent), dual-source fallback chain.
+// Chain per benchmark:
+//   1. Yahoo Finance futures quote (CL=F / BZ=F) — near-real-time, no API key
+//   2. AlphaVantage daily spot (WTI / BRENT) — 1-day lag, uses ALPHAVANTAGE_API_KEY
+//   3. EIA official spot — authoritative but lagged, uses EIA_API_KEY, always labeled with its date
+// Rule: NEVER substitute one benchmark's value into the other's field.
+// If every source fails for a benchmark, that benchmark returns null and the
+// frontend should render "unavailable".
 
-/* Equity/ETF symbol normalisation (Finnhub-quotable). Commodity/index IDs are
-   handled by SPECIAL below, BEFORE this map is consulted. */
-const SYMBOL_MAP = {
-  SPX:  'SPY',   // S&P 500 ETF proxy
-  EMCS: 'EEM',   // EM ETF proxy for EM Credit Spread
-  VIX:  '^VIX',  // CBOE Volatility Index
+const AV_KEY = process.env.ALPHAVANTAGE_API_KEY;
+const EIA_KEY = process.env.EIA_API_KEY;
+
+// EIA v2 series IDs for daily spot prices
+const EIA_SERIES = {
+  wti: "RWTC",  // Cushing, OK WTI Spot Price FOB
+  brent: "RBRTE" // Europe Brent Spot Price FOB
 };
 
-/* Commodity & index symbols Finnhub free can't quote → dedicated sources. */
-const SPECIAL = {
-  BRENT:  { kind: 'eia',  series: 'RBRTE', name: 'Brent Crude Spot',        unit: 'USD/bbl'    },
-  WTI:    { kind: 'eia',  series: 'RWTC',  name: 'WTI Cushing Spot',        unit: 'USD/bbl'    },
-  NG:     { kind: 'avc',  fn: 'NATURAL_GAS', name: 'Henry Hub Natural Gas', unit: 'USD/MMBtu'  },
-  NATGAS: { kind: 'avc',  fn: 'NATURAL_GAS', name: 'Henry Hub Natural Gas', unit: 'USD/MMBtu'  },
-  DXY:    { kind: 'fred', series: 'DTWEXBGS', name: 'US Dollar Index (Broad)', unit: 'index'   },
-};
+const YAHOO_SYMBOLS = { wti: "CL=F", brent: "BZ=F" };
+const AV_FUNCTIONS = { wti: "WTI", brent: "BRENT" };
 
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin',  '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'GET')     return res.status(405).json({ error: 'Method not allowed' });
-
-  const rawSymbol = (req.query.symbol || '').toUpperCase().trim();
-  if (!rawSymbol) return res.status(400).json({ error: 'symbol query parameter required' });
-
-  /* ── 0. Commodity / index special-routing (daily data, cached 6h) ── */
-  const special = SPECIAL[rawSymbol];
-  if (special) {
-    try {
-      const result = await fetchSpecial(special);
-      if (result) {
-        res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
-        return res.status(200).json({ ...result, requestedSymbol: rawSymbol });
-      }
-    } catch (err) {
-      console.warn(`[market] special source failed for ${rawSymbol}:`, err.message);
-    }
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(502).json({ error: 'Price source failed', symbol: rawSymbol });
-  }
-
-  /* ── Equities / ETFs: Finnhub primary → Alpha Vantage fallback ── */
-  const symbol     = SYMBOL_MAP[rawSymbol] || rawSymbol;
-  const finnhubKey = process.env.FINNHUB_API_KEY;
-  const avKey      = process.env.ALPHA_VANTAGE_KEY;
-
-  if (finnhubKey) {
-    try {
-      const result = await fetchFinnhub(symbol, finnhubKey);
-      if (result) {
-        res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=15');
-        return res.status(200).json({ ...result, requestedSymbol: rawSymbol });
-      }
-    } catch (err) { console.warn('[market] Finnhub failed:', err.message); }
-  } else {
-    console.warn('[market] FINNHUB_API_KEY not set — skipping Finnhub');
-  }
-
-  const isFutures = symbol.endsWith('=F') || symbol.startsWith('^') || symbol.includes('-Y.');
-  if (avKey && !isFutures) {
-    try {
-      const result = await fetchAlphaVantage(symbol, avKey);
-      if (result) {
-        res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
-        return res.status(200).json({ ...result, requestedSymbol: rawSymbol });
-      }
-    } catch (err) { console.warn('[market] Alpha Vantage failed:', err.message); }
-  } else if (!avKey) {
-    console.warn('[market] ALPHA_VANTAGE_KEY not set — skipping AV fallback');
-  }
-
-  res.setHeader('Cache-Control', 'no-store');
-  return res.status(502).json({
-    error:  'All price sources failed',
-    symbol: rawSymbol,
-    hints: [
-      'Ensure FINNHUB_API_KEY is set correctly in Vercel (no surrounding quotes/spaces)',
-      'After market hours Finnhub returns c=0; fallback to prevClose is applied automatically',
-    ],
+// ---------- Source 1: Yahoo Finance futures (live) ----------
+async function fetchYahoo(benchmark) {
+  const symbol = YAHOO_SYMBOLS[benchmark];
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=7d`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0 (DELAX GEO-RISK dashboard)" }
   });
-};
+  if (!res.ok) throw new Error(`Yahoo ${symbol} HTTP ${res.status}`);
+  const data = await res.json();
 
-/* ═══════════════ Special-source dispatch (commodity / index) ═══════════════ */
-async function fetchSpecial(spec) {
-  if (spec.kind === 'eia')  return fetchEIASeries(spec.series, spec.name, spec.unit);
-  if (spec.kind === 'avc')  return fetchAVCommodity(spec.fn,   spec.name, spec.unit);
-  if (spec.kind === 'fred') return fetchFRED(spec.series,      spec.name, spec.unit);
+  const result = data?.chart?.result?.[0];
+  const meta = result?.meta;
+  const price = meta?.regularMarketPrice;
+  if (typeof price !== "number") throw new Error(`Yahoo ${symbol}: no price in response`);
+
+  // 7d change from the oldest close in the 7d window
+  let changePct7d = null;
+  const closes = result?.indicators?.quote?.[0]?.close?.filter(v => typeof v === "number");
+  if (closes && closes.length > 1) {
+    const first = closes[0];
+    if (first > 0) changePct7d = ((price - first) / first) * 100;
+  }
+
+  return {
+    price: round2(price),
+    changePct7d: changePct7d !== null ? round2(changePct7d) : null,
+    source: "Yahoo Finance futures",
+    symbol,
+    asOf: meta?.regularMarketTime
+      ? new Date(meta.regularMarketTime * 1000).toISOString()
+      : new Date().toISOString(),
+    live: true
+  };
+}
+
+// ---------- Source 2: AlphaVantage daily spot (1-day lag) ----------
+async function fetchAlphaVantage(benchmark) {
+  if (!AV_KEY) throw new Error("ALPHAVANTAGE_API_KEY not set");
+  const fn = AV_FUNCTIONS[benchmark];
+  const url = `https://www.alphavantage.co/query?function=${fn}&interval=daily&apikey=${AV_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`AlphaVantage ${fn} HTTP ${res.status}`);
+  const data = await res.json();
+
+  const series = data?.data;
+  if (!Array.isArray(series) || series.length === 0) {
+    throw new Error(`AlphaVantage ${fn}: empty series (rate limit or bad key)`);
+  }
+
+  // Series is newest-first; entries can have value "." on holidays — skip those
+  const valid = series.filter(d => d.value !== "." && !isNaN(parseFloat(d.value)));
+  if (valid.length === 0) throw new Error(`AlphaVantage ${fn}: no valid data points`);
+
+  const latest = valid[0];
+  const price = parseFloat(latest.value);
+
+  // 7d change: find the point ~7 calendar days back
+  let changePct7d = null;
+  const latestDate = new Date(latest.date);
+  const target = new Date(latestDate);
+  target.setDate(target.getDate() - 7);
+  const prior = valid.find(d => new Date(d.date) <= target);
+  if (prior) {
+    const priorPrice = parseFloat(prior.value);
+    if (priorPrice > 0) changePct7d = ((price - priorPrice) / priorPrice) * 100;
+  }
+
+  return {
+    price: round2(price),
+    changePct7d: changePct7d !== null ? round2(changePct7d) : null,
+    source: "AlphaVantage daily spot",
+    asOf: latest.date,
+    live: false
+  };
+}
+
+// ---------- Source 3: EIA official spot (lagged, authoritative) ----------
+async function fetchEIA(benchmark) {
+  if (!EIA_KEY) throw new Error("EIA_API_KEY not set");
+  const series = EIA_SERIES[benchmark];
+  const url =
+    `https://api.eia.gov/v2/petroleum/pri/spt/data/?api_key=${EIA_KEY}` +
+    `&frequency=daily&data[0]=value&facets[series][]=${series}` +
+    `&sort[0][column]=period&sort[0][direction]=desc&length=10`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`EIA ${series} HTTP ${res.status}`);
+  const data = await res.json();
+
+  const rows = data?.response?.data;
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error(`EIA ${series}: no data`);
+
+  const latest = rows[0];
+  const price = parseFloat(latest.value);
+  if (isNaN(price)) throw new Error(`EIA ${series}: invalid value`);
+
+  let changePct7d = null;
+  const prior = rows[rows.length - 1];
+  const priorPrice = parseFloat(prior?.value);
+  if (!isNaN(priorPrice) && priorPrice > 0 && prior !== latest) {
+    changePct7d = ((price - priorPrice) / priorPrice) * 100;
+  }
+
+  // Flag staleness so the frontend can show "EIA official · as of {date}"
+  const ageDays = Math.floor((Date.now() - new Date(latest.period).getTime()) / 86400000);
+
+  return {
+    price: round2(price),
+    changePct7d: changePct7d !== null ? round2(changePct7d) : null,
+    source: "EIA official spot",
+    asOf: latest.period,
+    ageDays,
+    stale: ageDays > 2,
+    live: false
+  };
+}
+
+// ---------- Fallback chain ----------
+async function fetchBenchmark(benchmark) {
+  const chain = [
+    ["yahoo", fetchYahoo],
+    ["alphavantage", fetchAlphaVantage],
+    ["eia", fetchEIA]
+  ];
+  const errors = [];
+  for (const [name, fn] of chain) {
+    try {
+      const result = await fn(benchmark);
+      return { ...result, benchmark: benchmark.toUpperCase(), fallbacksTried: errors };
+    } catch (err) {
+      errors.push(`${name}: ${err.message}`);
+    }
+  }
+  // All sources failed — return null, never a substitute value
+  console.error(`All sources failed for ${benchmark}:`, errors);
   return null;
 }
 
-/* EIA v2 petroleum spot — single series, newest first. */
-async function fetchEIASeries(series, name, unit) {
-  const key = process.env.EIA_API_KEY;
-  if (!key) throw new Error('EIA_API_KEY not set');
-  const url = 'https://api.eia.gov/v2/petroleum/pri/spt/data/' +
-    '?api_key=' + encodeURIComponent(key) +
-    '&frequency=daily&data[0]=value&facets[series][]=' + series +
-    '&sort[0][column]=period&sort[0][direction]=desc&length=10';
-  const resp = await fetchWithTimeout(url, 7000, { Accept: 'application/json' });
-  if (!resp.ok) throw new Error('EIA HTTP ' + resp.status);
-  const json = await resp.json();
-  const rows = json && json.response && json.response.data;
-  if (!rows || !rows.length) return null;
-  const price = parseFloat(rows[0].value);
-  if (isNaN(price)) return null;
-  const prev = rows[1] ? parseFloat(rows[1].value) : price;
-  return makePayload(series, price, prev, name, unit, 'EIA');
+function round2(n) {
+  return Math.round(n * 100) / 100;
 }
 
-/* Alpha Vantage commodity endpoint (e.g. NATURAL_GAS), daily, newest first.
-   Values can be "." on non-trading days — filter to the first two numerics. */
-async function fetchAVCommodity(fn, name, unit) {
-  const key = process.env.ALPHA_VANTAGE_KEY;
-  if (!key) throw new Error('ALPHA_VANTAGE_KEY not set');
-  const url = 'https://www.alphavantage.co/query?function=' + fn +
-    '&interval=daily&apikey=' + key;
-  const resp = await fetchWithTimeout(url, 7000);
-  if (!resp.ok) throw new Error('Alpha Vantage HTTP ' + resp.status);
-  const json = await resp.json();
-  if (json?.Note || json?.Information) throw new Error('Alpha Vantage rate limit (25/day)');
-  const data = Array.isArray(json?.data) ? json.data : [];
-  const nums = data
-    .map((d) => parseFloat(d.value))
-    .filter((v) => !isNaN(v));
-  if (!nums.length) return null;
-  const price = nums[0];
-  const prev  = nums[1] != null ? nums[1] : price;
-  return makePayload(fn, price, prev, name, unit, 'Alpha Vantage');
-}
-
-/* FRED observations — newest first, "." for missing values. */
-async function fetchFRED(series, name, unit) {
-  const key = process.env.FRED_API_KEY;
-  if (!key) throw new Error('FRED_API_KEY not set');
-  const url = 'https://api.stlouisfed.org/fred/series/observations' +
-    '?series_id=' + series + '&api_key=' + key +
-    '&file_type=json&sort_order=desc&limit=10';
-  const resp = await fetchWithTimeout(url, 7000);
-  if (!resp.ok) throw new Error('FRED HTTP ' + resp.status);
-  const json = await resp.json();
-  const obs = Array.isArray(json?.observations) ? json.observations : [];
-  const nums = obs
-    .map((o) => parseFloat(o.value))
-    .filter((v) => !isNaN(v));
-  if (!nums.length) return null;
-  const price = nums[0];
-  const prev  = nums[1] != null ? nums[1] : price;
-  return makePayload(series, price, prev, name, unit, 'FRED');
-}
-
-/* ═══════════════ Equity sources (unchanged behaviour) ═══════════════ */
-async function fetchFinnhub(symbol, apiKey) {
-  const url  = `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`;
-  const resp = await fetchWithTimeout(url, 5000);
-  if (!resp.ok) throw new Error(`Finnhub HTTP ${resp.status}`);
-  const data = await resp.json();
-
-  const currentPrice = data.c;
-  const prevClose    = data.pc;
-  if ((!currentPrice || currentPrice === 0) && (!prevClose || prevClose === 0)) return null;
-
-  const price       = (currentPrice && currentPrice !== 0) ? currentPrice : prevClose;
-  const isEstimated = (!currentPrice || currentPrice === 0);
-  const change        = prevClose ? price - prevClose : 0;
-  const percentChange = prevClose ? (change / prevClose) * 100 : 0;
-
-  return {
-    symbol,
-    price:         round4(price),
-    change:        round4(change),
-    percentChange: round4(percentChange),
-    high: data.h || null, low: data.l || null, open: data.o || null,
-    prevClose: prevClose || null,
-    isEstimated, currency: 'USD', source: 'Finnhub',
-    timestamp: new Date().toISOString(),
-  };
-}
-
-async function fetchAlphaVantage(symbol, apiKey) {
-  const url  = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
-  const resp = await fetchWithTimeout(url, 6000);
-  if (!resp.ok) throw new Error(`Alpha Vantage HTTP ${resp.status}`);
-  const json = await resp.json();
-  if (json?.Note || json?.Information) throw new Error('Alpha Vantage rate limit (25/day)');
-
-  const q = json?.['Global Quote'];
-  if (!q || !q['05. price']) return null;
-  const price     = parseFloat(q['05. price']);
-  const prevClose = parseFloat(q['08. previous close'] || q['05. price']);
-  const change    = parseFloat(q['09. change'] || '0');
-  const pct       = parseFloat((q['10. change percent'] || '0%').replace('%', ''));
-  if (!price || isNaN(price)) return null;
-
-  return {
-    symbol,
-    price:         round4(price),
-    change:        round4(change),
-    percentChange: round4(pct),
-    prevClose:     round4(prevClose),
-    isEstimated:   false, currency: 'USD', source: 'Alpha Vantage',
-    timestamp:     new Date().toISOString(),
-  };
-}
-
-/* ═══════════════ Shared helpers ═══════════════ */
-function makePayload(symbol, price, prevClose, name, unit, source) {
-  const change = prevClose ? price - prevClose : 0;
-  const pct    = prevClose ? (change / prevClose) * 100 : 0;
-  return {
-    symbol, name,
-    price:         round4(price),
-    change:        round4(change),
-    percentChange: round4(pct),
-    prevClose:     round4(prevClose),
-    isEstimated:   false,
-    unit, currency: unit === 'index' ? null : 'USD',
-    source,
-    timestamp: new Date().toISOString(),
-  };
-}
-
-function round4(n) { return parseFloat(Number(n).toFixed(4)); }
-
-async function fetchWithTimeout(url, ms, headers) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), ms);
+// ---------- Handler ----------
+export default async function handler(req, res) {
   try {
-    return await fetch(url, headers ? { headers, signal: controller.signal } : { signal: controller.signal });
+    const [wti, brent] = await Promise.all([
+      fetchBenchmark("wti"),
+      fetchBenchmark("brent")
+    ]);
+
+    // Optional: keep EIA as a "verified" secondary read even when live succeeds,
+    // so the UI can show both the live quote and the official EIA print + date.
+    let eiaVerified = null;
+    try {
+      const [eiaWti, eiaBrent] = await Promise.all([fetchEIA("wti"), fetchEIA("brent")]);
+      eiaVerified = { wti: eiaWti, brent: eiaBrent };
+    } catch (_) {
+      // Non-fatal — verified block is a bonus, not a requirement
+    }
+
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
+    res.status(200).json({
+      updatedAt: new Date().toISOString(),
+      wti,     // null if all sources failed — frontend renders "unavailable"
+      brent,   // null if all sources failed — frontend renders "unavailable"
+      eiaVerified
+    });
   } catch (err) {
-    if (err.name === 'AbortError') throw new Error('upstream timeout');
-    throw err;
-  } finally {
-    clearTimeout(timer);
+    console.error("market.js fatal:", err);
+    res.status(500).json({ error: "Market data unavailable" });
   }
 }
