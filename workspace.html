@@ -23,6 +23,8 @@
 
 <!-- Shared cross-page state MUST load before anything that reads structure/scenario. -->
 <script src="/delax-state.js"></script>
+<link rel="stylesheet" href="/delax-chrome.css"/>
+<script src="/delax-chrome.js" defer></script>
 <script src="/risk-structures.js"></script>
 
 <style>
@@ -104,7 +106,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 @media(max-width:600px){.alert-text{white-space:normal}}
 
 /* MAIN */
-main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 1.25rem max(4rem, calc(2.5rem + env(safe-area-inset-bottom, 0px)))}
+main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 1.25rem 4rem}
 
 /* SECTION LABEL */
 .section-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.9rem;display:flex;align-items:center;gap:.6rem}
@@ -241,7 +243,7 @@ main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 
 /* KPI BOTTOM BAR — scrolls with page, sits right above footer */
 body.beginner-mode body.beginner-mode 
 /* FOOTER */
-.footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.75rem 1.25rem max(1.75rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));margin-top:2.5rem;font-family:var(--mono);font-size:.8rem;color:var(--text-sec);text-align:center;letter-spacing:.04em;line-height:1.75}
+.footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.75rem 1.25rem;margin-top:2.5rem;font-family:var(--mono);font-size:.8rem;color:var(--text-sec);text-align:center;letter-spacing:.04em;line-height:1.75}
 .footer strong{color:var(--text-sec)}
 
 /* SCROLLBAR */
@@ -259,7 +261,7 @@ body.beginner-mode body.beginner-mode
   .header{padding:0 .75rem;height:auto;padding-top:.5rem;padding-bottom:.5rem}
   .subtitle{display:none}
   /* On mobile the header is shorter (~50px) since subtitle is hidden */
-    main{padding:1rem .75rem max(3rem, calc(2rem + env(safe-area-inset-bottom, 0px)))}
+    main{padding:1rem .75rem 3rem}
   .kpi-value{font-size:1.75rem}
   .drawer{width:100%}
 }
@@ -453,32 +455,9 @@ body.beginner-mode body.beginner-mode
   .eq-drop-name{font-size:.76rem}
   .eq-drop-footer{display:none}
 }
-/* ══ WORKSPACE — page chrome ══ */
-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;
-  padding:.7rem 1.25rem;background:var(--bg-panel);border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:600;flex-wrap:wrap}
-.hdr-left{display:flex;align-items:baseline;gap:.75rem;min-width:0}
-.hdr-brand{display:flex;align-items:baseline;gap:.45rem;text-decoration:none}
-.hdr-mark{color:var(--amber);font-size:1rem;line-height:1}
-.hdr-title{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;color:var(--text-pri);white-space:nowrap}
-.hdr-sub{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--text-sec);
-  text-transform:uppercase;white-space:nowrap;font-weight:500}
-@media(max-width:640px){.hdr-sub{display:none}}
-.hdr-right{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
-
-.ws-structure{display:flex;align-items:center;gap:.45rem;font-family:var(--mono);
-  font-size:.6rem;letter-spacing:.06em;color:var(--text-sec);
-  background:var(--bg-deep);border:1px solid var(--border-dim);padding:.35rem .6rem;border-radius:2px}
-.ws-struct-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
-.ws-tier{font-size:.52rem;letter-spacing:.12em;color:var(--amber);
-  border:1px solid rgba(255,224,64,.3);background:rgba(255,224,64,.08);padding:.1rem .35rem;border-radius:2px}
-.ws-select{background:var(--bg-deep);border:1px solid var(--border);color:var(--text-pri);
-  font-family:var(--mono);font-size:.62rem;padding:.38rem .55rem;border-radius:2px;
-  letter-spacing:.06em;cursor:pointer;outline:none}
-.ws-select:focus{border-color:var(--cyan)}
-
-main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem max(3rem, calc(2rem + env(safe-area-inset-bottom, 0px)))}
-@media(max-width:600px){main{padding:1rem .85rem max(2.5rem, calc(1.75rem + env(safe-area-inset-bottom, 0px)))}}
+/* ══ WORKSPACE — layout ══ */
+main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+@media(max-width:600px){main{padding:1rem .85rem 2.5rem}}
 
 .ws-muted{font-family:var(--mono);font-size:.65rem;color:var(--text-sec);
   line-height:1.65;margin-bottom:.85rem}
@@ -545,6 +524,16 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem max(3rem, calc(2rem +
   padding:.3rem .65rem;border-radius:2px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .eq-add-btn:hover{background:rgba(0,230,160,.1)}
 
+/* ══ SUPPRESSED-OUTPUT NOTICE ══
+   Used wherever the platform declines to publish a figure. Deliberately plain:
+   a suppression is information, not an error, and should not read like one. */
+.eq-suppressed{padding:.9rem 1rem;background:var(--bg-deep);
+  border:1px dashed var(--border);border-radius:2px}
+.eq-suppressed-title{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-sec);margin-bottom:.4rem}
+.eq-suppressed-body{font-family:var(--mono);font-size:.6rem;color:var(--text-dim);line-height:1.8}
+.eq-suppressed-body a{color:var(--cyan)}
+
 /* ══ TOAST ══ */
 .toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%) translateY(140%);
   background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--cyan);
@@ -583,29 +572,8 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem max(3rem, calc(2rem +
 </head>
 <body data-theme="cyberpunk">
 
-<!-- ═══════════════ HEADER ═══════════════ -->
-<header>
-  <div class="hdr-left">
-    <a href="/" class="hdr-brand" aria-label="DELAX GEO-RISK home">
-      <span class="hdr-mark">◆</span>
-      <span class="hdr-title">DELAX <span style="color:var(--amber)">GEO-RISK</span></span>
-    </a>
-    <span class="hdr-sub">INVESTOR WORKSPACE</span>
-  </div>
-  <div class="hdr-right">
-    <div class="ws-structure" id="wsStructure" title="Active risk structure">
-      <span class="ws-struct-dot"></span>
-      <span id="wsStructureName">Hormuz / Iran</span>
-      <span class="ws-tier" id="wsStructureTier">EMPIRICAL</span>
-    </div>
-    <select class="ws-select" id="wsScenario" aria-label="Scenario" onchange="onScenarioSelect(this.value)">
-      <option value="optimistic">Optimistic</option>
-      <option value="baseline">Baseline</option>
-      <option value="pessimistic">Pessimistic</option>
-    </select>
-    <a class="btn" href="/" id="wsBackLink">← Dashboard</a>
-  </div>
-</header>
+<!-- Shared chrome — rendered by /delax-chrome.js -->
+<div id="dxHeader"></div>
 
 <main>
 
@@ -779,10 +747,10 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem max(3rem, calc(2rem +
         <!-- Conflict-adjusted scenario simulator -->
         <div class="eq-scenario-box">
           <div class="eq-scenario-title">
-            <span>⚡ Conflict Scenario Projections</span>
+            <span>⚡ Scenario Context</span>
             <span style="color:var(--text-dim);font-size:.54rem" id="eqScenarioActiveLabel">Active: Baseline</span>
           </div>
-          <div class="eq-scenario-rows" id="eqScenarioRows">
+          <div class="eq-scenario-rows" id="eqProjBox">
             <div class="eq-scenario-row">
               <span class="eq-scenario-label">3-Month (conflict premium)</span>
               <span class="eq-scenario-val base" id="eqProj3M">—</span>
@@ -878,7 +846,7 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem max(3rem, calc(2rem +
         </div>
         <div style="margin-top:.65rem;font-family:var(--mono);font-size:.58rem;
           color:var(--text-dim)">
-          Change scenario in the header to update projections
+          Scenario is set in the header above
         </div>
       </div>
 
@@ -934,34 +902,28 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem max(3rem, calc(2rem +
 </div>
 
 
-<footer class="footer" role="contentinfo">
-  <div class="footer-line footer-brand">
-    <strong>DELAX GEO-RISK</strong> · Cross-asset geopolitical risk analytics
-  </div>
-  <div class="footer-line footer-meta">
-    Model <span id="footerVersion">v4.4</span><span id="footerReviewWrap" hidden><span class="footer-sep">·</span><span id="footerReview"></span></span>
-  </div>
-  <div class="footer-line footer-dim" id="footerSources">
-    Sources: EIA · FRED · Twelve Data · GDELT · IMF WEO · SIPRI · FAO · Baltic Exchange
-  </div>
-  <nav class="footer-links" aria-label="Footer">
-    <a href="/">Dashboard</a>
-    <a href="/workspace.html" aria-current="page">Investor Workspace</a>
-    <a href="/exposure-desk.html">Exposure Desk</a>
-    <a href="/methodology.html">Methodology &amp; calibration</a>
-  </nav>
-  <div class="footer-line footer-legal">
-    Analysis, not advice. Scenario outputs are probabilistic model estimates — not forecasts,
-    not recommendations, and not personalised investment advice. Consult a qualified adviser
-    before acting on anything you read here. © 2026 DELAXCOM LLC.
-  </div>
-</footer>
+<div id="dxFooter"></div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ── structure registry: impact betas for the active structure ── */
 const STRUCT_DATA = { 'hormuz-iran': {}, 'taiwan-strait': {} };
+
+/* Scenario prose per structure. Previously a single hardcoded map that said
+   "Iran holds leverage over the strait · Brent peaks ~$102" no matter which
+   structure was active — so a Taiwan portfolio was narrated with Hormuz facts.
+   Read through SD() like every other structure-aware payload. */
+STRUCT_DATA['hormuz-iran'].SCENARIO_DESC = {
+  baseline:    'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
+  optimistic:  'MOU holds · mines cleared · premiums decay · Brent settles $70-78',
+  pessimistic: 'Truce collapses · second closure from a worse base · Brent $150-180',
+};
+STRUCT_DATA['taiwan-strait'].SCENARIO_DESC = {
+  baseline:    'Quarantine pressure without blockade · foundry output continues · shipping premiums elevated',
+  optimistic:  'Status quo holds · transits normal · semiconductor supply uninterrupted',
+  pessimistic: 'Blockade or interdiction · foundry output halts · semiconductor supply shock',
+};
 /* Portfolio impact multipliers — maps sector to scenario impact estimates */
 STRUCT_DATA['hormuz-iran'].SECTOR_IMPACT = {
   'XOM':{12:0.38, 36:0.90,sector:'Energy'},  'CVX':{12:0.35,36:0.85,sector:'Energy'},
@@ -1065,32 +1027,20 @@ function aiStructureContext() {
   return m.name + ' (' + m.tier + ')';
 }
 
-/* ── header sync ── */
-function syncHeader() {
-  var m = structureMeta();
-  var nameEl = document.getElementById('wsStructureName');
-  var tierEl = document.getElementById('wsStructureTier');
-  if (nameEl) nameEl.textContent = m.name;
-  if (tierEl) { tierEl.textContent = m.tier; tierEl.style.display = m.tier ? '' : 'none'; }
-
-  var sel = document.getElementById('wsScenario');
-  if (sel && sel.value !== getScenario()) sel.value = getScenario();
-
+/* ── header/footer are rendered by DelaxChrome; page-local sync is only for
+      the elements that live inside <main>. ── */
+function syncPageChrome() {
   var lbl = document.getElementById('portfolioScenarioLabel');
   if (lbl) lbl.textContent = SCENARIO_LABELS[getScenario()] || getScenario();
-
-  var back = document.getElementById('wsBackLink');
-  if (back) back.href = DelaxState.linkTo('/');
+  if (typeof eqSyncScenarioCard === 'function') eqSyncScenarioCard();
 }
-
-function onScenarioSelect(v) { DelaxState.set('scenario', v); }
 
 /* ── react to state changes from anywhere (including another tab) ── */
 DelaxState.subscribe(function (d) {
   scenario = d.state.scenario;
   window.ACTIVE_STRUCTURE = d.state.structure;
   DelaxState.applyToDocument();
-  syncHeader();
+  syncPageChrome();
 
   if (d.changed.indexOf('scenario') >= 0 || d.changed.indexOf('structure') >= 0) {
     /* Coverage is structure-dependent, so badges and impact both re-render.
@@ -1106,7 +1056,10 @@ DelaxState.subscribe(function (d) {
 /* ── boot ── */
 document.addEventListener('DOMContentLoaded', function () {
   DelaxState.applyToDocument();
-  syncHeader();
+  if (window.DelaxChrome) {
+    DelaxChrome.render({ page: 'Investor Workspace', active: 'workspace' });
+  }
+  syncPageChrome();
 
   loadPortfolioFromStorage();
 
@@ -1953,15 +1906,9 @@ async function eqLoadTicker(sym) {
 
     eqRenderHeader(data);
     eqRenderStats(data);
+    eqRenderChart(eqRangeDays);
     eqRenderProjections(data);
     eqUpdateSidebar();
-    // Defer chart until after display:block has reflowed (offsetWidth was 0 otherwise)
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        eqRenderChart(eqRangeDays);
-        eqEnsureChartObserver();
-      });
-    });
 
     // Track in watchlist local cache
     if (data.quote) eqWatchPrices[sym] = data.quote;
@@ -2049,9 +1996,7 @@ function eqRenderChart(days) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  // Prefer real laid-out width; fall back only if still zero (e.g. very first paint)
-  let W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 0;
-  if (W < 40) W = 600;
+  const W   = canvas.offsetWidth || 600;
   const H   = 240;
   canvas.width  = W * dpr;
   canvas.height = H * dpr;
@@ -2061,15 +2006,10 @@ function eqRenderChart(days) {
   const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
   if (!candles.length) {
     ctx.clearRect(0,0,W,H);
-    ctx.fillStyle = '#7a91b3';
+    ctx.fillStyle = '#5a7299';
     ctx.font = '12px IBM Plex Mono, monospace';
     ctx.textAlign = 'center';
-    const src = (eqCurrentData && eqCurrentData.candleSource) || 'none';
-    const asOf = (eqCurrentData && eqCurrentData.candleAsOf) || '';
-    ctx.fillText('No chart data available', W/2, H/2 - 10);
-    ctx.font = '10px IBM Plex Mono, monospace';
-    ctx.fillStyle = '#5a7299';
-    ctx.fillText('source: ' + src + (asOf ? ' · as of ' + asOf : ''), W/2, H/2 + 12);
+    ctx.fillText('No chart data available', W/2, H/2);
     return;
   }
 
@@ -2210,23 +2150,6 @@ function eqRenderChart(days) {
   }
 }
 
-
-/* Redraw candles when the chart container changes width (orientation, sidebar, etc.) */
-let _eqChartObserver = null;
-function eqEnsureChartObserver() {
-  if (_eqChartObserver || typeof ResizeObserver === 'undefined') return;
-  const canvas = document.getElementById('eq-chart-canvas');
-  if (!canvas || !canvas.parentElement) return;
-  let _t = null;
-  _eqChartObserver = new ResizeObserver(function () {
-    clearTimeout(_t);
-    _t = setTimeout(function () {
-      if (eqAllCandles && eqAllCandles.length) eqRenderChart(eqRangeDays);
-    }, 80);
-  });
-  _eqChartObserver.observe(canvas.parentElement);
-}
-
 function eqSetRange(days, btn) {
   eqRangeDays = days;
   document.querySelectorAll('.eq-range-btn').forEach(b => b.classList.remove('active'));
@@ -2237,52 +2160,56 @@ function eqSetRange(days, btn) {
 }
 
 function eqRenderProjections(data) {
-  const q = data.quote || {};
-  if (!q.price) return;
+  const q  = data.quote || {};
+  const sc = getScenario();
 
-  const price   = q.price;
-  const sym     = data.symbol;
-  const sector  = eqGetSector(sym);
-  const sc      = scenario || 'baseline';
-  const mults   = EQ_SCENARIO_MULT[sc] || EQ_SCENARIO_MULT.baseline;
-  const secMult = mults[sector] || mults.sp500;
+  /* PRICE TARGETS SUPPRESSED (Aug 2026).
+     This function used to print 3M / 6M / 12M dollar price targets derived from
+     a `baseAnnual` table ({energy:0.07, defense:0.09, …}) commented only as
+     "rough historical sector averages" — figures with no source — multiplied by
+     EQ_SCENARIO_MULT, which is fitted to Hormuz and was applied unchanged under
+     Taiwan. A dollar target is the most citable number on this page, so an
+     uncalibrated one is the most damaging. Same call as the fabricated VaR
+     constant and the UNPRICED Taiwan tier: say nothing rather than invent.
 
-  // Base annualised return assumptions (rough historical sector averages)
-  const baseAnnual = {
-    energy:0.07, defense:0.09, gold:0.05, airlines:0.04,
-    bonds:-0.01, sp500:0.09, em:0.06, dxy:0.01,
-  };
-  const baseAnn  = baseAnnual[sector] || 0.07;
+     Restore when sector betas are calibrated against historical analogues —
+     at which point these must resolve through SD() per structure. */
+  const projBox = document.getElementById('eqProjBox');
+  if (projBox) {
+    projBox.innerHTML =
+      '<div class="eq-suppressed">' +
+        '<div class="eq-suppressed-title">Price targets not shown</div>' +
+        '<div class="eq-suppressed-body">' +
+          'Forward price targets for this ticker are not calibrated against historical ' +
+          'analogues for the active structure, so none are published. Portfolio-level ' +
+          'scenario impact and 1-week VaR below are computed from the structure\'s ' +
+          'published betas and realised weekly returns.' +
+          ' <a href="/methodology.html">Methodology &rarr;</a>' +
+        '</div>' +
+      '</div>';
+  }
 
-  // Conflict-adjusted 3M, 6M, 12M projections
-  const adj3M    = price * (1 + (baseAnn * secMult * (3/12)));
-  const adj6M    = price * (1 + (baseAnn * secMult * (6/12)));
-  const adj12Opt = price * (1 + (baseAnn * EQ_SCENARIO_MULT.optimistic[sector]  || 1.05));
-  const adj12Pes = price * (1 + (baseAnn * EQ_SCENARIO_MULT.pessimistic[sector] || 0.85));
-
-  const sign = v => v >= price ? '+' : '';
-  const fmt  = v => `$${v.toFixed(2)} (${sign(v)}${(((v-price)/price)*100).toFixed(1)}%)`;
-
-  document.getElementById('eqProj3M').textContent     = fmt(adj3M);
-  document.getElementById('eqProj6M').textContent     = fmt(adj6M);
-  document.getElementById('eqProj12MBull').textContent= fmt(adj12Opt);
-  document.getElementById('eqProj12MBear').textContent= fmt(adj12Pes);
-
-  // Scenario label
-  const scLabel = document.getElementById('eqScenarioActiveLabel');
-  const siLabel = document.getElementById('eqAiScenarioTag');
-  const sideSc  = document.getElementById('eqSideScenario');
-  const sideDesc= document.getElementById('eqSideScenarioDesc');
-  const scName  = SCENARIO_LABELS[sc] || sc;
+  /* Scenario labelling — structure-aware, and driven by whatever the header
+     segmented control currently holds. */
+  const scName   = SCENARIO_LABELS[sc] || sc;
+  const scLabel  = document.getElementById('eqScenarioActiveLabel');
+  const siLabel  = document.getElementById('eqAiScenarioTag');
+  const sideSc   = document.getElementById('eqSideScenario');
+  const sideDesc = document.getElementById('eqSideScenarioDesc');
   if (scLabel) scLabel.textContent = `Active: ${scName}`;
   if (siLabel) siLabel.textContent = scName;
   if (sideSc)  sideSc.textContent  = scName;
-  const desc = {
-    baseline:   'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
-    optimistic: 'MOU holds · mines cleared · premiums decay · Brent settles $70–78',
-    pessimistic:'Truce collapses · second closure from a worse base · Brent $150–180',
-  };
-  if (sideDesc) sideDesc.textContent = desc[sc] || '';
+  if (sideDesc) {
+    const desc = SD('SCENARIO_DESC') || {};
+    sideDesc.textContent = desc[sc] || '';
+  }
+  return q;
+}
+
+/* Scenario card must reflect state even before a ticker is loaded — otherwise
+   the markup defaults sit there looking like live output. */
+function eqSyncScenarioCard() {
+  eqRenderProjections(eqCurrentData || { quote: {} });
 }
 
 /* ── Watchlist sidebar ── */
@@ -2290,17 +2217,26 @@ async function eqUpdateSidebar() {
   const container = document.getElementById('eqWatchlist');
   if (!container) return;
 
-  // Render immediately with cached prices, then refresh
   eqRenderWatchlist(container);
 
-  // Fetch fresh prices in parallel
-  const fetches = EQ_WATCH_META.map(w =>
-    fetch(`/api/market?symbol=${encodeURIComponent(w.id)}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.price) eqWatchPrices[w.id] = d; })
-      .catch(() => null)
-  );
-  await Promise.allSettled(fetches);
+  /* One /api/snapshot call instead of one /api/market call per row.
+     The per-symbol fan-out fired 8 unpaced requests on every page load and
+     competed with /api/market-equity for the same Finnhub quota. Snapshot
+     already serves the whole quote map and is CDN-cached for 5 minutes. */
+  try {
+    const r = await fetch('/api/snapshot');
+    if (!r.ok) return;
+    const j = await r.json();
+    const q = (j && j.quotes) || {};
+    EQ_WATCH_META.forEach(function (w) {
+      const d = q[w.id];
+      if (d && d.price != null) {
+        eqWatchPrices[w.id] = { price: d.price, percentChange: d.changePct };
+      }
+    });
+  } catch (e) {
+    /* leave cached prices in place */
+  }
   eqRenderWatchlist(container);
 }
 

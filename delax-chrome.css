@@ -1,0 +1,174 @@
+/* ═══════════════════════════════════════════════════════════════
+   /delax-chrome.css — shared header + footer for every DELAX surface
+   ═══════════════════════════════════════════════════════════════
+   Loaded by workspace.html (and, from the next cycle, index.html, intel and
+   analysis) so the four destinations cannot drift apart visually.
+
+   DESIGN INTENT — instrument panel, not sci-fi terminal.
+   The platform's claim is that it tells you what it does and does not know.
+   Glow and neon read as "simulation"; restraint reads as "measurement". The
+   amber brand mark stays for continuity; everything else is quiet, and colour
+   is reserved for information that carries meaning — most of all the tier
+   badge, which is the single most important thing on any page.
+
+   Depends on the design tokens (--bg-*, --text-*, --amber, --cyan …) already
+   declared by the host page's :root block.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── LINK BASELINE ────────────────────────────────────────────────
+   Every anchor gets an explicit colour. Without this, an <a> with no class
+   falls back to the user-agent default (#0000EE) which is effectively
+   invisible on a near-black background — the bug that buried the workspace
+   header link and the dashboard CTA. Never remove this rule. */
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 2px; }
+
+/* ═══ HEADER ═══ */
+.dx-header{
+  position:sticky; top:0; z-index:600;
+  background:var(--bg-panel);
+  border-bottom:1px solid var(--border);
+  padding:0 1.1rem;
+}
+.dx-header-row{
+  max-width:1180px; margin:0 auto;
+  display:flex; align-items:center; gap:1rem;
+  min-height:52px; flex-wrap:wrap;
+}
+
+/* ── brand + page name ── */
+.dx-brand{
+  display:flex; align-items:baseline; gap:.45rem;
+  text-decoration:none; color:var(--text-pri); flex-shrink:0;
+}
+.dx-brand:hover{ text-decoration:none; }
+.dx-brand:hover .dx-wordmark{ color:#fff; }
+.dx-mark{ color:var(--amber); font-size:.9rem; line-height:1; }
+.dx-wordmark{
+  font-family:var(--display); font-size:.98rem; letter-spacing:.07em;
+  color:var(--text-pri); white-space:nowrap; transition:color .15s;
+}
+.dx-wordmark em{ font-style:normal; color:var(--amber); }
+
+.dx-divider{ width:1px; align-self:stretch; background:var(--border-dim); margin:.7rem 0; }
+
+.dx-page{
+  font-family:var(--mono); font-size:.6rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--text-sec); white-space:nowrap;
+}
+
+.dx-spacer{ flex:1 1 auto; min-width:0; }
+
+/* ── STATE CHIP — which model am I reading? ──
+   The most consequential element in the header. Structure name plus its
+   evidence tier, together, because a structure name without its tier invites
+   the reader to assume the numbers are all equally well grounded. */
+.dx-state{
+  display:inline-flex; align-items:center; gap:.5rem;
+  background:var(--bg-deep); border:1px solid var(--border-dim);
+  border-radius:3px; padding:.3rem .55rem; min-width:0;
+}
+.dx-state-name{
+  font-family:var(--mono); font-size:.63rem; letter-spacing:.04em;
+  color:var(--text-pri); white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; max-width:11rem;
+}
+.dx-tier{
+  font-family:var(--mono); font-size:.5rem; letter-spacing:.13em;
+  text-transform:uppercase; padding:.14rem .38rem; border-radius:2px;
+  white-space:nowrap; flex-shrink:0;
+}
+/* Fitted to observed data — the strongest claim the platform makes. */
+.dx-tier[data-tier="EMPIRICAL"]{
+  color:var(--green); background:rgba(0,230,160,.09); border:1px solid rgba(0,230,160,.28);
+}
+/* Not priced by any market — deliberately loud, because it is a caveat. */
+.dx-tier[data-tier="UNPRICED"]{
+  color:var(--amber); background:rgba(255,224,64,.09); border:1px solid rgba(255,224,64,.32);
+}
+.dx-tier[data-tier="MODELLED"],.dx-tier:not([data-tier]){
+  color:var(--text-sec); background:transparent; border:1px solid var(--border-dim);
+}
+
+/* ── SCENARIO — segmented, not a dropdown ──
+   All three states stay visible. A <select> hides two thirds of the model's
+   range behind a click and makes the active one look like the only one. */
+.dx-scenario{
+  display:inline-flex; border:1px solid var(--border-dim);
+  border-radius:3px; overflow:hidden; background:var(--bg-deep); flex-shrink:0;
+}
+.dx-scenario button{
+  font-family:var(--mono); font-size:.58rem; letter-spacing:.09em;
+  text-transform:uppercase; background:transparent; color:var(--text-dim);
+  border:none; border-right:1px solid var(--border-dim);
+  padding:.36rem .6rem; cursor:pointer; transition:color .15s, background .15s;
+}
+.dx-scenario button:last-child{ border-right:none; }
+.dx-scenario button:hover{ color:var(--text-pri); background:rgba(255,255,255,.03); }
+.dx-scenario button[aria-pressed="true"]{ color:var(--bg-deep); background:var(--text-sec); font-weight:600; }
+.dx-scenario button[aria-pressed="true"][data-scenario="pessimistic"]{ background:var(--red);   color:#fff; }
+.dx-scenario button[aria-pressed="true"][data-scenario="optimistic"]{  background:var(--green); color:var(--bg-deep); }
+.dx-scenario button[aria-pressed="true"][data-scenario="baseline"]{    background:var(--amber); color:var(--bg-deep); }
+.dx-scenario button:focus-visible{ outline:2px solid var(--cyan); outline-offset:-2px; }
+
+/* ── NAV ── */
+.dx-nav{ display:flex; align-items:center; gap:.15rem; flex-shrink:0; }
+.dx-nav a{
+  font-family:var(--mono); font-size:.6rem; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--text-dim);
+  padding:.36rem .5rem; border-radius:2px; text-decoration:none; transition:color .15s, background .15s;
+}
+.dx-nav a:hover{ color:var(--text-pri); background:rgba(255,255,255,.04); text-decoration:none; }
+.dx-nav a[aria-current="page"]{ color:var(--amber); }
+
+/* ── RESPONSIVE ──
+   Below 860px the row wraps: identity on line one, model state on line two.
+   Nothing is hidden behind a hamburger — the tier badge in particular must
+   never be a click away. */
+@media(max-width:860px){
+  .dx-header-row{ padding:.5rem 0; gap:.6rem; }
+  .dx-spacer{ flex-basis:100%; height:0; }
+  .dx-page{ font-size:.55rem; letter-spacing:.14em; }
+  .dx-state-name{ max-width:8rem; }
+}
+@media(max-width:520px){
+  .dx-header{ padding:0 .8rem; }
+  .dx-divider,.dx-page{ display:none; }
+  .dx-nav a{ padding:.36rem .38rem; font-size:.56rem; }
+  .dx-scenario button{ padding:.34rem .45rem; font-size:.54rem; }
+}
+
+/* ═══ FOOTER ═══
+   Class names and structure mirror the dashboard exactly so the two pages
+   read identically. */
+.footer{
+  border-top:1px solid var(--border-dim); background:var(--bg-panel);
+  padding:1.5rem 1.25rem 2rem; margin-top:2.5rem;
+  font-family:var(--mono); text-align:center;
+}
+.footer-line{ font-size:.66rem; line-height:1.75; color:var(--text-sec); margin-bottom:.4rem; }
+.footer-line:last-child{ margin-bottom:0; }
+.footer-brand{ font-size:.72rem; color:var(--text-pri); letter-spacing:.05em; }
+.footer-brand strong{ color:var(--amber); font-weight:700; letter-spacing:.08em; }
+.footer-meta{ font-size:.62rem; color:var(--text-dim); }
+.footer-sep{ margin:0 .4rem; color:var(--border); }
+.footer-dim{ font-size:.62rem; color:var(--text-dim); }
+.footer-links{
+  display:flex; justify-content:center; align-items:center;
+  flex-wrap:wrap; gap:.35rem 1.15rem; margin:.85rem 0;
+}
+.footer-links a{
+  font-size:.66rem; color:var(--cyan); text-decoration:none;
+  letter-spacing:.03em; padding:.2rem 0;
+}
+.footer-links a:hover,.footer-links a:focus-visible{ text-decoration:underline; color:#fff; }
+.footer-links a[aria-current="page"]{ color:var(--amber); }
+.footer-legal{
+  font-size:.6rem; color:var(--text-dim); line-height:1.8;
+  max-width:56rem; margin:0 auto;
+}
+@media(max-width:600px){
+  .footer{ padding:1.25rem .9rem 1.75rem; }
+  .footer-links{ gap:.3rem .8rem; }
+}

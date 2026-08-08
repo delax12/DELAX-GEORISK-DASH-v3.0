@@ -1,12 +1,12 @@
 /* ═══════════════════════════════════════════════════
-   DELAX GEO-RISK — Service Worker v5.1
+   DELAX GEO-RISK — Service Worker v5.0
    Place this file at the ROOT of your repo (same level as index.html).
    Vercel will serve it at https://your-domain.com/sw.js automatically.
 
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v5.1'; // bumped — Phase 1 workspace: footer parity, hdr-sub contrast, candle reflow + ResizeObserver
+const CACHE_NAME  = 'delax-georisk-v5.1'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
                                           // so every returning visitor MUST get the new shell rather than a cached one
                                           // that still references deleted functions.
 const CACHE_URLS  = [
@@ -14,6 +14,8 @@ const CACHE_URLS  = [
   '/index.html',
   '/workspace.html',
   '/delax-state.js',
+  '/delax-chrome.js',
+  '/delax-chrome.css',
   '/dashboard-live.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
   // globe.gl removed — Fix 2.1 (saves 820KB from precache)
@@ -46,7 +48,8 @@ self.addEventListener('fetch', event => {
 
   // Shared state module: network-first, because a stale copy can disagree with
   // the page reading it about which structure is selected.
-  if (url.endsWith('/delax-state.js') || url.endsWith('/risk-structures.js')) {
+  if (url.endsWith('/delax-state.js') || url.endsWith('/risk-structures.js') ||
+      url.endsWith('/delax-chrome.js') || url.endsWith('/delax-chrome.css')) {
     event.respondWith(
       fetch(req).then(res => {
         const clone = res.clone();
@@ -85,35 +88,37 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  /* First-party scripts (dashboard-live.js, risk-structures.js already handled above):
+  /* ── MODEL & APP SCRIPTS: NETWORK-FIRST ──────────────────────────────────────
+     risk-structures.js is the single source of truth for every number on the site.
      Serving it cache-first meant returning visitors ran an OLD model against a NEW
-     page shell. After the workspace split every first-party script now goes to the
-     network first and falls back to cache offline.
+     page — which is exactly how a deployed structure update can appear "not to have
+     shipped" (the review stamp rendering as an em-dash was this bug). Any same-origin
+     first-party script now goes to the network first and falls back to cache offline.
      Third-party CDN libraries stay cache-first below: they are version-pinned.       */
-  if (url.includes(self.location.origin) && (url.endsWith('.js') || url.endsWith('.css'))) {
+  const isOwnScript = url.startsWith(self.location.origin) && /\.(js|json)(\?|$)/.test(url);
+  if (isOwnScript) {
     event.respondWith(
-      fetch(req).then(res => {
-        if (res && res.status === 200) {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
-        }
-        return res;
-      }).catch(() => caches.match(req))
-    );
-    return;
-  }
-
-  // Everything else (images, fonts, CDN libs): cache-first
-  event.respondWith(
-    caches.match(req).then(cached => {
-      if (cached) return cached;
-      return fetch(req).then(response => {
+      fetch(req).then(response => {
         if (response && response.status === 200 && response.type !== 'opaque') {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
         }
         return response;
-      }).catch(() => caches.match('/index.html'))
-    })
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Cache-first for third-party/static assets (version-pinned CDN libs, fonts, etc.)
+  event.respondWith(
+    caches.match(req).then(cached => {
+      if (cached) return cached;
+      return fetch(req).then(response => {
+        if (!response || response.status !== 200 || response.type === 'opaque') return response;
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+        return response;
+      });
+    }).catch(() => caches.match('/index.html'))
   );
 });

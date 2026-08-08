@@ -51,6 +51,23 @@ const CANDLES_PATH = 'snapshot/candles.json';
    freshness — the cost of a false "stale" is one Twelve Data credit. */
 const STALE_TRADING_DAYS = 3;
 
+/* The candle blob is ~800KB at 66 tickers, and every request previously
+   downloaded and parsed all of it to read ONE ticker's daily array. Warm
+   lambda instances now reuse a parsed copy for SNAP_TTL_MS. Cold starts still
+   pay once; the cron rewrites the blob daily, so a 10-minute window can never
+   serve data older than the staleness guard already tolerates. */
+const SNAP_TTL_MS = 10 * 60 * 1000;
+let _snapCache = { at: 0, candles: null };
+
+async function getCandleBundle(symbol) {
+  const now = Date.now();
+  if (!_snapCache.candles || (now - _snapCache.at) > SNAP_TTL_MS) {
+    const snap = await readJsonBlob(CANDLES_PATH);
+    _snapCache = { at: now, candles: (snap && snap.candles) || {} };
+  }
+  return _snapCache.candles[symbol] || null;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -129,8 +146,7 @@ module.exports = async function handler(req, res) {
   // 2a. Snapshot blob, only if recent enough to render without a right-edge gap.
   let staleBundle = null;
   try {
-    const snap = await readJsonBlob(CANDLES_PATH);
-    const bundle = snap?.candles?.[symbol];
+    const bundle = await getCandleBundle(symbol);
     if (bundle && Array.isArray(bundle.daily) && bundle.daily.length) {
       const lastRow = bundle.daily[bundle.daily.length - 1];
       const asOf    = bundle.updated || (lastRow && lastRow[0]) || null;
@@ -265,7 +281,13 @@ module.exports = async function handler(req, res) {
   }
 
   if (!result.quote && !result.fundamentals) {
-    return res.status(502).json({ error: 'All data sources failed', symbol, errors });
+    /* errors[] carries the per-provider reason. It is returned so the client can
+       show something better than a generic failure, and so this branch is never
+       again indistinguishable from a code fault. */
+    return res.status(502).json({
+      error: 'Market data temporarily unavailable for ' + symbol,
+      symbol, errors,
+    });
   }
 
   // Only cache successful responses
@@ -274,6 +296,29 @@ module.exports = async function handler(req, res) {
 };
 
 /* ── helpers ── */
+
+/* Fetch + parse JSON with a hard timeout.
+   RESTORED Aug 2026: this helper was dropped during the Stage 1 rewrite while
+   all six call sites remained. Every provider call threw
+   `ReferenceError: fetchJSON is not defined`, each was swallowed by its own
+   try/catch, and the handler fell through to the 502 "All data sources failed"
+   branch — so quotes, fundamentals AND candles returned empty for every symbol
+   while nothing appeared in runtime error reporting. The undeclared-identifier
+   gate now runs against api/*.js to make this class impossible to ship again. */
+async function fetchJSON(url, timeoutMs = 6000) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(tid);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch (err) {
+    clearTimeout(tid);
+    if (err.name === 'AbortError') throw new Error('Timeout');
+    throw err;
+  }
+}
 
 /* Snapshot stores compact rows: [date, open, high, low, close] */
 function mapSnapshotDaily(daily) {
