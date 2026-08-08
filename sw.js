@@ -1,15 +1,19 @@
 /* ═══════════════════════════════════════════════════
-   DELAX GEO-RISK — Service Worker v2.2
+   DELAX GEO-RISK — Service Worker v5.0
    Place this file at the ROOT of your repo (same level as index.html).
    Vercel will serve it at https://your-domain.com/sw.js automatically.
 
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v4.4'; // bumped — v4.4 structure sweep; model files now network-first
+const CACHE_NAME  = 'delax-georisk-v5.0'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
+                                          // so every returning visitor MUST get the new shell rather than a cached one
+                                          // that still references deleted functions.
 const CACHE_URLS  = [
   '/',
   '/index.html',
+  '/workspace.html',
+  '/delax-state.js',
   '/dashboard-live.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
   // globe.gl removed — Fix 2.1 (saves 820KB from precache)
@@ -40,6 +44,19 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   const url = req.url;
 
+  // Shared state module: network-first, because a stale copy can disagree with
+  // the page reading it about which structure is selected.
+  if (url.endsWith('/delax-state.js') || url.endsWith('/risk-structures.js')) {
+    event.respondWith(
+      fetch(req).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(req, clone));
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
   // Always go to network for API calls and Vercel insights beacons — don't cache
   if (url.includes('/api/') || url.includes('/_vercel/')) {
     event.respondWith(
@@ -53,7 +70,8 @@ self.addEventListener('fetch', event => {
   }
 
   // HTML navigations + the app shell: network-first, fall back to cache when offline.
-  const isHTML = req.mode === 'navigate' || url.endsWith('/') || url.endsWith('/index.html');
+  const isHTML = req.mode === 'navigate' || url.endsWith('/') ||
+                 url.endsWith('/index.html') || url.endsWith('/workspace.html');
   if (isHTML) {
     event.respondWith(
       fetch(req).then(response => {
