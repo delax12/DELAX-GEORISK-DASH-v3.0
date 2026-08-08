@@ -1,1 +1,2357 @@
-SEE_ARTIFACTS_workspace-phase1.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0"/>
+<title>Investor Workspace — DELAX GEO-RISK</title>
+<meta name="description" content="Research any global equity, build a portfolio, and see modelled scenario impact and 1-week Value at Risk under an active geopolitical risk structure."/>
+<link rel="canonical" href="https://delaxcom.org/workspace.html"/>
+<meta name="theme-color" content="#050a14"/>
+
+<!-- GA4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KEK0Q8HN11"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-KEK0Q8HN11');
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+
+<!-- Shared cross-page state MUST load before anything that reads structure/scenario. -->
+<script src="/delax-state.js"></script>
+<script src="/risk-structures.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN SYSTEM v2.2 — CSS VARIABLES
+   Change theme by toggling data-theme on <body>
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --bg-deep:#080c14; --bg-card:#0d1525; --bg-panel:#111d33;
+  --border:#1e3055; --border-dim:#152238;
+  --amber:#f5a623; --amber-dim:#c47e10;
+  --cyan:#00d4ff; --cyan-dim:#0099cc;
+  --green:#00e676; --red:#ff3d4a; --yellow:#ffe040; --purple:#b388ff;
+  --text-pri:#e8edf5; --text-sec:#7a91b3; --text-dim:#7189ad; /* was #5a7299 = 3.96:1, failed AA; #7189ad = 5.42:1 */
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --display:'Bebas Neue',sans-serif;
+  --font-scale:1; /* controlled by font-size slider */
+}
+/* OS-level "increase contrast": brighten the dimmest tiers and harden borders.
+   Base palette already passes AA after the --text-dim fix above; this goes further
+   for users who ask for it, and is invisible otherwise. */
+@media (prefers-contrast: more) {
+  :root {
+    --text-sec:#9cb2d0; --text-dim:#9cb2d0;
+    --border:#3a5578;
+  }
+}
+/* Classic / light theme */
+[data-theme="classic"] {
+  --bg-deep:#f0f3f8; --bg-card:#fff; --bg-panel:#f7f9fc;
+  --border:#d0d9e8; --border-dim:#e2e8f2;
+  --amber:#c47e10; --amber-dim:#a06000; --cyan:#0070b8; --cyan-dim:#005a96;
+  --green:#16803c; --red:#c41a27; --yellow:#b45309; --purple:#6d28d9;
+  --text-pri:#0f1923; --text-sec:#374a63; --text-dim:#6b7fa0;
+}
+[data-theme="classic"] body::before{display:none}
+[data-theme="classic"] .header{background:rgba(240,243,248,.97);border-bottom-color:#d0d9e8}
+[data-theme="classic"] .kpi-card.up .kpi-value{color:#c41a27}
+[data-theme="classic"] .kpi-card.down .kpi-value{color:#16803c}
+/* Color-blind safe palette */
+[data-colorblind="true"] { --green:#009E73; --red:#D55E00; --amber:#E69F00; --cyan:#56B4E9; --purple:#CC79A7; }
+
+/* RESET */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:calc(15px * var(--font-scale));scroll-behavior:smooth}
+body{background:var(--bg-deep);color:var(--text-pri);font-family:var(--sans);line-height:1.5;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:200;background:rgba(8,12,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;gap:.75rem;flex-wrap:wrap}
+.header-brand{display:flex;align-items:baseline;gap:.6rem}
+.logo{font-family:var(--display);font-size:1.4rem;letter-spacing:.08em;color:var(--amber);line-height:1}
+.subtitle{font-family:var(--mono);font-size:.6rem;color:var(--text-sec);letter-spacing:.12em;text-transform:uppercase}
+.header-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.live-badge{display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--green);letter-spacing:.1em;text-transform:uppercase}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:.4;box-shadow:0 0 3px var(--green)}}
+.timestamp{font-family:var(--mono);font-size:.6rem;color:var(--text-sec)}
+.offline-badge{display:none;font-family:var(--mono);font-size:.58rem;color:var(--yellow);background:rgba(255,224,64,.12);border:1px solid rgba(255,224,64,.3);padding:.2rem .5rem;border-radius:2px}
+.offline-badge.show{display:inline-flex}
+
+/* BUTTONS */
+.btn{background:transparent;border:1px solid var(--border);color:var(--text-sec);font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.38rem .8rem;border-radius:2px;cursor:pointer;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.amber{border-color:var(--amber);color:var(--amber)}
+.btn.amber:hover{background:var(--amber);color:#000;box-shadow:0 0 18px rgba(245,166,35,.4)}
+.btn.cyan{border-color:var(--cyan);color:var(--cyan)}
+.btn.cyan:hover{background:rgba(0,212,255,.15)}
+.btn.green{border-color:var(--green);color:var(--green)}
+.btn:disabled{opacity:.5;pointer-events:none}
+.refresh-btn{background:transparent;border:1px solid var(--amber);color:var(--amber);font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.4rem .9rem;border-radius:2px;cursor:pointer;transition:all .2s}
+.refresh-btn:hover{background:var(--amber);color:#000;box-shadow:0 0 18px rgba(245,166,35,.4)}
+.refresh-btn:disabled{opacity:.5;pointer-events:none}
+
+/* ALERT BANNER */
+.alert-banner{background:linear-gradient(90deg,rgba(255,61,74,.1),rgba(255,61,74,.03));border:1px solid rgba(255,61,74,.3);border-left:3px solid var(--red);padding:.65rem 1.25rem;margin-bottom:0;border-radius:2px;display:flex;align-items:center;gap:1rem;font-family:var(--mono);font-size:.68rem;color:var(--text-sec)}
+.alert-label{font-weight:600;letter-spacing:.1em;white-space:nowrap;flex-shrink:0}
+.alert-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert-text strong{color:var(--text-pri)}
+@media(max-width:600px){.alert-text{white-space:normal}}
+
+/* MAIN */
+main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 1.25rem 4rem}
+
+/* SECTION LABEL */
+.section-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.9rem;display:flex;align-items:center;gap:.6rem}
+.section-label::before{content:'';display:inline-block;width:16px;height:1px;background:var(--amber)}
+
+/* MODE STRIP */
+.mode-strip{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.mode-badge{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;padding:.3rem .75rem;border-radius:2px;border:1px solid var(--border)}
+.mode-badge.beginner{background:rgba(0,212,255,.1);border-color:var(--cyan);color:var(--cyan)}
+.mode-badge.expert{background:rgba(179,136,255,.1);border-color:var(--purple);color:var(--purple)}
+
+/* PROVENANCE ICON */
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(0,212,255,.15);border:1px solid var(--cyan-dim);color:var(--cyan);font-size:.55rem;cursor:help;flex-shrink:0;font-family:var(--mono);font-style:normal;vertical-align:middle;margin-left:.25rem}
+.provenance-tip{position:fixed;z-index:9500;max-width:260px;background:var(--bg-panel);border:1px solid var(--border);border-left:3px solid var(--cyan);padding:.6rem .85rem;border-radius:2px;font-family:var(--mono);font-size:.6rem;color:var(--text-sec);line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,.6);pointer-events:none;opacity:0;transition:opacity .15s}
+.provenance-tip.visible{opacity:1}
+
+/* JARGON TOOLTIP */
+[data-jargon]{border-bottom:1px dotted var(--text-dim);cursor:help}
+.jargon-tip{position:fixed;z-index:9400;max-width:270px;background:var(--bg-panel);border:1px solid var(--border);border-left:3px solid var(--amber);padding:.6rem .85rem;border-radius:2px;font-family:var(--sans);font-size:.7rem;color:var(--text-sec);line-height:1.55;box-shadow:0 8px 32px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .15s}
+.jargon-tip.visible{opacity:1}
+
+/* TABS */
+/* CONTROLS */
+.controls-row{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.control-group{display:flex;align-items:center;gap:.4rem}
+.control-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.toggle-btn{background:var(--bg-panel);border:1px solid var(--border);color:var(--text-sec);font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .75rem;border-radius:2px;cursor:pointer;transition:all .18s}
+.toggle-btn.active-baseline{background:rgba(0,212,255,.15);border-color:var(--cyan);color:var(--cyan)}
+.toggle-btn.active-optimistic{background:rgba(0,230,118,.12);border-color:var(--green);color:var(--green)}
+.toggle-btn.active-pessimistic{background:rgba(255,61,74,.12);border-color:var(--red);color:var(--red)}
+.toggle-btn:hover{border-color:var(--text-sec);color:var(--text-pri)}
+.select-ctrl{background:var(--bg-panel);border:1px solid var(--border);color:var(--text-pri);font-family:var(--mono);font-size:.6rem;padding:.3rem .7rem;border-radius:2px;outline:none;cursor:pointer;appearance:none}
+.select-ctrl:focus{border-color:var(--amber)}
+
+/* CHART BOXES */
+.chart-box{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:2px;overflow:hidden;margin-bottom:1.1rem}
+.chart-header{padding:.9rem 1.1rem .65rem;border-bottom:1px solid var(--border-dim);display:flex;align-items:baseline;justify-content:space-between;gap:1rem}
+.chart-title{font-family:var(--display);font-size:1.1rem;letter-spacing:.06em;color:var(--text-pri)}
+.chart-desc{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase}
+.chart-body{padding:.65rem .4rem .4rem}
+.echart{width:100%}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.1rem}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.1rem;margin-bottom:1.1rem}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:.3rem;font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .55rem;border-radius:2px;font-weight:600}
+.badge-buy{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.4)}
+.badge-avoid{background:rgba(255,61,74,.15);color:var(--red);border:1px solid rgba(255,61,74,.4)}
+.badge-monitor{background:rgba(255,224,64,.12);color:var(--yellow);border:1px solid rgba(255,224,64,.3)}
+
+/* ══ PRO PAYWALL MODAL — gates AI features for Free tier users ══ */
+.pro-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);
+  z-index:900;display:none;align-items:center;justify-content:center;padding:1rem;opacity:0;transition:opacity .25s}
+.pro-modal-overlay.open{display:flex;opacity:1}
+.pro-modal{background:var(--bg-card);border:1px solid var(--border);border-top:3px solid var(--purple);
+  border-radius:4px;max-width:480px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.7);
+  transform:scale(.95);transition:transform .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.pro-modal-overlay.open .pro-modal{transform:scale(1)}
+.pro-modal-header{padding:1.5rem 1.75rem 1rem;text-align:center;border-bottom:1px solid var(--border-dim);
+  background:linear-gradient(180deg,rgba(179,136,255,.08),transparent)}
+.pro-modal-lock{font-size:2rem;margin-bottom:.5rem;filter:drop-shadow(0 0 12px rgba(179,136,255,.5))}
+.pro-modal-title{font-family:var(--display);font-size:1.35rem;letter-spacing:.04em;color:var(--text-pri);margin-bottom:.35rem}
+.pro-modal-tier{display:inline-block;font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--purple);background:rgba(179,136,255,.12);
+  border:1px solid rgba(179,136,255,.3);padding:.22rem .7rem;border-radius:2px}
+.pro-modal-body{padding:1.25rem 1.75rem}
+.pro-modal-desc{font-family:var(--sans);font-size:.85rem;color:#c8d4e8;line-height:1.65;margin-bottom:1rem;text-align:center}
+.pro-modal-benefits{list-style:none;padding:0;margin:0 0 1.1rem}
+.pro-modal-benefits li{font-family:var(--sans);font-size:.78rem;color:var(--text-sec);
+  padding:.42rem 0;display:flex;align-items:flex-start;gap:.6rem;line-height:1.55}
+.pro-modal-benefits li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0;margin-top:.05rem}
+.pro-modal-form{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.5rem}
+.pro-modal-input{background:var(--bg-deep);border:1px solid var(--border);color:var(--text-pri);
+  font-family:var(--sans);font-size:.82rem;padding:.65rem .85rem;border-radius:2px;outline:none;
+  transition:border-color .15s;width:100%}
+.pro-modal-input:focus{border-color:var(--purple)}
+.pro-modal-input::placeholder{color:var(--text-dim)}
+.pro-modal-btn{font-family:var(--display);font-size:.82rem;letter-spacing:.08em;
+  background:linear-gradient(135deg,var(--purple),#8b5cf6);color:#fff;border:none;padding:.8rem 1rem;
+  border-radius:2px;cursor:pointer;transition:transform .15s,box-shadow .15s;width:100%;font-weight:600}
+.pro-modal-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(179,136,255,.4)}
+.pro-modal-btn:disabled{opacity:.5;cursor:wait;transform:none}
+.pro-modal-footer{padding:.85rem 1.75rem 1.25rem;border-top:1px solid var(--border-dim);
+  display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.pro-modal-contact{font-family:var(--mono);font-size:.6rem;color:var(--text-dim);letter-spacing:.04em}
+.pro-modal-contact a{color:var(--cyan);text-decoration:none}
+.pro-modal-contact a:hover{text-decoration:underline}
+.pro-modal-later{background:transparent;border:1px solid var(--border-dim);color:var(--text-sec);
+  font-family:var(--mono);font-size:.6rem;padding:.4rem .8rem;border-radius:2px;cursor:pointer;
+  letter-spacing:.08em;text-transform:uppercase;transition:all .15s}
+.pro-modal-later:hover{color:var(--text-pri);border-color:var(--text-sec)}
+.pro-modal-success{display:none;text-align:center;padding:1rem 0}
+.pro-modal-success.show{display:block}
+.pro-modal-success-icon{font-size:2rem;margin-bottom:.6rem}
+.pro-modal-success-text{font-family:var(--sans);font-size:.85rem;color:#c8d4e8;line-height:1.6}
+
+/* Pro lock badge overlay on gated elements (visible on hover) */
+.pro-lock-hint{position:absolute;top:.5rem;right:.5rem;font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.1em;color:var(--purple);background:rgba(179,136,255,.12);
+  border:1px solid rgba(179,136,255,.3);padding:.2rem .5rem;border-radius:2px;pointer-events:none;
+  z-index:3;opacity:.75;transition:opacity .2s}
+.kpi-card:hover .pro-lock-hint{opacity:1}
+.drawer{position:fixed;top:0;right:0;width:380px;max-width:95vw;height:100vh;background:var(--bg-card);border-left:1px solid var(--border);z-index:401;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border-dim);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-card);z-index:1}
+.drawer-title{font-family:var(--display);font-size:1.1rem;letter-spacing:.06em;color:var(--amber)}
+.drawer-close{background:transparent;border:1px solid var(--border);color:var(--text-sec);width:28px;height:28px;border-radius:2px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.drawer-close:hover{border-color:var(--red);color:var(--red)}
+.drawer-body{padding:1.25rem 1.5rem;flex:1}
+.drawer-section{margin-bottom:1.5rem}
+.drawer-section-title{font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan);margin-bottom:.85rem;padding-bottom:.4rem;border-bottom:1px solid var(--border-dim)}
+
+/* SLIDER ROWS */
+.slider-row{margin-bottom:1rem}
+.slider-row label{font-family:var(--mono);font-size:.62rem;color:var(--text-sec);display:flex;justify-content:space-between;margin-bottom:.35rem}
+.slider-row label span{color:var(--amber);font-weight:600}
+.slider-row input[type=range]{width:100%;appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none;cursor:pointer}
+.slider-row input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px rgba(245,166,35,.5);cursor:pointer}
+.slider-row input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--amber);border:none;cursor:pointer}
+.scenario-impact{background:var(--bg-panel);border:1px solid var(--border-dim);padding:.85rem;border-radius:2px;margin-top:1rem}
+.scenario-impact h5{font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.6rem}
+.impact-row{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:.65rem;color:var(--text-sec);padding:.25rem 0;border-bottom:1px solid var(--border-dim)}
+.impact-row:last-child{border-bottom:none}
+.impact-row .impact-val{font-weight:600}
+.impact-row .impact-val.up{color:var(--red)}
+.impact-row .impact-val.down{color:var(--green)}
+
+/* FONT SIZE SLIDER */
+.font-slider-wrap{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.6rem;color:var(--text-dim)}
+.font-slider-wrap input[type=range]{width:70px;height:3px;appearance:none;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+.font-slider-wrap input[type=range]::-webkit-slider-thumb{appearance:none;width:10px;height:10px;border-radius:50%;background:var(--amber);cursor:pointer}
+
+/* KPI BOTTOM BAR — scrolls with page, sits right above footer */
+body.beginner-mode body.beginner-mode 
+/* FOOTER */
+.footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.75rem 1.25rem;margin-top:2.5rem;font-family:var(--mono);font-size:.8rem;color:var(--text-sec);text-align:center;letter-spacing:.04em;line-height:1.75}
+.footer strong{color:var(--text-sec)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg-deep)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--amber-dim)}
+
+/* ACCESSIBILITY */
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .header{padding:0 .75rem;height:auto;padding-top:.5rem;padding-bottom:.5rem}
+  .subtitle{display:none}
+  /* On mobile the header is shorter (~50px) since subtitle is hidden */
+    main{padding:1rem .75rem 3rem}
+  .kpi-value{font-size:1.75rem}
+  .drawer{width:100%}
+}
+
+
+/* PORTFOLIO SIMULATOR */
+.portfolio-section{background:var(--bg-card);border:1px solid var(--border-dim);padding:1.25rem;margin-bottom:1.1rem}
+.portfolio-section h4{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;color:var(--text-pri);margin-bottom:.75rem}
+.portfolio-presets{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.85rem}
+.portfolio-grid{display:grid;gap:.5rem;margin-bottom:.85rem}
+.portfolio-row{display:grid;grid-template-columns:1fr 80px 80px auto;gap:.5rem;align-items:center}
+.portfolio-input{background:var(--bg-panel);border:1px solid var(--border);color:var(--text-pri);font-family:var(--mono);font-size:.65rem;padding:.35rem .6rem;border-radius:2px;outline:none;width:100%}
+.portfolio-input:focus{border-color:var(--amber)}
+.portfolio-results{background:var(--bg-panel);border:1px solid var(--border-dim);padding:1rem}
+.portfolio-result-row{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--border-dim);font-family:var(--mono);font-size:.65rem}
+.portfolio-result-row:last-child{border-bottom:none}
+.portfolio-result-row .val{font-weight:600}
+.portfolio-result-row .val.pos{color:var(--green)}
+.portfolio-result-row .val.neg{color:var(--red)}
+.portfolio-result-row .val.warn{color:var(--amber)}
+/* ══ EQUITIES TAB — Step 15 ══ */
+.eq-layout{display:grid;grid-template-columns:1fr 280px;gap:1.25rem;align-items:start}
+@media(max-width:900px){.eq-layout{grid-template-columns:1fr}}
+/* Mobile sidebar: hidden by default, toggled by button */
+@media(max-width:500px){
+  #eqSidebar{display:none}
+  #eqSidebar.mobile-open{display:block}
+}
+.eq-search-bar{display:flex;gap:.6rem;margin-bottom:0;align-items:center}
+@media(max-width:500px){
+  .eq-search-bar{flex-direction:column;align-items:stretch}
+  .eq-search-btn{width:100%;text-align:center;padding:.75rem}
+}
+.eq-search-input{flex:1;background:var(--bg-deep);border:1px solid var(--border);
+  color:var(--text-pri);font-family:var(--mono);font-size:.82rem;padding:.7rem 1rem;
+  border-radius:2px;outline:none;transition:border-color .15s;letter-spacing:.04em;text-transform:uppercase}
+.eq-search-input:focus{border-color:var(--cyan)}
+.eq-search-input::placeholder{text-transform:none;color:var(--text-dim);font-size:.75rem;letter-spacing:0}
+.eq-search-btn{background:var(--cyan);color:#000;border:none;font-family:var(--mono);
+  font-size:.72rem;font-weight:700;letter-spacing:.1em;padding:.72rem 1.25rem;
+  border-radius:2px;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.eq-search-btn:hover{opacity:.85}
+.eq-search-btn:disabled{opacity:.4;cursor:wait}
+@media(max-width:500px){
+  .eq-search-btn .btn-label{display:none}
+  .eq-search-btn .btn-icon{display:inline}
+  .eq-search-btn{font-size:.9rem;letter-spacing:0;padding:.75rem 1.25rem}
+}
+@media(min-width:501px){
+  .eq-search-btn .btn-icon{display:none}
+}
+.eq-ticker-header{display:flex;align-items:baseline;gap:.75rem;margin-bottom:.25rem;flex-wrap:wrap}
+.eq-ticker-name{font-family:var(--display);font-size:1.5rem;letter-spacing:.04em;color:var(--text-pri)}
+.eq-ticker-sym{font-family:var(--mono);font-size:.75rem;color:var(--text-dim);letter-spacing:.1em}
+.eq-price-row{display:flex;align-items:baseline;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.eq-price{font-family:var(--display);font-size:2.2rem;color:var(--cyan);letter-spacing:-.01em}
+.eq-change{font-family:var(--mono);font-size:.85rem;font-weight:600}
+.eq-change.up{color:var(--green)} .eq-change.down{color:var(--red)}
+.eq-source-tag{font-family:var(--mono);font-size:.56rem;color:var(--text-dim);
+  background:var(--bg-deep);border:1px solid var(--border-dim);padding:.15rem .5rem;border-radius:2px}
+.eq-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--border-dim);border:1px solid var(--border-dim);margin-bottom:1.25rem}
+@media(max-width:700px){.eq-stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){
+  .eq-stat{padding:.65rem .7rem}
+  .eq-stat-val{font-size:.9rem}
+  .eq-stat-label{font-size:.5rem}
+}
+.eq-stat{background:var(--bg-card);padding:.85rem 1rem}
+.eq-stat-label{font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:.3rem}
+.eq-stat-val{font-family:var(--display);font-size:1.05rem;color:var(--text-pri);letter-spacing:.02em}
+.eq-stat-val.positive{color:var(--green)} .eq-stat-val.negative{color:var(--red)}
+.eq-chart-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  padding:1rem 1.1rem;margin-bottom:1.25rem}
+.eq-chart-header{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem}
+.eq-chart-title{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-sec)}
+.eq-range-btns{display:flex;gap:3px}
+.eq-range-btn{font-family:var(--mono);font-size:.58rem;padding:.22rem .55rem;
+  background:var(--bg-deep);border:1px solid var(--border-dim);color:var(--text-dim);
+  border-radius:2px;cursor:pointer;transition:all .15s;letter-spacing:.06em}
+.eq-range-btn:hover,.eq-range-btn.active{background:rgba(0,212,255,.1);
+  border-color:var(--cyan);color:var(--cyan)}
+@media(max-width:500px){
+  .eq-range-btn{padding:.5rem .85rem;font-size:.65rem}
+  #eq-chart-canvas{touch-action:pan-y}
+}
+#eq-chart-canvas{width:100%;height:240px}
+.eq-scenario-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  border-left:3px solid var(--amber);padding:1rem 1.1rem;margin-bottom:1.25rem}
+.eq-scenario-title{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--amber);margin-bottom:.65rem;
+  display:flex;align-items:center;justify-content:space-between}
+.eq-scenario-rows{display:flex;flex-direction:column;gap:.4rem}
+.eq-scenario-row{display:flex;align-items:center;justify-content:space-between;
+  padding:.45rem .65rem;background:var(--bg-deep);border-radius:2px}
+.eq-scenario-label{font-family:var(--mono);font-size:.62rem;color:var(--text-sec)}
+.eq-scenario-val{font-family:var(--mono);font-size:.72rem;font-weight:700}
+.eq-scenario-val.base{color:var(--cyan)}
+.eq-scenario-val.bull{color:var(--green)}
+.eq-scenario-val.bear{color:var(--red)}
+.eq-ai-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  border-left:3px solid var(--purple);padding:1rem 1.1rem;margin-bottom:1.25rem}
+.eq-ai-header{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--purple);margin-bottom:.65rem}
+.eq-ai-content{font-family:var(--sans);font-size:.78rem;color:#c8d4e8;line-height:1.75}
+.eq-sidebar-box{background:var(--bg-card);border:1px solid var(--border-dim);
+  padding:.85rem 1rem;margin-bottom:1rem}
+.eq-sidebar-title{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-dim);margin-bottom:.65rem;
+  padding-bottom:.45rem;border-bottom:1px solid var(--border-dim)}
+.eq-watch-row{display:flex;align-items:center;justify-content:space-between;
+  padding:.42rem 0;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;
+  transition:background .12s;border-radius:2px;padding:.4rem .35rem}
+.eq-watch-row:hover{background:rgba(255,255,255,.04)}
+.eq-watch-sym{font-family:var(--mono);font-size:.68rem;color:var(--cyan);letter-spacing:.06em;font-weight:600}
+.eq-watch-name{font-family:var(--sans);font-size:.6rem;color:var(--text-dim)}
+.eq-watch-price{font-family:var(--mono);font-size:.68rem;color:var(--text-pri);text-align:right}
+.eq-watch-chg{font-family:var(--mono);font-size:.58rem;text-align:right}
+.eq-watch-chg.up{color:var(--green)} .eq-watch-chg.down{color:var(--red)}
+.eq-sector-pill{display:inline-block;font-family:var(--mono);font-size:.58rem;
+  padding:.28rem .65rem;border-radius:2px;cursor:pointer;margin:.2rem;
+  border:1px solid var(--border-dim);color:var(--text-sec);background:var(--bg-deep);
+  transition:all .15s;letter-spacing:.04em;white-space:nowrap}
+.eq-sector-pill:hover{border-color:var(--amber);color:var(--amber)}
+/* Mobile quick picks — horizontal scroll strip */
+@media(max-width:500px){
+  .eq-chips-wrap{
+    display:flex;flex-wrap:nowrap;overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;padding-bottom:.35rem;
+    mask-image:linear-gradient(to right,#000 85%,transparent 100%);
+    -webkit-mask-image:linear-gradient(to right,#000 85%,transparent 100%);
+  }
+  .eq-chips-wrap::-webkit-scrollbar{display:none}
+  .eq-sector-pill{flex-shrink:0;margin:.15rem .2rem;
+    padding:.45rem .8rem;font-size:.65rem;min-height:36px;
+    display:inline-flex;align-items:center}
+}
+.eq-empty{text-align:center;padding:3rem 1rem;color:var(--text-dim);
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;line-height:2}
+/* General mobile overrides for equities tab */
+@media(max-width:500px){
+  .eq-chart-box{padding:.75rem .75rem}
+  .eq-scenario-box{padding:.75rem .75rem}
+  .eq-ai-box{padding:.75rem .75rem}
+  .eq-sidebar-box{padding:.75rem .85rem}
+  .eq-ticker-name{font-size:1.15rem}
+  .eq-price{font-size:1.75rem}
+  .eq-empty{padding:2rem .75rem}
+  .eq-scenario-row{flex-direction:column;align-items:flex-start;gap:.2rem;padding:.55rem .65rem}
+  .eq-scenario-val{font-size:.78rem}
+}
+@media(max-width:360px){
+  .eq-stats-grid{grid-template-columns:1fr 1fr}
+  .eq-stat-val{font-size:.82rem}
+}
+
+/* Autocomplete dropdown */
+.eq-drop-item{display:flex;align-items:center;gap:.65rem;padding:.65rem .85rem;
+  cursor:pointer;border-bottom:1px solid var(--border-dim);transition:background .1s;
+  min-height:48px}
+.eq-drop-item:last-child{border-bottom:none}
+.eq-drop-item:hover,.eq-drop-item.focused{background:rgba(0,212,255,.07)}
+.eq-drop-flag{font-size:1rem;flex-shrink:0;width:1.4rem;text-align:center}
+.eq-drop-sym{font-family:var(--mono);font-size:.75rem;color:var(--cyan);
+  font-weight:700;letter-spacing:.06em;min-width:72px}
+.eq-drop-name{font-family:var(--sans);font-size:.72rem;color:var(--text-sec);
+  flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-drop-exch{font-family:var(--mono);font-size:.56rem;color:var(--text-dim);
+  white-space:nowrap;letter-spacing:.06em;text-align:right}
+.eq-drop-type{font-family:var(--mono);font-size:.52rem;padding:.12rem .4rem;
+  border-radius:2px;background:var(--bg-deep);border:1px solid var(--border-dim);
+  color:var(--text-dim);letter-spacing:.08em;white-space:nowrap;flex-shrink:0}
+.eq-drop-searching{padding:.85rem;font-family:var(--mono);font-size:.62rem;
+  color:var(--text-dim);letter-spacing:.08em;text-align:center;
+  animation:pulse 1.5s infinite}
+.eq-drop-empty{padding:.85rem;font-family:var(--mono);font-size:.62rem;
+  color:var(--text-dim);letter-spacing:.06em;text-align:center}
+.eq-drop-footer{padding:.45rem .85rem;font-family:var(--mono);font-size:.54rem;
+  color:var(--text-dim);border-top:1px solid var(--border-dim);
+  letter-spacing:.06em;background:var(--bg-deep)}
+/* Mobile dropdown overrides */
+@media(max-width:500px){
+  #eqDropdown{max-height:55vh !important}
+  .eq-drop-exch,.eq-drop-type{display:none}
+  .eq-drop-item{padding:.75rem .75rem;gap:.5rem}
+  .eq-drop-sym{font-size:.8rem;min-width:64px}
+  .eq-drop-name{font-size:.76rem}
+  .eq-drop-footer{display:none}
+}
+/* ══ WORKSPACE — page chrome ══ */
+header{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.7rem 1.25rem;background:var(--bg-panel);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:600;flex-wrap:wrap}
+.hdr-left{display:flex;align-items:baseline;gap:.75rem;min-width:0}
+.hdr-brand{display:flex;align-items:baseline;gap:.45rem;text-decoration:none}
+.hdr-mark{color:var(--amber);font-size:1rem;line-height:1}
+.hdr-title{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;color:var(--text-pri);white-space:nowrap}
+.hdr-sub{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;color:var(--text-dim);
+  text-transform:uppercase;white-space:nowrap}
+@media(max-width:640px){.hdr-sub{display:none}}
+.hdr-right{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+
+.ws-structure{display:flex;align-items:center;gap:.45rem;font-family:var(--mono);
+  font-size:.6rem;letter-spacing:.06em;color:var(--text-sec);
+  background:var(--bg-deep);border:1px solid var(--border-dim);padding:.35rem .6rem;border-radius:2px}
+.ws-struct-dot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
+.ws-tier{font-size:.52rem;letter-spacing:.12em;color:var(--amber);
+  border:1px solid rgba(255,224,64,.3);background:rgba(255,224,64,.08);padding:.1rem .35rem;border-radius:2px}
+.ws-select{background:var(--bg-deep);border:1px solid var(--border);color:var(--text-pri);
+  font-family:var(--mono);font-size:.62rem;padding:.38rem .55rem;border-radius:2px;
+  letter-spacing:.06em;cursor:pointer;outline:none}
+.ws-select:focus{border-color:var(--cyan)}
+
+main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+@media(max-width:600px){main{padding:1rem .85rem 2.5rem}}
+
+.ws-muted{font-family:var(--mono);font-size:.65rem;color:var(--text-sec);
+  line-height:1.65;margin-bottom:.85rem}
+.ws-label{font-family:var(--mono);font-size:.6rem;color:var(--text-dim);
+  margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase}
+
+/* ══ HOLDINGS panel ══ */
+.ws-holdings{margin-bottom:1.5rem;padding:0;overflow:hidden}
+.holdings-head{width:100%;display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;background:transparent;border:none;cursor:pointer;padding:1rem 1.25rem;
+  text-align:left;color:inherit;font:inherit;transition:background .15s}
+.holdings-head:hover{background:rgba(255,255,255,.02)}
+.holdings-head-left{display:flex;align-items:center;gap:.6rem}
+.holdings-head h4{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;
+  color:var(--text-pri);margin:0}
+#holdingsChevron{color:var(--amber);font-size:.8rem;width:.9rem;display:inline-block}
+.holdings-count{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-dim);
+  border:1px solid var(--border-dim);padding:.2rem .55rem;border-radius:2px;white-space:nowrap}
+#holdingsBody{padding:0 1.25rem 1.25rem}
+.ws-hold-header{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+  letter-spacing:.08em;margin-bottom:.3rem}
+@media(max-width:600px){.ws-hold-header{display:none}}
+
+/* Ticker cell carries the coverage badge under the input */
+.hold-tick{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.hold-cov{font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:.08rem .35rem;border-radius:2px;align-self:flex-start;white-space:nowrap}
+.hold-cov.ok{color:var(--green);border:1px solid rgba(0,230,160,.28);background:rgba(0,230,160,.07)}
+.hold-cov.no{color:var(--text-dim);border:1px solid var(--border-dim);background:var(--bg-deep)}
+
+/* ══ RESULTS + coverage honesty ══ */
+.portfolio-result-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:.5rem}
+@media(max-width:600px){
+  .portfolio-result-row{grid-template-columns:1fr 1fr;row-gap:.2rem}
+}
+.portfolio-result-row.uncovered{opacity:.62}
+.portfolio-result-row.total{border-top:1px solid var(--border);margin-top:.4rem;
+  padding-top:.5rem;font-weight:700}
+.portfolio-result-row .val.muted{color:var(--text-dim);font-weight:500}
+
+.portfolio-note{font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
+  line-height:1.7;margin-top:.6rem;padding:.55rem .7rem;
+  border-left:2px solid var(--text-dim);background:var(--bg-deep)}
+
+/* ══ VaR row ══ */
+.portfolio-result-row.var-row{display:block;margin-top:.6rem;padding-top:.6rem;
+  border-top:1px solid var(--border);background:rgba(255,224,64,.04);
+  padding:.6rem .7rem;border-radius:2px}
+.var-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-sec);display:block;margin-bottom:.2rem}
+.var-row .val{font-family:var(--display);font-size:1.15rem;letter-spacing:.02em;display:block}
+.var-detail{font-family:var(--mono);font-size:.56rem;color:var(--text-dim);
+  line-height:1.7;display:block;margin-top:.3rem}
+
+.ws-method-note{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+  line-height:1.75;margin-top:.7rem}
+.ws-method-note a{color:var(--cyan);text-decoration:none}
+.ws-method-note a:hover{text-decoration:underline}
+
+/* ══ Add-to-portfolio action in the research header ══ */
+.eq-add-btn{font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;
+  background:transparent;border:1px solid var(--green);color:var(--green);
+  padding:.3rem .65rem;border-radius:2px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.eq-add-btn:hover{background:rgba(0,230,160,.1)}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%) translateY(140%);
+  background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--cyan);
+  color:var(--text-pri);font-family:var(--mono);font-size:.68rem;line-height:1.5;
+  padding:.7rem 1rem;border-radius:2px;z-index:1000;max-width:min(90vw,420px);
+  box-shadow:0 12px 40px rgba(0,0,0,.5);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{border-left-color:var(--red)}
+
+/* FOOTER — accessibility pass.
+   Previous sizes (.55–.58rem ≈ 8–9px) were below any reasonable legibility floor and
+   used --text-dim on a dark panel, which fails contrast badly. Now: 0.72–0.8rem, the
+   secondary text colour, generous line-height, and a centred measure. */
+.footer-line{margin:0 0 .5rem 0;line-height:1.7;max-width:82ch;margin-left:auto;margin-right:auto}
+.footer-line:last-child{margin-bottom:0}
+.footer-brand{font-size:.86rem;letter-spacing:.06em;color:var(--text-pri)}
+.footer-brand strong{color:var(--cyan)}
+.footer-meta{font-size:.72rem;color:var(--text-sec)}
+.footer-dim{color:var(--text-sec);font-size:.72rem}
+.footer-sep{opacity:.45;margin:0 .45rem}
+.footer-links{display:flex;gap:1.25rem;justify-content:center;flex-wrap:wrap;margin-top:.65rem}
+.footer-links a{color:var(--cyan);text-decoration:none;font-size:.74rem;letter-spacing:.05em;
+  border-bottom:1px solid transparent;padding-bottom:1px;transition:border-color .15s,color .15s}
+.footer-links a:hover,.footer-links a:focus-visible{border-bottom-color:var(--cyan);color:#fff}
+.footer-links a:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:2px}
+.footer-legal{margin-top:1rem;padding-top:.85rem;border-top:1px solid var(--border-dim);
+  color:var(--text-sec);font-size:.72rem;line-height:1.75;max-width:76ch;
+  margin-left:auto;margin-right:auto;letter-spacing:.02em}
+@media (max-width:600px){
+  .footer{padding:1.4rem 1rem;font-size:.76rem}
+  .footer-brand{font-size:.8rem}
+  .footer-line,.footer-dim,.footer-meta,.footer-legal,.footer-links a{font-size:.72rem}
+  .footer-links{gap:1rem}
+}
+</style>
+</head>
+<body data-theme="cyberpunk">
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header>
+  <div class="hdr-left">
+    <a href="/" class="hdr-brand" aria-label="DELAX GEO-RISK home">
+      <span class="hdr-mark">◆</span>
+      <span class="hdr-title">DELAX <span style="color:var(--amber)">GEO-RISK</span></span>
+    </a>
+    <span class="hdr-sub">INVESTOR WORKSPACE</span>
+  </div>
+  <div class="hdr-right">
+    <div class="ws-structure" id="wsStructure" title="Active risk structure">
+      <span class="ws-struct-dot"></span>
+      <span id="wsStructureName">Hormuz / Iran</span>
+      <span class="ws-tier" id="wsStructureTier">EMPIRICAL</span>
+    </div>
+    <select class="ws-select" id="wsScenario" aria-label="Scenario" onchange="onScenarioSelect(this.value)">
+      <option value="optimistic">Optimistic</option>
+      <option value="baseline">Baseline</option>
+      <option value="pessimistic">Pessimistic</option>
+    </select>
+    <a class="btn" href="/" id="wsBackLink">← Dashboard</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- ═══════════════ SEARCH ═══════════════ -->
+    <!-- Global search bar with autocomplete -->
+  <div style="margin-bottom:1.25rem">
+    <div class="eq-search-bar" style="position:relative;margin-bottom:.5rem">
+      <div style="flex:1;position:relative">
+        <input class="eq-search-input" id="eqSearchInput" type="text"
+          placeholder="Search any stock globally — name or ticker…"
+          aria-label="Search global stocks, ETFs and indices"
+          aria-autocomplete="list" aria-controls="eqDropdown" aria-expanded="false"
+          autocomplete="off" spellcheck="false"
+          oninput="eqOnInput(this.value)"
+          onkeydown="eqOnKeydown(event)"/>
+        <!-- Autocomplete dropdown -->
+        <div id="eqDropdown" role="listbox" aria-label="Search results"
+          style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--bg-panel);border:1px solid var(--border);
+            border-top:none;z-index:500;max-height:340px;overflow-y:auto;
+            box-shadow:0 12px 40px rgba(0,0,0,.6)">
+        </div>
+      </div>
+      <button class="eq-search-btn" id="eqSearchBtn" onclick="eqSearch()" aria-label="Search">
+        <span class="btn-label">LOOK UP →</span>
+        <span class="btn-icon">→</span>
+      </button>
+    </div>
+    <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
+      margin-top:.45rem;letter-spacing:.04em">
+      50,000+ securities · NYSE · NASDAQ · LSE · Tokyo · Hong Kong · Frankfurt ·
+      Tadawul · ASX · TSX · Euronext and more
+    </div>
+  </div>
+
+
+  <!-- ═══════════════ HOLDINGS ═══════════════ -->
+  <section class="portfolio-section ws-holdings" aria-labelledby="holdingsHeading">
+    <button class="holdings-head" id="holdingsToggle" onclick="toggleHoldings()"
+      aria-expanded="false" aria-controls="holdingsBody">
+      <span class="holdings-head-left">
+        <span id="holdingsChevron" aria-hidden="true">▸</span>
+        <h4 id="holdingsHeading">💼 Your Holdings</h4>
+      </span>
+      <span class="holdings-count" id="holdingsCount">empty</span>
+    </button>
+
+    <div id="holdingsBody" style="display:none">
+      <p class="ws-muted">
+        Enter holdings to see modelled scenario impact and 1-week Value at Risk.
+        Stored in this browser only — nothing is uploaded.
+      </p>
+
+      <div class="ws-label">Load a preset</div>
+      <div class="portfolio-presets">
+        <button class="btn" onclick="loadPreset('defense')" aria-label="Load defense-heavy portfolio">🛡 Defense-Heavy</button>
+        <button class="btn" onclick="loadPreset('energy')"  aria-label="Load energy-heavy portfolio">⚡ Energy-Heavy</button>
+        <button class="btn" onclick="loadPreset('retail')"  aria-label="Load retail investor portfolio">👤 Retail Balanced</button>
+        <button class="btn" onclick="loadPreset('retiree')" aria-label="Load retiree portfolio">🏠 Retiree Conservative</button>
+        <button class="btn" onclick="clearPortfolio()"      aria-label="Clear all holdings">✕ Clear</button>
+      </div>
+
+      <div class="ws-label">Your holdings</div>
+      <div class="portfolio-row ws-hold-header">
+        <span>TICKER</span><span>SHARES</span><span>AVG COST ($)</span><span></span>
+      </div>
+      <div class="portfolio-grid" id="portfolioGrid"></div>
+      <button class="btn green" onclick="addPortfolioRow()" style="margin-top:.5rem" aria-label="Add holding">+ Add Holding</button>
+
+      <div style="margin-top:1.25rem">
+        <div class="ws-label">
+          Scenario impact — <span id="portfolioScenarioLabel">Baseline</span>
+        </div>
+        <div class="portfolio-results" id="portfolioResults">
+          <div class="portfolio-result-row">
+            <span style="color:var(--text-dim)">Add holdings above to see scenario impact and risk</span>
+          </div>
+        </div>
+        <div class="ws-method-note">
+          Impact figures apply the active structure's published sector betas, scaled by scenario.
+          Value at Risk is a historical simulation of realised weekly returns — not a forecast.
+          <a href="/methodology.html">Methodology →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ RESEARCH ═══════════════ -->
+    <!-- Main layout: left panel + right sidebar -->
+  <div class="eq-layout">
+
+    <!-- ── LEFT: main content ── -->
+    <div id="eqMain">
+
+      <!-- Empty state — shown before first search -->
+      <div id="eqEmpty" class="eq-empty">
+        <div style="font-size:2rem;margin-bottom:.75rem;opacity:.4">💹</div>
+        <div style="color:var(--text-sec);margin-bottom:.5rem">Equity Investor Intelligence</div>
+        <div style="font-size:.62rem;color:var(--text-dim)">
+          Type any company name or ticker to search 50,000+ global securities
+        </div>
+        <div style="margin-top:.75rem;font-family:var(--mono);font-size:.55rem;
+          color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase">
+          Conflict-relevant quick picks
+        </div>
+        <div class="eq-chips-wrap" style="margin-top:.65rem;display:flex;gap:.35rem;flex-wrap:wrap;justify-content:center">
+          <span class="eq-sector-pill" onclick="eqLoadTicker('XOM')"   title="ExxonMobil · NYSE">XOM</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('LMT')"   title="Lockheed Martin · NYSE">LMT</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('RTX')"   title="RTX Corp · NYSE">RTX</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('GLD')"   title="SPDR Gold ETF · NYSE">GLD</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('DAL')"   title="Delta Air Lines · NYSE">DAL</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('XLE')"   title="Energy Select ETF · NYSE">XLE</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('ITA')"   title="Defense ETF · NYSE">ITA</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('TLT')"   title="20Y Bond ETF · NYSE">TLT</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('BP.L')"  title="BP · London Stock Exchange">BP.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('SHEL.L')" title="Shell · London Stock Exchange">SHEL.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('2222.SR')" title="Saudi Aramco · Tadawul">2222.SR</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('TSM')"   title="TSMC · NYSE ADR">TSM</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('HSBA.L')" title="HSBC · London Stock Exchange">HSBA.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('RR.L')"  title="Rolls-Royce · London Stock Exchange">RR.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('CCJ')"   title="Cameco (Uranium) · NYSE">CCJ</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('FXI')"   title="China Large-Cap ETF · NYSE">FXI</span>
+        </div>
+      </div>
+
+      <!-- Results panel — hidden until first search -->
+      <div id="eqResults" style="display:none">
+
+        <!-- Ticker header -->
+        <div style="margin-bottom:1rem">
+          <div class="eq-ticker-header">
+            <span class="eq-ticker-name" id="eqTickerName">—</span>
+            <span class="eq-ticker-sym" id="eqTickerSym"></span>
+            <span class="eq-source-tag" id="eqSourceTag">Finnhub</span>
+            <button class="eq-add-btn" id="eqAddBtn" onclick="addCurrentTickerToPortfolio()"
+              style="display:none" aria-label="Add this ticker to your holdings">+ ADD TO HOLDINGS</button>
+          </div>
+          <div class="eq-price-row">
+            <span class="eq-price" id="eqPrice">—</span>
+            <span class="eq-change" id="eqChange"></span>
+            <span style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim)" id="eqMktStatus"></span>
+          </div>
+        </div>
+
+        <!-- 8-cell fundamentals grid -->
+        <div class="eq-stats-grid" id="eqStatsGrid">
+          <div class="eq-stat"><div class="eq-stat-label">Market Cap</div><div class="eq-stat-val" id="eqStatMktCap">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">P/E Ratio</div><div class="eq-stat-val" id="eqStatPE">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">52W High</div><div class="eq-stat-val positive" id="eqStat52H">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">52W Low</div><div class="eq-stat-val negative" id="eqStat52L">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Beta</div><div class="eq-stat-val" id="eqStatBeta">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Div Yield</div><div class="eq-stat-val positive" id="eqStatDiv">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Analyst Target</div><div class="eq-stat-val" id="eqStatTarget">—</div></div>
+          <div class="eq-stat"><div class="eq-stat-label">Profit Margin</div><div class="eq-stat-val" id="eqStatMargin">—</div></div>
+        </div>
+
+        <!-- Candlestick chart -->
+        <div class="eq-chart-box">
+          <div class="eq-chart-header">
+            <div class="eq-chart-title" id="eqChartLabel">30-Day Price History</div>
+            <div class="eq-range-btns">
+              <button class="eq-range-btn active" onclick="eqSetRange(30,this)">1M</button>
+              <button class="eq-range-btn" onclick="eqSetRange(60,this)">2M</button>
+              <button class="eq-range-btn" onclick="eqSetRange(90,this)">3M</button>
+            </div>
+          </div>
+          <canvas id="eq-chart-canvas" width="600" height="240"
+            style="width:100%;height:240px;display:block;touch-action:pan-y"></canvas>
+        </div>
+
+        <!-- Conflict-adjusted scenario simulator -->
+        <div class="eq-scenario-box">
+          <div class="eq-scenario-title">
+            <span>⚡ Conflict Scenario Projections</span>
+            <span style="color:var(--text-dim);font-size:.54rem" id="eqScenarioActiveLabel">Active: Baseline</span>
+          </div>
+          <div class="eq-scenario-rows" id="eqScenarioRows">
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">3-Month (conflict premium)</span>
+              <span class="eq-scenario-val base" id="eqProj3M">—</span>
+            </div>
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">6-Month projection</span>
+              <span class="eq-scenario-val base" id="eqProj6M">—</span>
+            </div>
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">12-Month (optimistic)</span>
+              <span class="eq-scenario-val bull" id="eqProj12MBull">—</span>
+            </div>
+            <div class="eq-scenario-row">
+              <span class="eq-scenario-label">12-Month (pessimistic)</span>
+              <span class="eq-scenario-val bear" id="eqProj12MBear">—</span>
+            </div>
+          </div>
+          <div style="margin-top:.65rem;font-family:var(--mono);font-size:.55rem;color:var(--text-dim);line-height:1.6">
+            Projections apply DELAX conflict multipliers to base historical returns.
+            Not financial advice — for scenario planning only.
+          </div>
+        </div>
+
+        <!-- AI Investor Insight — Pro gated -->
+        <div class="eq-ai-box">
+          <div class="eq-ai-header">🧠 AI Investor Analysis · <span id="eqAiScenarioTag">Armed Truce</span></div>
+          <div class="eq-ai-content" id="eqAiContent">
+            <div style="color:var(--text-dim);font-size:.72rem">
+              Click <strong style="color:var(--purple)">Get AI Analysis</strong> for a plain-English breakdown of this stock's conflict exposure, sector dynamics, and what the current scenario means for your position.
+            </div>
+          </div>
+          <button class="btn cyan" id="eqAiBtn" onclick="eqGetAI()"
+            style="margin-top:.85rem;font-size:.7rem;padding:.55rem 1.1rem">
+            🔒 Get AI Analysis (Pro)
+          </button>
+        </div>
+
+      </div><!-- end eqResults -->
+    </div><!-- end eqMain left -->
+
+    <!-- Mobile sidebar toggle — hidden on desktop -->
+    <button id="eqSidebarToggle" onclick="eqToggleSidebar()"
+      style="display:none;width:100%;margin-bottom:.75rem;
+        background:var(--bg-card);border:1px solid var(--border-dim);
+        color:var(--text-sec);font-family:var(--mono);font-size:.65rem;
+        letter-spacing:.1em;text-transform:uppercase;padding:.65rem 1rem;
+        cursor:pointer;text-align:left;border-radius:2px;
+        transition:border-color .15s"
+      aria-expanded="false">
+      ▶ Watchlist &amp; Sector Signals
+    </button>
+
+    <!-- ── RIGHT: sidebar ── -->
+    <div id="eqSidebar">
+
+      <!-- Watchlist -->
+      <div class="eq-sidebar-box">
+        <div class="eq-sidebar-title">Watchlist · Live Prices</div>
+        <div id="eqWatchlist">
+          <div style="font-family:var(--mono);font-size:.6rem;color:var(--text-dim);padding:.5rem 0">
+            Loading…
+          </div>
+        </div>
+      </div>
+
+      <!-- Sector signals -->
+      <div class="eq-sidebar-box">
+        <div class="eq-sidebar-title">Sector Signals</div>
+        <div style="font-family:var(--sans);font-size:.68rem;color:var(--text-dim);
+          margin-bottom:.65rem;line-height:1.5">
+          Click a sector to load its lead equity
+        </div>
+        <div id="eqSectorPills" class="eq-chips-wrap" style="flex-wrap:wrap">
+          <span class="eq-sector-pill" onclick="eqLoadTicker('XOM')"  title="Energy — XOM">⛽ Energy</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('LMT')"  title="Defense — LMT">🛡 Defense</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('GLD')"  title="Gold — GLD">🥇 Gold</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('DAL')"  title="Airlines — DAL">✈ Airlines</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('TLT')"  title="Bonds — TLT">📊 Bonds</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('SPY')"  title="S&P 500 — SPY">🏦 S&amp;P 500</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('EEM')"  title="EM — EEM">🌍 EM</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('DXY')"  title="USD — DXY">💵 USD</span>
+        </div>
+      </div>
+
+      <!-- Scenario context card -->
+      <div class="eq-sidebar-box" style="border-left:2px solid var(--amber)">
+        <div class="eq-sidebar-title">Active Scenario</div>
+        <div style="font-family:var(--display);font-size:1.1rem;color:var(--amber);
+          margin-bottom:.4rem" id="eqSideScenario">Armed Truce</div>
+        <div style="font-family:var(--sans);font-size:.68rem;color:var(--text-sec);line-height:1.5"
+          id="eqSideScenarioDesc">
+          Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102
+        </div>
+        <div style="margin-top:.65rem;font-family:var(--mono);font-size:.58rem;
+          color:var(--text-dim)">
+          Change scenario on the Charts tab to update projections
+        </div>
+      </div>
+
+    </div><!-- end sidebar -->
+  </div><!-- end eq-layout -->
+
+
+</main>
+
+<!-- ═══════════════ PRO PAYWALL MODAL ═══════════════ -->
+<div class="pro-modal-overlay" id="proModalOverlay" onclick="if(event.target===this)closeProModal()" role="dialog" aria-modal="true" aria-labelledby="proModalTitle">
+  <div class="pro-modal">
+    <div class="pro-modal-header">
+      <div class="pro-modal-lock">🔒</div>
+      <div class="pro-modal-title" id="proModalTitle">AI Investor Intelligence</div>
+      <div class="pro-modal-tier">Pro Feature</div>
+    </div>
+    <!-- Primary state: pitch + waitlist form -->
+    <div class="pro-modal-body" id="proModalBody">
+      <p class="pro-modal-desc">
+        Get plain-English AI analysis of how the Iran conflict affects <strong style="color:var(--text-pri)">your specific investments</strong> — from energy stocks to inflation exposure to portfolio hedges.
+      </p>
+      <ul class="pro-modal-benefits">
+        <li>Ask unlimited natural-language questions about the conflict's market impact</li>
+        <li>Click any KPI for a deep-dive AI explanation of what's really happening</li>
+        <li>Real-time AI news summaries of breaking headlines</li>
+        <li>Scenario-aware heatmap narratives tailored to your active outlook</li>
+        <li>Priority access to new investor features as they launch</li>
+      </ul>
+      <form class="pro-modal-form" onsubmit="submitProWaitlist(event)">
+        <input type="email" class="pro-modal-input" id="proModalEmail" required
+          placeholder="your@email.com — join the Pro waitlist" aria-label="Email address" />
+        <button type="submit" class="pro-modal-btn" id="proModalSubmit">
+          Join Pro Waitlist →
+        </button>
+      </form>
+    </div>
+    <!-- Success state: confirmation after email submit -->
+    <div class="pro-modal-body pro-modal-success" id="proModalSuccess">
+      <div class="pro-modal-success-icon">✉</div>
+      <div class="pro-modal-success-text">
+        <strong style="color:var(--text-pri)">You're on the list.</strong><br>
+        We'll reach out to <span id="proModalEmailEcho" style="color:var(--cyan)"></span> the moment Pro launches.
+      </div>
+    </div>
+    <div class="pro-modal-footer">
+      <div class="pro-modal-contact">
+        Questions? <a href="mailto:contact@delaxcom.com">contact@delaxcom.com</a>
+      </div>
+      <button class="pro-modal-later" onclick="closeProModal()">Maybe later</button>
+    </div>
+  </div>
+</div>
+
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">DELAXCOM LLC</div>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="/">Dashboard</a>
+      <a href="/workspace.html" aria-current="page">Workspace</a>
+      <a href="/exposure-desk.html">Exposure Desk</a>
+      <a href="/methodology.html">Methodology</a>
+    </nav>
+    <div class="footer-note">
+      Modelled estimates for research and education. Not investment advice.
+      Price data from public market sources; figures may be delayed.
+    </div>
+  </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ── structure registry: impact betas for the active structure ── */
+const STRUCT_DATA = { 'hormuz-iran': {}, 'taiwan-strait': {} };
+/* Portfolio impact multipliers — maps sector to scenario impact estimates */
+STRUCT_DATA['hormuz-iran'].SECTOR_IMPACT = {
+  'XOM':{12:0.38, 36:0.90,sector:'Energy'},  'CVX':{12:0.35,36:0.85,sector:'Energy'},
+  'RTX':{12:0.52, 36:1.10,sector:'Defense'}, 'LMT':{12:0.45,36:0.95,sector:'Defense'},
+  'NOC':{12:0.40, 36:0.88,sector:'Defense'}, 'DAL':{12:-0.30,36:-0.25,sector:'Aviation'},
+  'UAL':{12:-0.32,36:-0.28,sector:'Aviation'},'GLD':{12:0.22,36:0.18,sector:'Metals'},
+  'GDX':{12:0.25,36:0.22,sector:'Metals'},   'SPY':{12:-0.08,36:0.05,sector:'Broad Market'},
+  'QQQ':{12:-0.06,36:0.10,sector:'Tech'},    'VWO':{12:-0.22,36:-0.15,sector:'EM'},
+  'ZIM':{12:0.42,36:0.28,sector:'Shipping'}, 'FCX':{12:0.28,36:0.40,sector:'Commodities'},
+  'PANW':{12:0.25,36:0.50,sector:'Cyber'},   'DE': {12:0.18,36:0.40,sector:'Agri-Tech'},
+  'PFE':{12:0.14,36:0.22,sector:'Healthcare'},'JNJ':{12:0.12,36:0.20,sector:'Healthcare'},
+  'CCJ':{12:0.15,36:0.65,sector:'Nuclear'},
+};
+/* TAIWAN portfolio multipliers — DERIVED from computeExposure() single-name runs under
+   the Quarantine/Blockade case (12M column); 3Yr = 55% of it, tracking the capacity
+   recovery in timeline.semiCapacityOffline. Generated from the engine, not hand-tuned. */
+STRUCT_DATA['taiwan-strait'].SECTOR_IMPACT = {
+  'TSM':{12:-0.65,36:-0.36,sector:'Foundry'},      'UMC':{12:-0.65,36:-0.36,sector:'Foundry'},
+  'NVDA':{12:-0.66,36:-0.36,sector:'Fabless'},     'AMD':{12:-0.59,36:-0.32,sector:'Fabless'},
+  'AVGO':{12:-0.59,36:-0.32,sector:'Fabless'},     'QCOM':{12:-0.59,36:-0.32,sector:'Fabless'},
+  'INTC':{12:0.46, 36:0.25, sector:'Non-TW Fab'},  'MU':{12:0.35,36:0.19,sector:'Non-TW Fab'},
+  'SMH':{12:-0.55,36:-0.30,sector:'Semis'},        'ASML':{12:-0.47,36:-0.26,sector:'Semi Equip'},
+  'LRCX':{12:-0.47,36:-0.26,sector:'Semi Equip'},  'AMAT':{12:-0.47,36:-0.26,sector:'Semi Equip'},
+  'EWT':{12:-0.61,36:-0.34,sector:'Taiwan'},       'FXI':{12:-0.33,36:-0.18,sector:'China'},
+  'MCHI':{12:-0.33,36:-0.18,sector:'China'},       'EWY':{12:-0.06,36:0.05,sector:'Korea'},
+  'EWJ':{12:-0.06,36:0.02,sector:'Japan'},         'AAPL':{12:-0.38,36:-0.21,sector:'Big Tech'},
+  'MSFT':{12:-0.38,36:-0.21,sector:'Big Tech'},    'DELL':{12:-0.38,36:-0.21,sector:'Big Tech'},
+  'TM':{12:-0.31,36:-0.17,sector:'Autos'},         'GM':{12:-0.31,36:-0.17,sector:'Autos'},
+  'F':{12:-0.31,36:-0.17,sector:'Autos'},          'ZIM':{12:-0.09,36:-0.05,sector:'Container'},
+  'RTX':{12:0.35,36:0.42,sector:'Defense'},        'LMT':{12:0.35,36:0.42,sector:'Defense'},
+  'NOC':{12:0.35,36:0.42,sector:'Defense'},        'XOM':{12:-0.08,36:-0.04,sector:'Energy'},
+  'CVX':{12:-0.08,36:-0.04,sector:'Energy'},       'DAL':{12:-0.18,36:-0.10,sector:'Aviation'},
+  'UAL':{12:-0.18,36:-0.10,sector:'Aviation'},     'GLD':{12:0.14,36:0.08,sector:'Haven'},
+  'GDX':{12:0.14,36:0.08,sector:'Haven'},          'NEE':{12:0.15,36:0.09,sector:'Utilities'},
+  'SPY':{12:-0.33,36:-0.18,sector:'Broad Market'}, 'QQQ':{12:-0.33,36:-0.18,sector:'Broad Market'},
+  'VWO':{12:-0.26,36:-0.14,sector:'EM'},
+};
+
+/* ═════════════════════════════════════════════════════════════
+   WORKSPACE — state binding, helpers, boot
+   ═════════════════════════════════════════════════════════════
+   Structure and scenario are owned by DelaxState (delax-state.js) and shared
+   with every other destination. The legacy globals `scenario` and
+   `ACTIVE_STRUCTURE` are kept in sync because the ported equity and portfolio
+   code reads them by name; new code should call getScenario() / DelaxState.
+   ═════════════════════════════════════════════════════════════ */
+
+var scenario = DelaxState.get('scenario');
+window.ACTIVE_STRUCTURE = DelaxState.get('structure');
+
+function getScenario()  { return DelaxState.get('scenario'); }
+function getStructure() { return DelaxState.get('structure'); }
+
+/* ── shared helpers (ported verbatim from the dashboard) ── */
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function _esc(s){ return escHtml(s); }
+
+var _toastTimer = null;
+function showToast(msg, isError) {
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'toast show' + (isError ? ' error' : '');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function () { el.className = 'toast'; }, 4200);
+}
+
+/* ── structure registry (SECTOR_IMPACT only) ──
+   The workspace needs impact betas, not the full dashboard registry. SD()
+   keeps the same signature as the dashboard so ported code is unchanged. */
+function SD(name) {
+  var S = STRUCT_DATA[window.ACTIVE_STRUCTURE || 'hormuz-iran'] || STRUCT_DATA['hormuz-iran'];
+  return (name in S) ? S[name] : (STRUCT_DATA['hormuz-iran'][name]);
+}
+
+var SCENARIO_LABELS = {
+  baseline:    'Baseline',
+  optimistic:  'Optimistic',
+  pessimistic: 'Pessimistic',
+};
+
+/* Structure display metadata for the header pill. Falls back gracefully if
+   risk-structures.js has not defined the active id. */
+function structureMeta() {
+  var id = getStructure();
+  var fallback = {
+    'hormuz-iran':   { name: 'Hormuz / Iran',  tier: 'EMPIRICAL' },
+    'taiwan-strait': { name: 'Taiwan Strait',  tier: 'UNPRICED'  },
+  }[id] || { name: id, tier: '' };
+  try {
+    if (window.RISK_STRUCTURES && RISK_STRUCTURES[id]) {
+      var S = RISK_STRUCTURES[id];
+      return { name: S.shortName || S.name || fallback.name, tier: S.tier || fallback.tier };
+    }
+  } catch (e) {}
+  return fallback;
+}
+
+function aiStructureContext() {
+  var m = structureMeta();
+  return m.name + ' (' + m.tier + ')';
+}
+
+/* ── header sync ── */
+function syncHeader() {
+  var m = structureMeta();
+  var nameEl = document.getElementById('wsStructureName');
+  var tierEl = document.getElementById('wsStructureTier');
+  if (nameEl) nameEl.textContent = m.name;
+  if (tierEl) { tierEl.textContent = m.tier; tierEl.style.display = m.tier ? '' : 'none'; }
+
+  var sel = document.getElementById('wsScenario');
+  if (sel && sel.value !== getScenario()) sel.value = getScenario();
+
+  var lbl = document.getElementById('portfolioScenarioLabel');
+  if (lbl) lbl.textContent = SCENARIO_LABELS[getScenario()] || getScenario();
+
+  var back = document.getElementById('wsBackLink');
+  if (back) back.href = DelaxState.linkTo('/');
+}
+
+function onScenarioSelect(v) { DelaxState.set('scenario', v); }
+
+/* ── react to state changes from anywhere (including another tab) ── */
+DelaxState.subscribe(function (d) {
+  scenario = d.state.scenario;
+  window.ACTIVE_STRUCTURE = d.state.structure;
+  DelaxState.applyToDocument();
+  syncHeader();
+
+  if (d.changed.indexOf('scenario') >= 0 || d.changed.indexOf('structure') >= 0) {
+    /* Coverage is structure-dependent, so badges and impact both re-render.
+       VaR re-runs because its covered set may have changed. */
+    renderPortfolioGrid();
+    calcPortfolioImpact();
+    if (typeof eqCurrentData !== 'undefined' && eqCurrentData && typeof eqRenderProjections === 'function') {
+      eqRenderProjections(eqCurrentData);
+    }
+  }
+});
+
+/* ── boot ── */
+document.addEventListener('DOMContentLoaded', function () {
+  DelaxState.applyToDocument();
+  syncHeader();
+
+  loadPortfolioFromStorage();
+
+  if (typeof eqUpdateSidebar === 'function') eqUpdateSidebar();
+  if (typeof eqInitMobileUI === 'function') eqInitMobileUI();
+
+  /* Deep link: /workspace.html?symbol=NVDA opens straight into research. */
+  try {
+    var sym = new URLSearchParams(location.search).get('symbol');
+    if (sym) {
+      sym = sym.toUpperCase().replace(/[^A-Z0-9.\-^]/g, '').slice(0, 12);
+      if (sym) {
+        var input = document.getElementById('eqSearchInput');
+        if (input) input.value = sym;
+        eqLoadTicker(sym);
+      }
+    }
+  } catch (e) {}
+
+  window.addEventListener('scroll', function () {
+    if (typeof eqCloseDropdown === 'function') eqCloseDropdown();
+  }, { passive: true });
+
+  if (typeof __wsBootDone === 'function') __wsBootDone();
+});
+
+/* Boot completion probe — the G6 gate asserts this fires, which is how the
+   orphaned-reference class that broke the globe boot gets caught here. */
+window.__wsBooted = false;
+function __wsBootDone() { window.__wsBooted = true; }
+
+
+function isProUser() {
+  // While the paywall is disabled, all Pro/AI features are unlocked for the
+  // public showcase. Flip PAYWALL_ENABLED to true to restore Pro gating.
+  if (!PAYWALL_ENABLED) return true;
+  // TODO (Step 16): replace with real Supabase session check.
+  return false;
+}
+
+function showProModal(feature = 'whatif') {
+  window._proModalFeature = feature;  // captured for the waitlist API submission
+  const overlay = document.getElementById('proModalOverlay');
+  const title   = document.getElementById('proModalTitle');
+  const desc    = overlay && overlay.querySelector('.pro-modal-desc');
+  const body    = document.getElementById('proModalBody');
+  const success = document.getElementById('proModalSuccess');
+  const meta    = PRO_MODAL[feature] || PRO_MODAL.whatif;
+  if (title) title.textContent = meta.title;
+  if (desc)  desc.innerHTML    = `${meta.pitch} Plus full access to every AI feature on DELAX GEO-RISK.`;
+  if (body)    body.style.display    = '';
+  if (success) success.classList.remove('show');
+  if (overlay) overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Focus email input for immediate typing
+  setTimeout(() => {
+    const inp = document.getElementById('proModalEmail');
+    if (inp) inp.focus();
+  }, 250);
+}
+
+function closeProModal() {
+  const overlay = document.getElementById('proModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function submitProWaitlist(e) {
+  e.preventDefault();
+  const email  = document.getElementById('proModalEmail').value.trim();
+  const btn    = document.getElementById('proModalSubmit');
+  const body   = document.getElementById('proModalBody');
+  const success= document.getElementById('proModalSuccess');
+  const echo   = document.getElementById('proModalEmailEcho');
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Adding you…';
+
+  // Capture context of which feature triggered this signup
+  const feature = (window._proModalFeature || 'unknown');
+
+  // Store locally as a backup in case the network fails
+  try {
+    const list = JSON.parse(localStorage.getItem('delax_pro_waitlist') || '[]');
+    if (!list.includes(email)) list.push(email);
+    localStorage.setItem('delax_pro_waitlist',          JSON.stringify(list));
+    localStorage.setItem('delax_pro_waitlist_latest',   email);
+    localStorage.setItem('delax_pro_waitlist_joined_at', new Date().toISOString());
+  } catch(_) {}
+
+  // POST to /api/waitlist → Resend → contact@delaxcom.com
+  let sentOk = false;
+  let errorMsg = '';
+  try {
+    const res = await fetch('/api/waitlist', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        scenario:  (typeof scenario !== 'undefined' ? scenario : 'unknown'),
+        feature,
+        userAgent: navigator.userAgent || '',
+        referrer:  document.referrer   || '',
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) {
+      sentOk = true;
+    } else {
+      errorMsg = data.error || `HTTP ${res.status}`;
+      console.warn('[waitlist] API error:', errorMsg);
+    }
+  } catch (err) {
+    errorMsg = err.message;
+    console.warn('[waitlist] Network error:', errorMsg);
+  }
+
+  if (echo)    echo.textContent = email;
+  if (body)    body.style.display = 'none';
+  if (success) success.classList.add('show');
+
+  // If the API failed, show a small warning (but still show success state —
+  // the email is in localStorage, we'll recover it on next deploy)
+  if (!sentOk && success) {
+    const warn = document.createElement('div');
+    warn.style.cssText = 'margin-top:.85rem;padding:.55rem .75rem;background:rgba(255,224,64,.08);border:1px solid rgba(255,224,64,.3);border-radius:2px;font-family:var(--mono);font-size:.58rem;color:var(--yellow);line-height:1.5';
+    warn.textContent = '⚠ Saved locally — if you don\'t hear from us in 48h, email contact@delaxcom.com directly.';
+    success.appendChild(warn);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Join Pro Waitlist →';
+}
+
+
+/* ═════════════════════════════════════════════════════════════
+   HOLDINGS — impact, coverage, and risk
+   ═════════════════════════════════════════════════════════════
+   Three rules govern everything below, and none of them bend:
+
+   1. COVERAGE IS EXPLICIT. A holding is "covered" only if the ACTIVE
+      structure's SECTOR_IMPACT map names it. Uncovered holdings are shown
+      and valued but carry NO impact figure and NO risk contribution. They
+      are never zero-filled — a 0.0% next to calibrated names reads as
+      "we modelled this and it nets out", which is a lie about a ticker we
+      have never modelled at all.
+
+   2. NO FABRICATED NUMBERS. Every figure traces to either a published
+      sector beta or a realised price series. The previous build printed
+      "Est. 95% VaR (1-day)" as a hardcoded 18% of portfolio value —
+      no volatility, no correlation, roughly an order of magnitude above
+      any defensible equity figure. It is gone.
+
+   3. SILENCE BEATS A WEAK NUMBER. Where the data cannot support a figure,
+      the figure is suppressed with a stated reason rather than estimated.
+   ═════════════════════════════════════════════════════════════ */
+
+var portfolioRows = [];
+var _rowSeq       = 0;               // deterministic row ids (no Math.random)
+var _varState     = { status: 'idle', text: '', detail: '' };
+var _weeklyCache  = {};              // sym → [[date, close], …] for this session
+
+var PRESETS = {
+  defense:  [{ticker:'RTX',shares:50,cost:101},{ticker:'LMT',shares:20,cost:462},{ticker:'NOC',shares:15,cost:450},{ticker:'PANW',shares:25,cost:300}],
+  energy:   [{ticker:'XOM',shares:100,cost:114},{ticker:'CVX',shares:60,cost:160},{ticker:'GLD',shares:30,cost:213},{ticker:'FCX',shares:80,cost:45}],
+  retail:   [{ticker:'SPY',shares:40,cost:500},{ticker:'QQQ',shares:20,cost:430},{ticker:'GLD',shares:15,cost:213},{ticker:'XOM',shares:25,cost:114}],
+  retiree:  [{ticker:'SPY',shares:20,cost:500},{ticker:'GLD',shares:30,cost:213},{ticker:'JNJ',shares:40,cost:155},{ticker:'PFE',shares:50,cost:28}],
+};
+
+function nextRowId() { _rowSeq += 1; return 'h' + _rowSeq; }
+
+/* ── Risk model constants ──────────────────────────────────────
+   Published on the methodology page. Changing any of these changes a
+   number users may cite, so they live here, named, in one place. */
+var VAR_CONFIDENCE   = 0.95;   // 95% — read as the 5th percentile of losses
+var VAR_MIN_WEEKS    = 104;    // 2 years of common observations, or suppress
+var VAR_LOOKBACK_MAX = 320;    // cap on weekly observations used (~6.1 years)
+
+/* ═════════════════════════════════════════
+   PORTFOLIO CRUD
+   ═════════════════════════════════════════ */
+
+function loadPreset(name) {
+  portfolioRows = (PRESETS[name] || []).map(function (r) {
+    return { id: nextRowId(), ticker: r.ticker, shares: r.shares, cost: r.cost };
+  });
+  renderPortfolioGrid();
+  calcPortfolioImpact();
+  savePortfolioToStorage();
+  setHoldingsOpen(true);
+}
+
+function clearPortfolio() {
+  portfolioRows = [];
+  renderPortfolioGrid();
+  var el = document.getElementById('portfolioResults');
+  if (el) el.innerHTML = emptyResultsHtml();
+  _varState = { status: 'idle', text: '', detail: '' };
+  renderVarRow();
+  savePortfolioToStorage();
+}
+
+function addPortfolioRow() {
+  portfolioRows.push({ id: nextRowId(), ticker: '', shares: 0, cost: 0 });
+  renderPortfolioGrid();
+  setHoldingsOpen(true);
+}
+
+function removePortfolioRow(id) {
+  portfolioRows = portfolioRows.filter(function (r) { return r.id !== id; });
+  renderPortfolioGrid();
+  calcPortfolioImpact();
+  savePortfolioToStorage();
+}
+
+function onPortfolioChange(id, field, val) {
+  var row = portfolioRows.find(function (r) { return r.id === id; });
+  if (!row) return;
+  row[field] = field === 'ticker' ? String(val).toUpperCase().trim() : (parseFloat(val) || 0);
+  calcPortfolioImpact();
+  savePortfolioToStorage();
+}
+
+/* Cross-wire: research panel → holdings.
+   Adds the symbol currently open in research, prefilled with its live price
+   as avg cost. Existing holding of the same ticker is focused, not duplicated. */
+function addCurrentTickerToPortfolio() {
+  if (!eqCurrentSymbol) { showToast('Search a ticker first', true); return; }
+  var existing = portfolioRows.find(function (r) { return r.ticker === eqCurrentSymbol; });
+  if (existing) {
+    setHoldingsOpen(true);
+    showToast(eqCurrentSymbol + ' is already in your holdings');
+    renderPortfolioGrid();
+    return;
+  }
+  var px = (eqCurrentData && eqCurrentData.quote && eqCurrentData.quote.price) || 0;
+  portfolioRows.push({ id: nextRowId(), ticker: eqCurrentSymbol, shares: 0, cost: px });
+  renderPortfolioGrid();
+  savePortfolioToStorage();
+  setHoldingsOpen(true);
+  showToast('Added ' + eqCurrentSymbol + ' — enter share count to see impact');
+}
+
+/* Cross-wire: holdings → research panel. */
+function researchHolding(ticker) {
+  if (!ticker) return;
+  var input = document.getElementById('eqSearchInput');
+  if (input) input.value = ticker;
+  eqLoadTicker(ticker);
+  var panel = document.getElementById('eqMain');
+  if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ═════════════════════════════════════════
+   RENDERING
+   ═════════════════════════════════════════ */
+
+function emptyResultsHtml() {
+  return '<div class="portfolio-result-row">' +
+    '<span style="color:var(--text-dim)">Add holdings above to see scenario impact and risk</span></div>';
+}
+
+function isCovered(ticker) {
+  var map = SD('SECTOR_IMPACT') || {};
+  return Object.prototype.hasOwnProperty.call(map, ticker);
+}
+
+function renderPortfolioGrid() {
+  var grid = document.getElementById('portfolioGrid');
+  if (!grid) return;
+  if (!portfolioRows.length) {
+    grid.innerHTML = '<div style="font-family:var(--mono);font-size:.62rem;color:var(--text-dim);padding:.5rem 0">No holdings added yet.</div>';
+    updateHoldingsCount();
+    return;
+  }
+  grid.innerHTML = portfolioRows.map(function (r) {
+    var covered = r.ticker && isCovered(r.ticker);
+    var badge = !r.ticker ? ''
+      : covered
+        ? '<span class="hold-cov ok" title="Modelled by the active risk structure">covered</span>'
+        : '<span class="hold-cov no" title="Not modelled by the active risk structure — excluded from impact and risk">uncovered</span>';
+    return '<div class="portfolio-row">' +
+      '<div class="hold-tick">' +
+        '<input class="portfolio-input" type="text" placeholder="e.g. XOM" value="' + escHtml(r.ticker) + '" ' +
+          'onchange="onPortfolioChange(\'' + r.id + '\',\'ticker\',this.value)" aria-label="Ticker symbol"/>' +
+        badge +
+      '</div>' +
+      '<input class="portfolio-input" type="number" placeholder="Shares" value="' + (r.shares || '') + '" ' +
+        'onchange="onPortfolioChange(\'' + r.id + '\',\'shares\',this.value)" aria-label="Number of shares"/>' +
+      '<input class="portfolio-input" type="number" placeholder="Avg Cost" value="' + (r.cost || '') + '" ' +
+        'onchange="onPortfolioChange(\'' + r.id + '\',\'cost\',this.value)" aria-label="Average cost per share"/>' +
+      '<div style="display:flex;gap:.3rem">' +
+        (r.ticker
+          ? '<button class="btn" onclick="researchHolding(\'' + escHtml(r.ticker) + '\')" ' +
+            'style="padding:.3rem .5rem" title="Open in research panel" aria-label="Research ' + escHtml(r.ticker) + '">🔍</button>'
+          : '') +
+        '<button class="btn" onclick="removePortfolioRow(\'' + r.id + '\')" ' +
+          'style="border-color:var(--red);color:var(--red);padding:.3rem .5rem" aria-label="Remove holding">✕</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  updateHoldingsCount();
+}
+
+function updateHoldingsCount() {
+  var el = document.getElementById('holdingsCount');
+  if (!el) return;
+  var valid = portfolioRows.filter(function (r) { return r.ticker && r.shares > 0 && r.cost > 0; });
+  el.textContent = valid.length ? valid.length + (valid.length === 1 ? ' holding' : ' holdings') : 'empty';
+}
+
+/* ═════════════════════════════════════════
+   SCENARIO IMPACT
+   ═════════════════════════════════════════ */
+
+function calcPortfolioImpact() {
+  var results = document.getElementById('portfolioResults');
+  if (!results) return;
+
+  var validRows = portfolioRows.filter(function (r) { return r.ticker && r.shares > 0 && r.cost > 0; });
+  updateHoldingsCount();
+  if (!validRows.length) {
+    results.innerHTML = emptyResultsHtml();
+    _varState = { status: 'idle', text: '', detail: '' };
+    renderVarRow();
+    return;
+  }
+
+  var impactMap = SD('SECTOR_IMPACT') || {};
+  var scen = getScenario();
+  /* Scenario intensity multiplier — published alongside the betas. */
+  var mult = scen === 'pessimistic' ? 1.4 : scen === 'optimistic' ? 0.55 : 1.0;
+
+  var coveredValue = 0, uncoveredValue = 0;
+  var total12 = 0, total36 = 0;
+
+  var rows = validRows.map(function (r) {
+    var impact  = impactMap[r.ticker];
+    var value   = r.shares * r.cost;
+    var covered = !!impact;
+    if (covered) {
+      coveredValue += value;
+      var a12 = impact['12'] * mult;
+      var a36 = impact['36'] * mult;
+      total12 += value * a12;
+      total36 += value * a36;
+      return { ticker: r.ticker, value: value, covered: true, adj12: a12, adj36: a36, sector: impact.sector };
+    }
+    uncoveredValue += value;
+    return { ticker: r.ticker, value: value, covered: false };
+  });
+
+  var totalValue = coveredValue + uncoveredValue;
+  var fmtMoney = function (n) { return '$' + Math.round(n).toLocaleString(); };
+  var pct = function (x) { return (x >= 0 ? '+' : '') + (x * 100).toFixed(1) + '%'; };
+
+  var rowsHtml = rows.map(function (r) {
+    if (!r.covered) {
+      return '<div class="portfolio-result-row uncovered">' +
+        '<span>' + escHtml(r.ticker) +
+          ' <span class="hold-cov no">not covered by this structure</span></span>' +
+        '<span>' + fmtMoney(r.value) + '</span>' +
+        '<span class="val muted">—</span><span class="val muted">—</span></div>';
+    }
+    return '<div class="portfolio-result-row">' +
+      '<span>' + escHtml(r.ticker) +
+        ' <span style="color:var(--text-dim);font-size:.58rem">' + escHtml(r.sector) + '</span></span>' +
+      '<span>' + fmtMoney(r.value) + '</span>' +
+      '<span class="val ' + (r.adj12 >= 0 ? 'pos' : 'neg') + '">' + pct(r.adj12) + ' (12M)</span>' +
+      '<span class="val ' + (r.adj36 >= 0 ? 'pos' : 'neg') + '">' + pct(r.adj36) + ' (3Yr)</span></div>';
+  }).join('');
+
+  /* Totals are computed on the COVERED base only. Dividing modelled impact by
+     a denominator that includes unmodelled holdings would understate the
+     percentage by exactly the uncovered share. */
+  var p12 = coveredValue ? total12 / coveredValue : 0;
+  var p36 = coveredValue ? total36 / coveredValue : 0;
+
+  var totalHtml = coveredValue
+    ? '<div class="portfolio-result-row total">' +
+        '<span>MODELLED SUBTOTAL</span>' +
+        '<span>' + fmtMoney(coveredValue) + '</span>' +
+        '<span class="val ' + (p12 >= 0 ? 'pos' : 'neg') + '">' + pct(p12) + ' (12M)</span>' +
+        '<span class="val ' + (p36 >= 0 ? 'pos' : 'neg') + '">' + pct(p36) + ' (3Yr)</span></div>'
+    : '<div class="portfolio-result-row total"><span>MODELLED SUBTOTAL</span>' +
+        '<span>' + fmtMoney(0) + '</span>' +
+        '<span class="val muted" style="grid-column:span 2">No holding is covered by the active structure</span></div>';
+
+  var coverageNote = uncoveredValue
+    ? '<div class="portfolio-note">' +
+        fmtMoney(uncoveredValue) + ' of ' + fmtMoney(totalValue) + ' (' +
+        Math.round((uncoveredValue / totalValue) * 100) + '%) sits in holdings this structure does not model. ' +
+        'Those are excluded from impact and risk rather than scored as zero.' +
+      '</div>'
+    : '';
+
+  results.innerHTML = rowsHtml + totalHtml + coverageNote +
+    '<div class="portfolio-result-row var-row" id="varRow"></div>';
+
+  renderVarRow();
+  scheduleVarCompute(rows.filter(function (r) { return r.covered; }));
+}
+
+/* ═════════════════════════════════════════
+   VALUE AT RISK — historical simulation
+   ═════════════════════════════════════════
+   1-WEEK 95% VaR from realised weekly closes. Deliberately NOT 1-day:
+   the stored daily series is 120 rows spanning Feb–Aug 2026, which is the
+   2026 war and its ceasefire end to end. A VaR fitted to that window is a
+   war-regime figure with a structural break mid-sample. The weekly series
+   reaches back ~6 years across several regimes, so it is both deeper and
+   more honest, and 320 observations put the 5th percentile on stable ground
+   where 119 daily returns would not.
+
+   Historical simulation, not parametric: portfolio-weighted weekly returns
+   are ranked and the 5th percentile is read directly. Correlation between
+   holdings is inherited from the realised data — no covariance matrix, no
+   normality assumption, and a methodology that fits in one sentence.
+
+   PRICE RISK ONLY. Foreign-listed holdings are measured in their own
+   quote currency, so currency movement is excluded. Stated in the UI.
+   ═════════════════════════════════════════ */
+
+var _varToken = 0;
+
+function scheduleVarCompute(coveredRows) {
+  var token = ++_varToken;
+  if (!coveredRows.length) {
+    _varState = { status: 'idle', text: '', detail: '' };
+    renderVarRow();
+    return;
+  }
+  _varState = { status: 'loading', text: 'Computing…', detail: '' };
+  renderVarRow();
+  computeVaR(coveredRows).then(function (res) {
+    if (token !== _varToken) return;   // a newer edit superseded this run
+    _varState = res;
+    renderVarRow();
+  }).catch(function (err) {
+    if (token !== _varToken) return;
+    _varState = { status: 'error', text: 'unavailable', detail: 'Price history could not be loaded.' };
+    renderVarRow();
+    console.warn('[var]', err && err.message);
+  });
+}
+
+async function fetchWeekly(symbols) {
+  var need = symbols.filter(function (s) { return !_weeklyCache[s]; });
+  if (need.length) {
+    var url = '/api/snapshot?series=weekly&symbols=' + encodeURIComponent(need.join(','));
+    var r = await fetch(url);
+    if (!r.ok) throw new Error('snapshot HTTP ' + r.status);
+    var j = await r.json();
+    var c = (j && j.candles) || {};
+    need.forEach(function (s) {
+      var b = c[s];
+      _weeklyCache[s] = (b && Array.isArray(b.weekly)) ? b.weekly : [];
+    });
+  }
+  var out = {};
+  symbols.forEach(function (s) { out[s] = _weeklyCache[s] || []; });
+  return out;
+}
+
+async function computeVaR(coveredRows) {
+  var symbols = coveredRows.map(function (r) { return r.ticker; });
+  var series  = await fetchWeekly(symbols);
+
+  /* Holdings with no stored history cannot contribute. Drop them and say so
+     rather than silently treating them as flat. */
+  var usable = coveredRows.filter(function (r) { return (series[r.ticker] || []).length >= 2; });
+  var dropped = coveredRows.length - usable.length;
+  if (!usable.length) {
+    return { status: 'suppressed', text: 'unavailable',
+             detail: 'No price history is stored for these holdings.' };
+  }
+
+  /* Intersect trading dates so every return is measured over the same span. */
+  var maps = {};
+  usable.forEach(function (r) {
+    var m = {};
+    (series[r.ticker] || []).forEach(function (row) { m[row[0]] = +row[1]; });
+    maps[r.ticker] = m;
+  });
+  var common = Object.keys(maps[usable[0].ticker]).filter(function (d) {
+    return usable.every(function (r) { return isFinite(maps[r.ticker][d]); });
+  }).sort();
+
+  if (common.length > VAR_LOOKBACK_MAX) common = common.slice(-VAR_LOOKBACK_MAX);
+
+  if (common.length - 1 < VAR_MIN_WEEKS) {
+    return { status: 'suppressed', text: 'unavailable',
+             detail: 'Only ' + Math.max(0, common.length - 1) + ' weeks of overlapping history — ' +
+                     VAR_MIN_WEEKS + ' required.' };
+  }
+
+  var totalVal = usable.reduce(function (s, r) { return s + r.value; }, 0);
+  if (!totalVal) {
+    return { status: 'suppressed', text: 'unavailable', detail: 'Holdings have no value.' };
+  }
+  var weights = {};
+  usable.forEach(function (r) { weights[r.ticker] = r.value / totalVal; });
+
+  /* Portfolio-weighted weekly returns, current weights held constant. */
+  var rets = [];
+  for (var i = 1; i < common.length; i++) {
+    var prev = common[i - 1], cur = common[i], acc = 0, ok = true;
+    for (var k = 0; k < usable.length; k++) {
+      var sym = usable[k].ticker;
+      var p = maps[sym][prev], c = maps[sym][cur];
+      if (!isFinite(p) || !isFinite(c) || p <= 0) { ok = false; break; }
+      acc += weights[sym] * ((c / p) - 1);
+    }
+    if (ok) rets.push(acc);
+  }
+
+  if (rets.length < VAR_MIN_WEEKS) {
+    return { status: 'suppressed', text: 'unavailable',
+             detail: 'Only ' + rets.length + ' usable weekly returns — ' + VAR_MIN_WEEKS + ' required.' };
+  }
+
+  var pctReturn = percentile(rets, 1 - VAR_CONFIDENCE);   // 5th percentile
+  var lossPct   = pctReturn < 0 ? -pctReturn : 0;         // a gain means no modelled loss
+  var lossAmt   = lossPct * totalVal;
+
+  return {
+    status: 'ok',
+    text: '−$' + Math.round(lossAmt).toLocaleString() + '  (−' + (lossPct * 100).toFixed(1) + '%)',
+    detail: 'historical simulation · ' + rets.length + '-week lookback · ' +
+            'modelled holdings only · price risk only, excludes FX' +
+            (dropped ? ' · ' + dropped + ' holding' + (dropped === 1 ? '' : 's') + ' without stored history excluded' : ''),
+    weeks: rets.length,
+    lossPct: lossPct,
+    lossAmt: lossAmt,
+  };
+}
+
+/* Nearest-rank percentile on an ascending sort. p is a fraction (0.05 = 5th). */
+function percentile(values, p) {
+  var s = values.slice().sort(function (a, b) { return a - b; });
+  if (!s.length) return 0;
+  var rank = Math.ceil(p * s.length);
+  var idx  = Math.min(s.length - 1, Math.max(0, rank - 1));
+  return s[idx];
+}
+
+function renderVarRow() {
+  var el = document.getElementById('varRow');
+  if (!el) return;
+  if (_varState.status === 'idle') { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  var label = '<span class="var-label">1-week ' + Math.round(VAR_CONFIDENCE * 100) + '% VaR</span>';
+
+  if (_varState.status === 'loading') {
+    el.innerHTML = label + '<span class="val muted">computing…</span>';
+    return;
+  }
+  if (_varState.status === 'ok') {
+    el.innerHTML = label +
+      '<span class="val warn">' + _varState.text + '</span>' +
+      '<span class="var-detail">' + escHtml(_varState.detail) + '</span>';
+    return;
+  }
+  el.innerHTML = label +
+    '<span class="val muted">' + escHtml(_varState.text) + '</span>' +
+    '<span class="var-detail">' + escHtml(_varState.detail) + '</span>';
+}
+
+/* ═════════════════════════════════════════
+   PERSISTENCE + HOLDINGS PANEL STATE
+   ═════════════════════════════════════════ */
+
+function savePortfolioToStorage() {
+  try { localStorage.setItem('delax-portfolio', JSON.stringify(portfolioRows)); } catch (e) {}
+}
+
+function loadPortfolioFromStorage() {
+  var had = false;
+  try {
+    var saved = localStorage.getItem('delax-portfolio');
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        portfolioRows = parsed.map(function (r) {
+          return { id: nextRowId(), ticker: String(r.ticker || '').toUpperCase(),
+                   shares: +r.shares || 0, cost: +r.cost || 0 };
+        });
+        had = portfolioRows.some(function (r) { return r.ticker && r.shares > 0 && r.cost > 0; });
+      }
+    }
+  } catch (e) { portfolioRows = []; }
+  renderPortfolioGrid();
+  if (had) calcPortfolioImpact();
+  /* State-driven, not viewport-driven: a returning user with holdings sees
+     their exposure immediately; a first-time visitor sees the research tool. */
+  setHoldingsOpen(had);
+}
+
+function setHoldingsOpen(open) {
+  var body = document.getElementById('holdingsBody');
+  var btn  = document.getElementById('holdingsToggle');
+  if (!body || !btn) return;
+  body.style.display = open ? '' : 'none';
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  var chev = document.getElementById('holdingsChevron');
+  if (chev) chev.textContent = open ? '▾' : '▸';
+}
+
+function toggleHoldings() {
+  var body = document.getElementById('holdingsBody');
+  if (!body) return;
+  setHoldingsOpen(body.style.display === 'none');
+}
+
+
+/* ═════════════════════════════════════════════════════════════
+   BATCH 3 / STEP 15 — EQUITIES TAB
+   Bloomberg-style equity research terminal. Connects to
+   /api/market-equity (fundamentals + candles) and /api/market
+   (live quote). Scenario projections use DELAX conflict mults.
+   AI insight calls /api/analyze type:'stockinsights' — Pro gated.
+   ═════════════════════════════════════════════════════════════ */
+
+/* State */
+let eqCurrentSymbol  = null;
+let eqCurrentData    = null;   // last /api/market-equity response
+let eqAllCandles     = [];     // full 90-day candle set
+let eqRangeDays      = 30;
+let eqWatchPrices    = {};     // { sym: { price, percentChange } }
+const EQ_WATCH_META  = [
+  { id:'XOM',    name:'ExxonMobil'       },
+  { id:'LMT',    name:'Lockheed Martin'  },
+  { id:'RTX',    name:'RTX Corp'         },
+  { id:'GLD',    name:'SPDR Gold ETF'    },
+  { id:'DAL',    name:'Delta Air Lines'  },
+  { id:'GDX',    name:'VanEck Gold Miners'},
+  { id:'XLE',    name:'Energy Select ETF'},
+  { id:'TLT',    name:'iShares 20Y Bond' },
+];
+
+/* Conflict premium multipliers by sector/scenario (DELAX model) */
+const EQ_SCENARIO_MULT = {
+  baseline:    { energy:1.42, defense:1.28, gold:1.18, airlines:0.82, bonds:0.95, sp500:0.91, em:0.86, dxy:1.06 },
+  optimistic:  { energy:0.96, defense:1.08, gold:1.04, airlines:1.06, bonds:1.03, sp500:1.05, em:1.04, dxy:0.97 },
+  pessimistic: { energy:1.85, defense:1.52, gold:1.38, airlines:0.58, bonds:0.88, sp500:0.74, em:0.71, dxy:1.14 },
+};
+
+/* Map tickers to sectors for projection calc */
+function eqGetSector(sym) {
+  const map = {
+    XOM:'energy', CVX:'energy', COP:'energy', XLE:'energy', VDE:'energy',
+    LMT:'defense', RTX:'defense', NOC:'defense', BA:'defense', ITA:'defense',
+    GLD:'gold',  GDX:'gold',   IAU:'gold',   GOLD:'gold',
+    DAL:'airlines', UAL:'airlines', LUV:'airlines', AAL:'airlines',
+    TLT:'bonds',  BND:'bonds',  AGG:'bonds',  IEF:'bonds',
+    SPY:'sp500',  VOO:'sp500',  IVV:'sp500',  QQQ:'sp500',
+    EEM:'em',     VWO:'em',     IEMG:'em',
+    DXY:'dxy',    UUP:'dxy',
+    // v4.3 — the Taiwan-structure complex. Without these, TSM/NVDA/EWT fell through
+    // to the 'sp500' default and the AI payload described the wrong exposure.
+    TSM:'semis',  UMC:'semis',  NVDA:'semis', AMD:'semis',  AVGO:'semis',
+    QCOM:'semis', TXN:'semis',  INTC:'semis', MU:'semis',   SMH:'semis',
+    ASML:'semis', LRCX:'semis', AMAT:'semis', KLAC:'semis',
+    EWT:'em',     FXI:'em',     MCHI:'em',    EWY:'em',     EWJ:'em',
+    AAPL:'bigtech', MSFT:'bigtech', DELL:'bigtech',
+    TM:'autos',   GM:'autos',   F:'autos',    ZIM:'shipping',
+  };
+  return map[sym] || 'sp500'; // default to S&P 500 multiplier
+}
+
+/* ── Autocomplete engine ── */
+let _eqDebounce   = null;
+let _eqDropFocus  = -1;
+let _eqDropItems  = [];
+
+function eqOnInput(val) {
+  clearTimeout(_eqDebounce);
+  _eqDropFocus = -1;
+  if (!val || val.trim().length < 2) {
+    eqCloseDropdown();
+    return;
+  }
+  // Show searching state immediately
+  const dd = document.getElementById('eqDropdown');
+  if (dd) {
+    dd.style.display = 'block';
+    dd.innerHTML = '<div class="eq-drop-searching">◉ Searching global markets…</div>';
+    document.getElementById('eqSearchInput')?.setAttribute('aria-expanded','true');
+  }
+  _eqDebounce = setTimeout(() => eqFetchSuggestions(val.trim()), 300);
+}
+
+async function eqFetchSuggestions(q) {
+  const dd = document.getElementById('eqDropdown');
+  if (!dd) return;
+  try {
+    const res  = await fetch(`/api/market-search?q=${encodeURIComponent(q)}`);
+    const data = res.ok ? await res.json() : null;
+    const items = data?.results || [];
+    _eqDropItems = items;
+    _eqDropFocus = -1;
+    eqRenderDropdown(items, q);
+  } catch (_) {
+    if (dd) dd.innerHTML = '<div class="eq-drop-empty">Search unavailable — enter symbol directly</div>';
+  }
+}
+
+function eqRenderDropdown(items, q) {
+  const dd = document.getElementById('eqDropdown');
+  if (!dd) return;
+  if (!items.length) {
+    dd.innerHTML = `<div class="eq-drop-empty">No results for "${escHtml(q)}" — try a different spelling or ticker</div>`;
+    dd.style.display = 'block';
+    return;
+  }
+  const rows = items.map((r, i) => {
+    const typeTag = r.type && r.type !== 'Common Stock'
+      ? `<span class="eq-drop-type">${escHtml(r.type)}</span>` : '';
+    return `<div class="eq-drop-item" role="option" data-idx="${i}"
+      onclick="eqSelectDropItem(${i})"
+      onmouseover="eqFocusItem(${i})">
+      <span class="eq-drop-flag">${r.flag || '🌐'}</span>
+      <span class="eq-drop-sym">${escHtml(r.displaySymbol || r.symbol)}</span>
+      <span class="eq-drop-name" title="${escHtml(r.name)}">${escHtml(r.name)}</span>
+      ${typeTag}
+      <span class="eq-drop-exch">${escHtml(r.exchange)}</span>
+    </div>`;
+  }).join('');
+
+  dd.innerHTML = rows +
+    `<div class="eq-drop-footer">
+      ${items.length} result${items.length!==1?'s':''} · NYSE · NASDAQ · LSE · Tokyo · HK · Frankfurt · Tadawul and more
+    </div>`;
+  dd.style.display = 'block';
+}
+
+function eqFocusItem(idx) {
+  _eqDropFocus = idx;
+  document.querySelectorAll('#eqDropdown .eq-drop-item').forEach((el, i) => {
+    el.classList.toggle('focused', i === idx);
+  });
+}
+
+function eqSelectDropItem(idx) {
+  const item = _eqDropItems[idx];
+  if (!item) return;
+  const inp = document.getElementById('eqSearchInput');
+  if (inp) inp.value = item.symbol;
+  eqCloseDropdown();
+  eqLoadTicker(item.symbol);
+}
+
+function eqCloseDropdown() {
+  const dd  = document.getElementById('eqDropdown');
+  const inp = document.getElementById('eqSearchInput');
+  if (dd)  { dd.style.display = 'none'; dd.innerHTML = ''; }
+  if (inp) inp.setAttribute('aria-expanded','false');
+  _eqDropFocus = -1;
+  _eqDropItems = [];
+}
+
+function eqOnKeydown(e) {
+  const dd    = document.getElementById('eqDropdown');
+  const items = dd ? dd.querySelectorAll('.eq-drop-item') : [];
+  switch (e.key) {
+    case 'ArrowDown':
+      e.preventDefault();
+      _eqDropFocus = Math.min(_eqDropFocus + 1, items.length - 1);
+      eqFocusItem(_eqDropFocus);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      _eqDropFocus = Math.max(_eqDropFocus - 1, 0);
+      eqFocusItem(_eqDropFocus);
+      break;
+    case 'Enter':
+      e.preventDefault();
+      if (_eqDropFocus >= 0 && _eqDropItems[_eqDropFocus]) {
+        eqSelectDropItem(_eqDropFocus);
+      } else {
+        eqSearch();
+      }
+      break;
+    case 'Escape':
+      eqCloseDropdown();
+      break;
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('#eqDropdown') && !e.target.closest('#eqSearchInput')) {
+    eqCloseDropdown();
+  }
+});
+
+/* ── Search handler ── */
+async function eqSearch() {
+  eqCloseDropdown();
+  const raw = document.getElementById('eqSearchInput').value.trim().toUpperCase();
+  if (!raw) return;
+  await eqLoadTicker(raw);
+}
+
+async function eqLoadTicker(sym) {
+  sym = sym.toUpperCase().trim();
+  if (!sym) return;
+  eqCloseDropdown();
+
+  // Update search input
+  const inp = document.getElementById('eqSearchInput');
+  if (inp) inp.value = sym;
+
+  const btn = document.getElementById('eqSearchBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading…'; }
+
+  // Show results, hide empty state
+  document.getElementById('eqEmpty').style.display    = 'none';
+  document.getElementById('eqResults').style.display  = 'block';
+
+  // Reset UI to loading state
+  ['eqTickerName','eqTickerSym','eqPrice','eqChange','eqMktStatus',
+   'eqStatMktCap','eqStatPE','eqStat52H','eqStat52L',
+   'eqStatBeta','eqStatDiv','eqStatTarget','eqStatMargin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = '—'; el.className = el.className; }
+  });
+  document.getElementById('eqAiContent').innerHTML =
+    '<div style="color:var(--text-dim);font-size:.72rem">Click <strong style="color:var(--purple)">Get AI Analysis</strong> to analyse this stock.</div>';
+
+  try {
+    const res  = await fetch(`/api/market-equity?symbol=${encodeURIComponent(sym)}`);
+    const data = res.ok ? await res.json() : null;
+
+    if (!data || (!data.quote && !data.fundamentals)) {
+      throw new Error(data?.error || 'No data returned');
+    }
+
+    eqCurrentSymbol = sym;
+    eqCurrentData   = data;
+    eqAllCandles    = data.candles || [];
+
+    eqRenderHeader(data);
+    eqRenderStats(data);
+    eqRenderChart(eqRangeDays);
+    eqRenderProjections(data);
+    eqUpdateSidebar();
+
+    // Track in watchlist local cache
+    if (data.quote) eqWatchPrices[sym] = data.quote;
+
+  } catch (err) {
+    document.getElementById('eqTickerName').textContent = `⚠ ${err.message}`;
+    document.getElementById('eqTickerSym').textContent  = sym;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'LOOK UP →'; }
+  }
+}
+
+function eqRenderHeader(data) {
+  const q    = data.quote || {};
+  const fund = data.fundamentals || {};
+  const name = fund.name || data.symbol;
+
+  const nameEl = document.getElementById('eqTickerName');
+  const symEl  = document.getElementById('eqTickerSym');
+  const srcEl  = document.getElementById('eqSourceTag');
+  const priceEl= document.getElementById('eqPrice');
+  const chgEl  = document.getElementById('eqChange');
+  const statEl = document.getElementById('eqMktStatus');
+
+  if (nameEl) nameEl.textContent = name;
+  if (symEl)  symEl.textContent  = data.symbol;
+  if (srcEl)  srcEl.textContent  = q.source || fund.source || 'Finnhub';
+  if (priceEl && q.price) priceEl.textContent = `$${q.price.toFixed(2)}`;
+
+  if (chgEl && q.percentChange != null) {
+    const sign = q.percentChange >= 0 ? '+' : '';
+    chgEl.textContent = `${sign}${q.change?.toFixed(2) || '0.00'} (${sign}${q.percentChange.toFixed(2)}%)`;
+    chgEl.className   = `eq-change ${q.percentChange >= 0 ? 'up' : 'down'}`;
+  }
+  if (statEl) statEl.textContent = q.isEstimated ? '(prev close)' : '';
+
+  /* Cross-wire: research → holdings. Shown only once a ticker is loaded. */
+  const addBtn = document.getElementById('eqAddBtn');
+  if (addBtn) {
+    addBtn.style.display = '';
+    const held = (typeof portfolioRows !== 'undefined') &&
+      portfolioRows.some(function (r) { return r.ticker === data.symbol; });
+    addBtn.textContent = held ? '✓ IN HOLDINGS' : '+ ADD TO HOLDINGS';
+  }
+}
+
+function eqFmt(val, type) {
+  if (val == null || isNaN(val)) return '—';
+  switch(type) {
+    case 'cap': {
+      if (val >= 1e12) return `$${(val/1e12).toFixed(2)}T`;
+      if (val >= 1e9)  return `$${(val/1e9).toFixed(1)}B`;
+      if (val >= 1e6)  return `$${(val/1e6).toFixed(0)}M`;
+      return `$${val.toFixed(0)}`;
+    }
+    case 'pct': return `${(val*100).toFixed(1)}%`;
+    case 'x':   return `${parseFloat(val).toFixed(1)}x`;
+    case '$':   return `$${parseFloat(val).toFixed(2)}`;
+    case 'raw': return parseFloat(val).toFixed(2);
+    default:    return String(val);
+  }
+}
+
+function eqRenderStats(data) {
+  const f = data.fundamentals || {};
+  const q = data.quote        || {};
+  const stats = [
+    ['eqStatMktCap', eqFmt(f.marketCap,     'cap')],
+    ['eqStatPE',     eqFmt(f.pe,            'raw')],
+    ['eqStat52H',    eqFmt(f.high52 || q.high, '$')],
+    ['eqStat52L',    eqFmt(f.low52  || q.low,  '$')],
+    ['eqStatBeta',   eqFmt(f.beta,           'raw')],
+    ['eqStatDiv',    f.dividendYield ? eqFmt(f.dividendYield,'pct') : '—'],
+    ['eqStatTarget', eqFmt(f.analystTarget,  '$')],
+    ['eqStatMargin', f.profitMargin ? eqFmt(f.profitMargin,'pct') : '—'],
+  ];
+  stats.forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  });
+}
+
+function eqRenderChart(days) {
+  const canvas = document.getElementById('eq-chart-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.offsetWidth || 600;
+  const H   = 240;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Slice to requested range
+  const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
+  if (!candles.length) {
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#5a7299';
+    ctx.font = '12px IBM Plex Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('No chart data available', W/2, H/2);
+    return;
+  }
+
+  const pad   = { t:20, r:16, b:32, l:58 };
+  const cW    = W - pad.l - pad.r;
+  const cH    = H - pad.t - pad.b;
+  const xStep = cW / candles.length;
+
+  // Candles need >=5px each to be readable; below that, draw a line chart
+  const useLine = xStep < 5;
+
+  const prices = useLine
+    ? candles.map(c => c.close)
+    : candles.flatMap(c => [c.high, c.low]);
+  const minP  = Math.min(...prices);
+  const maxP  = Math.max(...prices);
+  const range = maxP - minP || 1;
+
+  const toX = i => pad.l + i * xStep + xStep / 2;
+  const toY = p => pad.t + cH - ((p - minP) / range) * cH;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines + price labels
+  ctx.strokeStyle = 'rgba(30,46,74,.6)';
+  ctx.lineWidth   = 1;
+  ctx.fillStyle   = '#5a7299';
+  ctx.font        = '10px IBM Plex Mono, monospace';
+  ctx.textAlign   = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const p = minP + (range / 4) * i;
+    const y = toY(p);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y);
+    ctx.stroke();
+    ctx.fillText(`$${p.toFixed(0)}`, pad.l - 4, y + 3);
+  }
+
+  // Date labels (every ~5 points)
+  ctx.textAlign  = 'center';
+  ctx.fillStyle  = '#3d5270';
+  ctx.font       = '9px IBM Plex Mono, monospace';
+  candles.forEach((c, i) => {
+    if (i % Math.max(1, Math.floor(candles.length / 5)) === 0) {
+      const d = new Date(c.time * 1000);
+      ctx.fillText(`${d.getMonth()+1}/${d.getDate()}`, toX(i), H - pad.b + 14);
+    }
+  });
+
+  // Volume bars (faint, lower 18% of chart)
+  const maxVol = Math.max(...candles.map(c => c.volume || 0));
+  if (maxVol > 0) {
+    candles.forEach((c, i) => {
+      const barH  = ((c.volume || 0) / maxVol) * (cH * 0.18);
+      const isUp  = c.close >= c.open;
+      ctx.fillStyle = isUp ? 'rgba(0,230,118,.15)' : 'rgba(255,61,74,.15)';
+      ctx.fillRect(toX(i) - xStep * 0.35, H - pad.b - barH, Math.max(xStep * 0.7, 1), barH);
+    });
+  }
+
+  if (useLine) {
+    /* ── LINE MODE (dense ranges / mobile) ── */
+    const first = candles[0].close;
+    const last  = candles[candles.length - 1].close;
+    const up    = last >= first;
+    const col   = up ? '#00e676' : '#ff3d4a';
+
+    // Gradient area under the close line
+    const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+    grad.addColorStop(0, up ? 'rgba(0,230,118,.22)' : 'rgba(255,61,74,.22)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    candles.forEach((c, i) => {
+      if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+      else         ctx.lineTo(toX(i), toY(c.close));
+    });
+    ctx.lineTo(toX(candles.length - 1), H - pad.b);
+    ctx.lineTo(toX(0), H - pad.b);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Close-price line with subtle glow
+    ctx.save();
+    ctx.shadowColor = col;
+    ctx.shadowBlur  = 6;
+    ctx.strokeStyle = col;
+    ctx.lineWidth   = 1.8;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    candles.forEach((c, i) => {
+      if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+      else         ctx.lineTo(toX(i), toY(c.close));
+    });
+    ctx.stroke();
+    ctx.restore();
+
+    // Endpoint dot + last price tag
+    const lx = toX(candles.length - 1), ly = toY(last);
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(`$${last.toFixed(2)}`, W - pad.r, Math.max(ly - 8, pad.t + 10));
+
+  } else {
+    /* ── CANDLE MODE (sparse ranges / desktop) ── */
+    candles.forEach((c, i) => {
+      const isUp  = c.close >= c.open;
+      const col   = isUp ? '#00e676' : '#ff3d4a';
+      const x     = toX(i);
+      const oY    = toY(c.open);
+      const cY    = toY(c.close);
+      const hY    = toY(c.high);
+      const lY    = toY(c.low);
+
+      // Wick
+      ctx.strokeStyle = col;
+      ctx.lineWidth   = 1;
+      ctx.beginPath(); ctx.moveTo(x, hY); ctx.lineTo(x, lY); ctx.stroke();
+
+      // Body
+      ctx.fillStyle = col;
+      const bodyTop = Math.min(oY, cY);
+      const bodyH   = Math.max(Math.abs(oY - cY), 1);
+      ctx.fillRect(x - xStep * 0.35, bodyTop, xStep * 0.7, bodyH);
+    });
+
+    // Close-price trend line (subtle overlay)
+    ctx.strokeStyle = 'rgba(0,212,255,.35)';
+    ctx.lineWidth   = 1.5;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    candles.forEach((c, i) => {
+      if (i === 0) ctx.moveTo(toX(i), toY(c.close));
+      else         ctx.lineTo(toX(i), toY(c.close));
+    });
+    ctx.stroke();
+  }
+}
+
+function eqSetRange(days, btn) {
+  eqRangeDays = days;
+  document.querySelectorAll('.eq-range-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const label = document.getElementById('eqChartLabel');
+  if (label) label.textContent = `${days === 30 ? '30' : days === 60 ? '60' : '90'}-Day Price History`;
+  eqRenderChart(days);
+}
+
+function eqRenderProjections(data) {
+  const q = data.quote || {};
+  if (!q.price) return;
+
+  const price   = q.price;
+  const sym     = data.symbol;
+  const sector  = eqGetSector(sym);
+  const sc      = scenario || 'baseline';
+  const mults   = EQ_SCENARIO_MULT[sc] || EQ_SCENARIO_MULT.baseline;
+  const secMult = mults[sector] || mults.sp500;
+
+  // Base annualised return assumptions (rough historical sector averages)
+  const baseAnnual = {
+    energy:0.07, defense:0.09, gold:0.05, airlines:0.04,
+    bonds:-0.01, sp500:0.09, em:0.06, dxy:0.01,
+  };
+  const baseAnn  = baseAnnual[sector] || 0.07;
+
+  // Conflict-adjusted 3M, 6M, 12M projections
+  const adj3M    = price * (1 + (baseAnn * secMult * (3/12)));
+  const adj6M    = price * (1 + (baseAnn * secMult * (6/12)));
+  const adj12Opt = price * (1 + (baseAnn * EQ_SCENARIO_MULT.optimistic[sector]  || 1.05));
+  const adj12Pes = price * (1 + (baseAnn * EQ_SCENARIO_MULT.pessimistic[sector] || 0.85));
+
+  const sign = v => v >= price ? '+' : '';
+  const fmt  = v => `$${v.toFixed(2)} (${sign(v)}${(((v-price)/price)*100).toFixed(1)}%)`;
+
+  document.getElementById('eqProj3M').textContent     = fmt(adj3M);
+  document.getElementById('eqProj6M').textContent     = fmt(adj6M);
+  document.getElementById('eqProj12MBull').textContent= fmt(adj12Opt);
+  document.getElementById('eqProj12MBear').textContent= fmt(adj12Pes);
+
+  // Scenario label
+  const scLabel = document.getElementById('eqScenarioActiveLabel');
+  const siLabel = document.getElementById('eqAiScenarioTag');
+  const sideSc  = document.getElementById('eqSideScenario');
+  const sideDesc= document.getElementById('eqSideScenarioDesc');
+  const scName  = SCENARIO_LABELS[sc] || sc;
+  if (scLabel) scLabel.textContent = `Active: ${scName}`;
+  if (siLabel) siLabel.textContent = scName;
+  if (sideSc)  sideSc.textContent  = scName;
+  const desc = {
+    baseline:   'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
+    optimistic: 'MOU holds · mines cleared · premiums decay · Brent settles $70–78',
+    pessimistic:'Truce collapses · second closure from a worse base · Brent $150–180',
+  };
+  if (sideDesc) sideDesc.textContent = desc[sc] || '';
+}
+
+/* ── Watchlist sidebar ── */
+async function eqUpdateSidebar() {
+  const container = document.getElementById('eqWatchlist');
+  if (!container) return;
+
+  // Render immediately with cached prices, then refresh
+  eqRenderWatchlist(container);
+
+  // Fetch fresh prices in parallel
+  const fetches = EQ_WATCH_META.map(w =>
+    fetch(`/api/market?symbol=${encodeURIComponent(w.id)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.price) eqWatchPrices[w.id] = d; })
+      .catch(() => null)
+  );
+  await Promise.allSettled(fetches);
+  eqRenderWatchlist(container);
+}
+
+function eqRenderWatchlist(container) {
+  container.innerHTML = EQ_WATCH_META.map(w => {
+    const d    = eqWatchPrices[w.id];
+    const price= d?.price != null ? `$${d.price.toFixed(2)}` : '—';
+    const pct  = d?.percentChange != null ? d.percentChange : null;
+    const pctStr = pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '—';
+    const cls  = pct == null ? '' : pct >= 0 ? 'up' : 'down';
+    const isActive = w.id === eqCurrentSymbol ? 'background:rgba(0,212,255,.06);border-radius:2px' : '';
+    return `<div class="eq-watch-row" onclick="eqLoadTicker('${w.id}')" style="${isActive}">
+      <div>
+        <div class="eq-watch-sym">${w.id}</div>
+        <div class="eq-watch-name">${w.name}</div>
+      </div>
+      <div>
+        <div class="eq-watch-price">${price}</div>
+        <div class="eq-watch-chg ${cls}">${pctStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── AI Analysis (Pro gated) ── */
+async function eqGetAI() {
+  if (!isProUser()) { showProModal('kpi'); return; }
+  if (!eqCurrentSymbol || !eqCurrentData) return;
+
+  const btn     = document.getElementById('eqAiBtn');
+  const content = document.getElementById('eqAiContent');
+  if (btn)  { btn.disabled = true; btn.textContent = '◉ Analysing…'; }
+  if (content) content.innerHTML = '<div style="color:var(--text-dim);font-size:.72rem;animation:pulse 1.5s infinite">Analysing this stock against the active scenario…</div>';
+
+  const q    = eqCurrentData.quote        || {};
+  const fund = eqCurrentData.fundamentals || {};
+  const sc   = scenario || 'baseline';
+
+  try {
+    const res  = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type:     'stockinsights',
+        symbol:   eqCurrentSymbol,
+        price:    q.price,
+        change:   q.percentChange,
+        pe:       fund.pe,
+        beta:     fund.beta,
+        sector:   eqGetSector(eqCurrentSymbol),
+        scenario: sc,
+        structure: aiStructureContext(),
+        oilPrice: ACTIVE_STRUCTURE==='taiwan-strait' ? null : (liveBrentPrice || 78),
+      }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const text = (data.analysis || data.narrative || '').replace(/\n/g, '<br>');
+    if (content) content.innerHTML = `<div style="line-height:1.75">${text}</div>`;
+  } catch (err) {
+    if (content) content.innerHTML = `<div style="color:var(--red);font-size:.72rem">⚠ ${err.message}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔒 Get AI Analysis (Pro)'; }
+  }
+}
+
+/* Fix 3 (mobile) — sidebar toggle */
+function eqToggleSidebar() {
+  const sidebar = document.getElementById('eqSidebar');
+  const btn     = document.getElementById('eqSidebarToggle');
+  if (!sidebar || !btn) return;
+  const open = sidebar.classList.toggle('mobile-open');
+  btn.textContent = open
+    ? '▼ Watchlist & Sector Signals'
+    : '▶ Watchlist & Sector Signals';
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+/* Show sidebar toggle button only on small screens */
+function eqInitMobileUI() {
+  const btn = document.getElementById('eqSidebarToggle');
+  if (!btn) return;
+  btn.style.display = window.innerWidth <= 500 ? 'block' : 'none';
+}
+window.addEventListener('resize', eqInitMobileUI);
+// Run on first equities tab open (handled inside eqInitialised block below)
+
+
+</script>
+</body>
+</html>
