@@ -104,7 +104,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 @media(max-width:600px){.alert-text{white-space:normal}}
 
 /* MAIN */
-main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 1.25rem 4rem}
+main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 1.25rem max(4rem, calc(2.5rem + env(safe-area-inset-bottom, 0px)))}
 
 /* SECTION LABEL */
 .section-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.9rem;display:flex;align-items:center;gap:.6rem}
@@ -241,7 +241,7 @@ main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 
 /* KPI BOTTOM BAR — scrolls with page, sits right above footer */
 body.beginner-mode body.beginner-mode 
 /* FOOTER */
-.footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.75rem 1.25rem;margin-top:2.5rem;font-family:var(--mono);font-size:.8rem;color:var(--text-sec);text-align:center;letter-spacing:.04em;line-height:1.75}
+.footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.75rem 1.25rem max(1.75rem, calc(1.25rem + env(safe-area-inset-bottom, 0px)));margin-top:2.5rem;font-family:var(--mono);font-size:.8rem;color:var(--text-sec);text-align:center;letter-spacing:.04em;line-height:1.75}
 .footer strong{color:var(--text-sec)}
 
 /* SCROLLBAR */
@@ -259,7 +259,7 @@ body.beginner-mode body.beginner-mode
   .header{padding:0 .75rem;height:auto;padding-top:.5rem;padding-bottom:.5rem}
   .subtitle{display:none}
   /* On mobile the header is shorter (~50px) since subtitle is hidden */
-    main{padding:1rem .75rem 3rem}
+    main{padding:1rem .75rem max(3rem, calc(2rem + env(safe-area-inset-bottom, 0px)))}
   .kpi-value{font-size:1.75rem}
   .drawer{width:100%}
 }
@@ -461,8 +461,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:1rem;
 .hdr-brand{display:flex;align-items:baseline;gap:.45rem;text-decoration:none}
 .hdr-mark{color:var(--amber);font-size:1rem;line-height:1}
 .hdr-title{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;color:var(--text-pri);white-space:nowrap}
-.hdr-sub{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;color:var(--text-dim);
-  text-transform:uppercase;white-space:nowrap}
+.hdr-sub{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;color:var(--text-sec);
+  text-transform:uppercase;white-space:nowrap;font-weight:500}
 @media(max-width:640px){.hdr-sub{display:none}}
 .hdr-right{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
 
@@ -477,8 +477,8 @@ header{display:flex;align-items:center;justify-content:space-between;gap:1rem;
   letter-spacing:.06em;cursor:pointer;outline:none}
 .ws-select:focus{border-color:var(--cyan)}
 
-main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
-@media(max-width:600px){main{padding:1rem .85rem 2.5rem}}
+main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem max(3rem, calc(2rem + env(safe-area-inset-bottom, 0px)))}
+@media(max-width:600px){main{padding:1rem .85rem max(2.5rem, calc(1.75rem + env(safe-area-inset-bottom, 0px)))}}
 
 .ws-muted{font-family:var(--mono);font-size:.65rem;color:var(--text-sec);
   line-height:1.65;margin-bottom:.85rem}
@@ -878,7 +878,7 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
         </div>
         <div style="margin-top:.65rem;font-family:var(--mono);font-size:.58rem;
           color:var(--text-dim)">
-          Change scenario on the Charts tab to update projections
+          Change scenario in the header to update projections
         </div>
       </div>
 
@@ -934,19 +934,26 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
 </div>
 
 
-<footer>
-  <div class="footer-inner">
-    <div class="footer-brand">DELAXCOM LLC</div>
-    <nav class="footer-links" aria-label="Footer">
-      <a href="/">Dashboard</a>
-      <a href="/workspace.html" aria-current="page">Workspace</a>
-      <a href="/exposure-desk.html">Exposure Desk</a>
-      <a href="/methodology.html">Methodology</a>
-    </nav>
-    <div class="footer-note">
-      Modelled estimates for research and education. Not investment advice.
-      Price data from public market sources; figures may be delayed.
-    </div>
+<footer class="footer" role="contentinfo">
+  <div class="footer-line footer-brand">
+    <strong>DELAX GEO-RISK</strong> · Cross-asset geopolitical risk analytics
+  </div>
+  <div class="footer-line footer-meta">
+    Model <span id="footerVersion">v4.4</span><span id="footerReviewWrap" hidden><span class="footer-sep">·</span><span id="footerReview"></span></span>
+  </div>
+  <div class="footer-line footer-dim" id="footerSources">
+    Sources: EIA · FRED · Twelve Data · GDELT · IMF WEO · SIPRI · FAO · Baltic Exchange
+  </div>
+  <nav class="footer-links" aria-label="Footer">
+    <a href="/">Dashboard</a>
+    <a href="/workspace.html" aria-current="page">Investor Workspace</a>
+    <a href="/exposure-desk.html">Exposure Desk</a>
+    <a href="/methodology.html">Methodology &amp; calibration</a>
+  </nav>
+  <div class="footer-line footer-legal">
+    Analysis, not advice. Scenario outputs are probabilistic model estimates — not forecasts,
+    not recommendations, and not personalised investment advice. Consult a qualified adviser
+    before acting on anything you read here. © 2026 DELAXCOM LLC.
   </div>
 </footer>
 
@@ -1946,9 +1953,15 @@ async function eqLoadTicker(sym) {
 
     eqRenderHeader(data);
     eqRenderStats(data);
-    eqRenderChart(eqRangeDays);
     eqRenderProjections(data);
     eqUpdateSidebar();
+    // Defer chart until after display:block has reflowed (offsetWidth was 0 otherwise)
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        eqRenderChart(eqRangeDays);
+        eqEnsureChartObserver();
+      });
+    });
 
     // Track in watchlist local cache
     if (data.quote) eqWatchPrices[sym] = data.quote;
@@ -2036,7 +2049,9 @@ function eqRenderChart(days) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  const W   = canvas.offsetWidth || 600;
+  // Prefer real laid-out width; fall back only if still zero (e.g. very first paint)
+  let W = canvas.offsetWidth || canvas.parentElement?.offsetWidth || 0;
+  if (W < 40) W = 600;
   const H   = 240;
   canvas.width  = W * dpr;
   canvas.height = H * dpr;
@@ -2046,10 +2061,15 @@ function eqRenderChart(days) {
   const candles = eqAllCandles.slice(-Math.min(days, eqAllCandles.length));
   if (!candles.length) {
     ctx.clearRect(0,0,W,H);
-    ctx.fillStyle = '#5a7299';
+    ctx.fillStyle = '#7a91b3';
     ctx.font = '12px IBM Plex Mono, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('No chart data available', W/2, H/2);
+    const src = (eqCurrentData && eqCurrentData.candleSource) || 'none';
+    const asOf = (eqCurrentData && eqCurrentData.candleAsOf) || '';
+    ctx.fillText('No chart data available', W/2, H/2 - 10);
+    ctx.font = '10px IBM Plex Mono, monospace';
+    ctx.fillStyle = '#5a7299';
+    ctx.fillText('source: ' + src + (asOf ? ' · as of ' + asOf : ''), W/2, H/2 + 12);
     return;
   }
 
@@ -2188,6 +2208,23 @@ function eqRenderChart(days) {
     });
     ctx.stroke();
   }
+}
+
+
+/* Redraw candles when the chart container changes width (orientation, sidebar, etc.) */
+let _eqChartObserver = null;
+function eqEnsureChartObserver() {
+  if (_eqChartObserver || typeof ResizeObserver === 'undefined') return;
+  const canvas = document.getElementById('eq-chart-canvas');
+  if (!canvas || !canvas.parentElement) return;
+  let _t = null;
+  _eqChartObserver = new ResizeObserver(function () {
+    clearTimeout(_t);
+    _t = setTimeout(function () {
+      if (eqAllCandles && eqAllCandles.length) eqRenderChart(eqRangeDays);
+    }, 80);
+  });
+  _eqChartObserver.observe(canvas.parentElement);
 }
 
 function eqSetRange(days, btn) {
