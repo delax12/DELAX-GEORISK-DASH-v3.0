@@ -101,6 +101,21 @@ module.exports = async function handler(req, res) {
         fetchJSON(`https://finnhub.io/api/v1/stock/metric?symbol=${encodeURIComponent(symbol)}&metric=all&token=${finnhubKey}`),
       ]);
 
+      /* A quote of c:0 means the provider does not carry this symbol — common
+         for foreign-exchange listings on US-only plans. Previously this fell
+         through silently, so the errors[] array reported only 2 of the 4
+         providers that actually failed and diagnosis became guesswork. */
+      if (quoteRes.status === 'rejected') {
+        errors.push(`quote: ${quoteRes.reason?.message || 'request failed'}`);
+      } else if (!quoteRes.value?.c) {
+        errors.push(`quote: symbol not carried on current data plan`);
+      }
+      if (metricsRes.status === 'rejected') {
+        errors.push(`fundamentals: ${metricsRes.reason?.message || 'request failed'}`);
+      } else if (!metricsRes.value?.metric) {
+        errors.push(`fundamentals: no data for symbol`);
+      }
+
       if (quoteRes.status === 'fulfilled' && quoteRes.value?.c) {
         const q = quoteRes.value;
         const price    = q.c || q.pc || 0;
@@ -229,6 +244,9 @@ module.exports = async function handler(req, res) {
       const ov = await fetchJSON(
         `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${encodeURIComponent(symbol)}&apikey=${avKey}`
       );
+      if (!ov?.Symbol) {
+        errors.push(`fundamentals fallback: ${ov?.Note || ov?.Information || 'symbol not found'}`);
+      }
       if (ov?.Symbol && !ov.Note && !ov.Information) {
         result.fundamentals = {
           marketCap:     ov.MarketCapitalization ? +ov.MarketCapitalization : null,
@@ -260,6 +278,9 @@ module.exports = async function handler(req, res) {
         `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${avKey}`
       );
       const q = gq?.['Global Quote'];
+      if (!q?.['05. price']) {
+        errors.push(`quote fallback: ${gq?.Note || gq?.Information || 'symbol not found'}`);
+      }
       if (q?.['05. price']) {
         const price = +q['05. price'];
         const prev  = +(q['08. previous close'] || price);

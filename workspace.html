@@ -534,6 +534,16 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
 .eq-suppressed-body{font-family:var(--mono);font-size:.6rem;color:var(--text-dim);line-height:1.8}
 .eq-suppressed-body a{color:var(--cyan)}
 
+/* ══ ADD-TO-HOLDINGS AFFORDANCES ══ */
+.eq-add-hint{font-family:var(--mono);font-size:.55rem;color:var(--text-dim);
+  letter-spacing:.06em;white-space:nowrap}
+@media(max-width:600px){.eq-add-hint{display:none !important}}
+.eq-drop-add{background:transparent;border:1px solid var(--border);color:var(--text-dim);
+  font-family:var(--mono);font-size:.72rem;line-height:1;width:1.4rem;height:1.4rem;
+  border-radius:2px;cursor:pointer;flex-shrink:0;transition:all .15s}
+.eq-drop-add:hover{border-color:var(--green);color:var(--green);background:rgba(0,230,160,.08)}
+.eq-drop-add:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+
 /* ══ TOAST ══ */
 .toast{position:fixed;bottom:1.25rem;left:50%;transform:translateX(-50%) translateY(140%);
   background:var(--bg-card);border:1px solid var(--border);border-left:3px solid var(--cyan);
@@ -604,8 +614,9 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
     </div>
     <div style="font-family:var(--mono);font-size:.58rem;color:var(--text-dim);
       margin-top:.45rem;letter-spacing:.04em">
-      50,000+ securities · NYSE · NASDAQ · LSE · Tokyo · Hong Kong · Frankfurt ·
-      Tadawul · ASX · TSX · Euronext and more
+      US-listed equities, ETFs and ADRs · NYSE · NASDAQ · NYSE American · OTC.
+      Foreign companies are searchable via their US listing (Shell as SHEL, BP as BP,
+      TSMC as TSM). Direct foreign-exchange listings are outside current data coverage.
     </div>
   </div>
 
@@ -688,12 +699,12 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
           <span class="eq-sector-pill" onclick="eqLoadTicker('XLE')"   title="Energy Select ETF · NYSE">XLE</span>
           <span class="eq-sector-pill" onclick="eqLoadTicker('ITA')"   title="Defense ETF · NYSE">ITA</span>
           <span class="eq-sector-pill" onclick="eqLoadTicker('TLT')"   title="20Y Bond ETF · NYSE">TLT</span>
-          <span class="eq-sector-pill" onclick="eqLoadTicker('BP.L')"  title="BP · London Stock Exchange">BP.L</span>
-          <span class="eq-sector-pill" onclick="eqLoadTicker('SHEL.L')" title="Shell · London Stock Exchange">SHEL.L</span>
-          <span class="eq-sector-pill" onclick="eqLoadTicker('2222.SR')" title="Saudi Aramco · Tadawul">2222.SR</span>
-          <span class="eq-sector-pill" onclick="eqLoadTicker('TSM')"   title="TSMC · NYSE ADR">TSM</span>
-          <span class="eq-sector-pill" onclick="eqLoadTicker('HSBA.L')" title="HSBC · London Stock Exchange">HSBA.L</span>
-          <span class="eq-sector-pill" onclick="eqLoadTicker('RR.L')"  title="Rolls-Royce · London Stock Exchange">RR.L</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('BP')"   title="BP plc · NYSE ADR">BP</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('SHEL')" title="Shell plc · NYSE ADR">SHEL</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('TSM')"  title="TSMC · NYSE ADR">TSM</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('HSBC')" title="HSBC Holdings · NYSE ADR">HSBC</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('BAESY')" title="BAE Systems · OTC ADR">BAESY</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('UUP')"  title="US Dollar Index ETF · NYSE">UUP</span>
           <span class="eq-sector-pill" onclick="eqLoadTicker('CCJ')"   title="Cameco (Uranium) · NYSE">CCJ</span>
           <span class="eq-sector-pill" onclick="eqLoadTicker('FXI')"   title="China Large-Cap ETF · NYSE">FXI</span>
         </div>
@@ -707,9 +718,9 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
           <div class="eq-ticker-header">
             <span class="eq-ticker-name" id="eqTickerName">—</span>
             <span class="eq-ticker-sym" id="eqTickerSym"></span>
-            <span class="eq-source-tag" id="eqSourceTag">Finnhub</span>
             <button class="eq-add-btn" id="eqAddBtn" onclick="addCurrentTickerToPortfolio()"
               style="display:none" aria-label="Add this ticker to your holdings">+ ADD TO HOLDINGS</button>
+            <span class="eq-add-hint" id="eqAddHint" style="display:none">Track this in your portfolio</span>
           </div>
           <div class="eq-price-row">
             <span class="eq-price" id="eqPrice">—</span>
@@ -831,7 +842,7 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
           <span class="eq-sector-pill" onclick="eqLoadTicker('TLT')"  title="Bonds — TLT">📊 Bonds</span>
           <span class="eq-sector-pill" onclick="eqLoadTicker('SPY')"  title="S&P 500 — SPY">🏦 S&amp;P 500</span>
           <span class="eq-sector-pill" onclick="eqLoadTicker('EEM')"  title="EM — EEM">🌍 EM</span>
-          <span class="eq-sector-pill" onclick="eqLoadTicker('DXY')"  title="USD — DXY">💵 USD</span>
+          <span class="eq-sector-pill" onclick="eqLoadTicker('UUP')"  title="US Dollar Index ETF — UUP">💵 USD</span>
         </div>
       </div>
 
@@ -1289,19 +1300,38 @@ function onPortfolioChange(id, field, val) {
    as avg cost. Existing holding of the same ticker is focused, not duplicated. */
 function addCurrentTickerToPortfolio() {
   if (!eqCurrentSymbol) { showToast('Search a ticker first', true); return; }
-  var existing = portfolioRows.find(function (r) { return r.ticker === eqCurrentSymbol; });
-  if (existing) {
+  var px = (eqCurrentData && eqCurrentData.quote && eqCurrentData.quote.price) || 0;
+  addTickerToPortfolio(eqCurrentSymbol, px);
+}
+
+/* Shared add path — used by the research header button AND the "+" on each
+   search result, so a ticker can be tracked without opening it first. */
+function addTickerToPortfolio(ticker, price) {
+  ticker = String(ticker || '').toUpperCase().trim();
+  if (!ticker) return;
+
+  if (portfolioRows.some(function (r) { return r.ticker === ticker; })) {
     setHoldingsOpen(true);
-    showToast(eqCurrentSymbol + ' is already in your holdings');
     renderPortfolioGrid();
+    showToast(ticker + ' is already in your holdings');
     return;
   }
-  var px = (eqCurrentData && eqCurrentData.quote && eqCurrentData.quote.price) || 0;
-  portfolioRows.push({ id: nextRowId(), ticker: eqCurrentSymbol, shares: 0, cost: px });
+
+  /* Prefill avg cost with a live price when we have one — from the open
+     research panel, or the watchlist cache. Otherwise leave it blank rather
+     than guess; a wrong cost basis silently distorts both impact and VaR. */
+  var px = price;
+  if (!px && eqCurrentSymbol === ticker && eqCurrentData && eqCurrentData.quote) {
+    px = eqCurrentData.quote.price;
+  }
+  if (!px && eqWatchPrices[ticker]) px = eqWatchPrices[ticker].price;
+
+  portfolioRows.push({ id: nextRowId(), ticker: ticker, shares: 0, cost: px || 0 });
   renderPortfolioGrid();
   savePortfolioToStorage();
   setHoldingsOpen(true);
-  showToast('Added ' + eqCurrentSymbol + ' — enter share count to see impact');
+  eqCloseDropdown();
+  showToast('Added ' + ticker + ' — enter share count to see impact');
 }
 
 /* Cross-wire: holdings → research panel. */
@@ -1761,19 +1791,36 @@ async function eqFetchSuggestions(q) {
     const res  = await fetch(`/api/market-search?q=${encodeURIComponent(q)}`);
     const data = res.ok ? await res.json() : null;
     const items = data?.results || [];
-    _eqDropItems = items;
+    /* Only surface symbols the data layer can resolve. Search returns every
+       global listing, but quotes and candles are US-only on current provider
+       plans — offering BP.L or 2222.SR guarantees a dead click. Foreign
+       companies remain reachable through their US listing (BP, SHEL, TSM). */
+    const usable = items.filter(eqIsServiceable);
+    _eqDropItems = usable;
     _eqDropFocus = -1;
-    eqRenderDropdown(items, q);
+    eqRenderDropdown(usable, q, items.length - usable.length);
   } catch (_) {
     if (dd) dd.innerHTML = '<div class="eq-drop-empty">Search unavailable — enter symbol directly</div>';
   }
 }
 
-function eqRenderDropdown(items, q) {
+/* A symbol is serviceable when it carries no foreign-exchange suffix.
+   Suffixed tickers (BP.L, 2222.SR, 7203.T) are listings on exchanges outside
+   current data coverage. US listings — including OTC ADRs like BAESY — have no
+   suffix and resolve normally. */
+function eqIsServiceable(r) {
+  const sym = String(r.symbol || r.displaySymbol || '');
+  if (!sym) return false;
+  return !/\.[A-Z]{1,3}$/i.test(sym);
+}
+
+function eqRenderDropdown(items, q, hiddenCount) {
   const dd = document.getElementById('eqDropdown');
   if (!dd) return;
   if (!items.length) {
-    dd.innerHTML = `<div class="eq-drop-empty">No results for "${escHtml(q)}" — try a different spelling or ticker</div>`;
+    dd.innerHTML = hiddenCount
+      ? `<div class="eq-drop-empty">Only foreign-exchange listings matched "${escHtml(q)}". Try the US listing — Shell is SHEL, BP is BP, TSMC is TSM.</div>`
+      : `<div class="eq-drop-empty">No results for "${escHtml(q)}" — try a different spelling or ticker</div>`;
     dd.style.display = 'block';
     return;
   }
@@ -1788,12 +1835,17 @@ function eqRenderDropdown(items, q) {
       <span class="eq-drop-name" title="${escHtml(r.name)}">${escHtml(r.name)}</span>
       ${typeTag}
       <span class="eq-drop-exch">${escHtml(r.exchange)}</span>
+      <button class="eq-drop-add" title="Add to holdings" aria-label="Add ${escHtml(r.displaySymbol || r.symbol)} to holdings"
+        onclick="event.stopPropagation();addTickerToPortfolio('${escHtml(r.displaySymbol || r.symbol)}')">+</button>
     </div>`;
   }).join('');
 
+  const hidden = hiddenCount
+    ? ` · ${hiddenCount} foreign listing${hiddenCount!==1?'s':''} hidden (outside data coverage)`
+    : '';
   dd.innerHTML = rows +
     `<div class="eq-drop-footer">
-      ${items.length} result${items.length!==1?'s':''} · NYSE · NASDAQ · LSE · Tokyo · HK · Frankfurt · Tadawul and more
+      ${items.length} result${items.length!==1?'s':''} · US listings, ETFs and ADRs${hidden}
     </div>`;
   dd.style.display = 'block';
 }
@@ -1928,14 +1980,12 @@ function eqRenderHeader(data) {
 
   const nameEl = document.getElementById('eqTickerName');
   const symEl  = document.getElementById('eqTickerSym');
-  const srcEl  = document.getElementById('eqSourceTag');
   const priceEl= document.getElementById('eqPrice');
   const chgEl  = document.getElementById('eqChange');
   const statEl = document.getElementById('eqMktStatus');
 
   if (nameEl) nameEl.textContent = name;
   if (symEl)  symEl.textContent  = data.symbol;
-  if (srcEl)  srcEl.textContent  = q.source || fund.source || 'Finnhub';
   if (priceEl && q.price) priceEl.textContent = `$${q.price.toFixed(2)}`;
 
   if (chgEl && q.percentChange != null) {
@@ -1952,6 +2002,8 @@ function eqRenderHeader(data) {
     const held = (typeof portfolioRows !== 'undefined') &&
       portfolioRows.some(function (r) { return r.ticker === data.symbol; });
     addBtn.textContent = held ? '✓ IN HOLDINGS' : '+ ADD TO HOLDINGS';
+    const hint = document.getElementById('eqAddHint');
+    if (hint) hint.style.display = held ? 'none' : '';
   }
 }
 
