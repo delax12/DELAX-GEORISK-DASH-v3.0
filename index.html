@@ -2081,6 +2081,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // defaults (stale numbers) sat on screen until the first scenario click.
     setScenario(scenario);
     // initGlobeMap removed — Fix 2.1
+    // Apply a non-default structure now that charts and tables exist.
+    if (window.DelaxState) {
+      const want = DelaxState.get('structure');
+      if (want && want !== ACTIVE_STRUCTURE && window.RISK_STRUCTURES && RISK_STRUCTURES[want]) {
+        applyStructure(want);
+      }
+    }
     doRefresh(); // fetch EIA on load
     // Step 14: start GDELT conflict event polling (15 min, no API key)
     pollGdelt();
@@ -2296,21 +2303,9 @@ function setScenario(s) {
   scenario = s; customScenarioActive = false;
   const _lbl = SCENARIO_LABELS[s] || s;
   document.getElementById('scenarioLabel').textContent = _lbl;
-  document.getElementById('portfolioScenarioLabel').textContent = _lbl;
-  ['narrativeScenarioTag','eqAiScenarioTag','eqSideScenario'].forEach(id=>{
+  ['narrativeScenarioTag'].forEach(id=>{
     const el = document.getElementById(id); if (el) el.textContent = _lbl;
   });
-  const _sd = document.getElementById('eqSideScenarioDesc');
-  const _descMap = (window.ACTIVE_STRUCTURE === 'taiwan-strait') ? {
-    baseline:    'Year-long blockade · world loses ALL Taiwan chips · −5.0% world GDP (Bloomberg)',
-    optimistic:  'Gray-zone pressure · coercion without interruption · chips keep shipping',
-    pessimistic: 'Invasion drawing in the US · −9.6% world GDP, $10.6T (Bloomberg) · tail −14%',
-  } : {
-    baseline:    'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
-    optimistic:  'MOU holds · mines cleared · premiums decay · Brent settles $70–78',
-    pessimistic: 'Truce collapses · second closure from a worse base · Brent $150–180',
-  };
-  if (_sd) _sd.textContent = _descMap[s] || '';
   ['baseline','optimistic','pessimistic'].forEach(k=>{
     const b = document.getElementById('btn-'+k);
     if(!b) return;
@@ -4713,18 +4708,10 @@ if (window.DelaxState) {
   });
 }
 
-/* The page markup is authored as Hormuz. If shared state says otherwise on
-   arrival, apply it once the DOM is ready so a Taiwan link or a prior selection
-   lands correctly instead of silently rendering the wrong structure. */
-document.addEventListener('DOMContentLoaded', function () {
-  if (!window.DelaxState) return;
-  var want = DelaxState.get('structure');
-  if (want && want !== 'hormuz-iran' && RISK_STRUCTURES[want]) {
-    applyStructure(want);
-  } else {
-    styleStructureBtns();
-  }
-});
+/* The page markup is authored as Hormuz. If shared state says otherwise, the
+   deferred boot block applies it AFTER initAllCharts() — applying it earlier
+   rebuilt the tables and called updateCharts() against charts that did not yet
+   exist. */
 
 
 /* ═══ TAIWAN NARRATIVE CONTENT (v4.5) ═══════════════════════════════════════
