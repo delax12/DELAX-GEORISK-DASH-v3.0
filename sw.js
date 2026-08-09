@@ -6,7 +6,7 @@
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v5.2'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
+const CACHE_NAME  = 'delax-georisk-v5.3'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
                                           // so every returning visitor MUST get the new shell rather than a cached one
                                           // that still references deleted functions.
 const CACHE_URLS  = [
