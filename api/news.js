@@ -27,6 +27,23 @@
  */
 'use strict';
 
+/* Stories that are never market signal on this platform. A local fire, crash or
+   crime is human tragedy, not an investable geopolitical event — and surfacing
+   one under a green "CLIMATE & WEATHER" chip on an investor dashboard is both
+   irrelevant and tonally wrong. Matched on title only, so a passing mention in
+   a macro story does not exclude it. */
+const LOCAL_NOISE = [
+  'firefighter', 'helicopter crash', 'car crash', 'shooting', 'stabbing',
+  'murder', 'homicide', 'arrested', 'sentenced', 'lawsuit filed', 'obituary',
+  'missing person', 'amber alert', 'high school', 'county sheriff',
+];
+
+/* Minimum relevance score for inclusion. The previous build SORTED by score but
+   never filtered, so once genuinely relevant stories ran out, score-zero local
+   news padded the list to the requested limit. Returning six good items beats
+   returning fifteen where nine are filler. */
+const MIN_GEO_SCORE = 2;
+
 /* Geopolitical relevance keywords for scoring/filtering */
 const GEO_KEYWORDS = [
   'war','conflict','military','sanction','diplomat','tension','crisis',
@@ -81,15 +98,19 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    /* ── Score by geopolitical relevance ── */
+    /* ── Score by geopolitical relevance, then FILTER ── */
     const scored = allItems.map(item => {
-      const text  = `${item.title} ${item.description || ''}`.toLowerCase();
+      const title = String(item.title || '').toLowerCase();
+      const text  = `${title} ${String(item.description || '').toLowerCase()}`;
       const score = GEO_KEYWORDS.reduce((s, kw) => s + (text.includes(kw) ? 1 : 0), 0);
-      return { ...item, _score: score };
+      const noisy = LOCAL_NOISE.some(kw => title.includes(kw));
+      return { ...item, _score: score, _noisy: noisy };
     });
 
-    /* Sort: geo-relevant first, then newest */
-    scored.sort((a, b) => {
+    const relevant = scored.filter(i => !i._noisy && i._score >= MIN_GEO_SCORE);
+
+    /* Sort: most relevant first, then newest */
+    relevant.sort((a, b) => {
       if (b._score !== a._score) return b._score - a._score;
       return new Date(b.pubDate) - new Date(a.pubDate);
     });
@@ -97,14 +118,14 @@ module.exports = async function handler(req, res) {
     /* De-duplicate by title prefix */
     const seen   = new Set();
     const deduped = [];
-    for (const item of scored) {
+    for (const item of relevant) {
       const key = item.title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 40);
       if (!seen.has(key)) { seen.add(key); deduped.push(item); }
       if (deduped.length >= limit) break;
     }
 
     const sources = [...new Set(deduped.map(i => i.source).filter(Boolean))].slice(0, 6);
-    const news    = deduped.map(({ _score, ...item }) => item); // strip internal score
+    const news    = deduped.map(({ _score, _noisy, ...item }) => item); // strip internal fields
 
     /* Cache successful responses for 5 min — protects NewsAPI 100 req/day free quota.
        At 5-min CDN cache: fetchNewsArticles (20-min poll) + DashboardLive (8-min poll)

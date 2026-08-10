@@ -997,6 +997,29 @@ function getStructure() { return DelaxState.get('structure'); }
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function _esc(s){ return escHtml(s); }
 
+/* Live Brent for the AI prompt. `liveBrentPrice` lives in index.html and was
+   never carried across when the equities panel moved here, so eqGetAI() threw a
+   ReferenceError inside its try block and rendered the failure as an error
+   message — the feature looked broken rather than degraded.
+
+   Returns null when unavailable rather than a stand-in figure. The old call
+   passed `liveBrentPrice || 78`, handing the model an oil price nobody
+   measured; analyze.js already formats a null as N/A, so the model is told it
+   does not know. */
+var _brentCache = { at: 0, price: null };
+async function getBrentPrice() {
+  if (Date.now() - _brentCache.at < 5 * 60 * 1000) return _brentCache.price;
+  try {
+    const r = await fetch('/api/market');
+    if (r.ok) {
+      const j = await r.json();
+      const p = j && j.brent && j.brent.price;
+      _brentCache = { at: Date.now(), price: (typeof p === 'number' && isFinite(p)) ? p : null };
+    }
+  } catch (e) { _brentCache = { at: Date.now(), price: null }; }
+  return _brentCache.price;
+}
+
 var _toastTimer = null;
 function showToast(msg, isError) {
   var el = document.getElementById('toast');
@@ -2346,7 +2369,7 @@ async function eqGetAI() {
         sector:   eqGetSector(eqCurrentSymbol),
         scenario: sc,
         structure: aiStructureContext(),
-        oilPrice: ACTIVE_STRUCTURE==='taiwan-strait' ? null : (liveBrentPrice || 78),
+        oilPrice: ACTIVE_STRUCTURE==='taiwan-strait' ? null : await getBrentPrice(),
       }),
     });
     const data = await res.json();

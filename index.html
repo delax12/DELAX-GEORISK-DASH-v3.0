@@ -1946,14 +1946,33 @@ async function updateTickerPrices() {
     NATGAS: 'NG',
   };
 
-  const entries = Object.entries(FETCH_MAP);
-  const results = await Promise.allSettled(
-    entries.map(([id, sym]) =>
-      fetch(`/api/market?symbol=${encodeURIComponent(sym)}`)
-        .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-        .then(d => ({ id, data: d }))
-    )
-  );
+  /* Oil benchmarks use /api/market?benchmark=…; equities use the shared quote
+     layer. The old code sent ?symbol= to the oil endpoint for everything, which
+     that endpoint does not accept — so no row ever went live.
+     DXY and NATGAS resolve on neither source today: DXY is an index rather than
+     a tradeable symbol, and NG is not carried by the oil endpoint. They stay
+     non-live rather than display an unmeasured figure. */
+  const OIL_IDS     = { BRENT: 'brent', WTI: 'wti' };
+  const UNSUPPORTED = new Set(['DXY', 'NATGAS']);
+  const entries     = Object.entries(FETCH_MAP).filter(([id]) => !UNSUPPORTED.has(id));
+
+  /* /api/market ignores query params and returns BOTH benchmarks in one
+     response — { wti, brent, eiaVerified } — so it is called once, not per row. */
+  const [oil, quoteMap] = await Promise.all([
+    fetchOilBenchmarks(),
+    getQuotes(entries.filter(([id]) => !OIL_IDS[id]).map(([, sym]) => sym)),
+  ]);
+
+  const results = entries.map(([id, sym]) => {
+    const src = OIL_IDS[id] ? oil[OIL_IDS[id]] : quoteMap[sym];
+    if (!src || typeof src.price !== 'number' || !isFinite(src.price)) {
+      return { status: 'rejected' };
+    }
+    return {
+      status: 'fulfilled',
+      value: { id, data: { price: src.price, percentChange: src.percentChange ?? src.changePct7d ?? null } },
+    };
+  });
 
   let anyLive = false;
   results.forEach(r => {
@@ -2008,8 +2027,13 @@ const CATEGORIES = [
    keywords:['currency','exchange rate','dollar','euro','devaluation','forex','currency crisis','emerging market','debt crisis','imf','bailout']},
   {id:'conflict',   label:'CONFLICT IMPACT',    icon:'⚠',color:'#ff6b6b',
    keywords:['war','conflict','sanction','missile','attack','military','invasion','ukraine','russia','israel','gaza','iran','nuclear','weapons']},
-  {id:'climate',    label:'CLIMATE & WEATHER',  icon:'🌍',color:'#43d98f',
-   keywords:['drought','flood','hurricane','climate','crop failure','wildfire','extreme weather','heatwave','earthquake','el nino','monsoon']},
+  /* Scoped to economic transmission, not weather events as such. 'wildfire'
+     alone matched a local fire fatality and filed it here; a weather event only
+     belongs on this dashboard when it moves crops, energy or shipping. */
+  {id:'climate',    label:'CLIMATE & SUPPLY',   icon:'🌍',color:'#43d98f',
+   keywords:['crop failure','harvest','drought','famine','food price','grain','wheat',
+             'flooding disrupts','crop yield','el nino','monsoon','water shortage',
+             'climate policy','carbon price','energy transition']},
   {id:'health',     label:'HEALTHCARE COSTS',   icon:'🏥',color:'#a78bfa',
    keywords:['healthcare','medical','insurance','drug price','medicine','hospital','prescription','health insurance','pandemic']},
 ];
@@ -2088,7 +2112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply a non-default structure now that charts and tables exist.
     if (window.DelaxState) {
       const want = DelaxState.get('structure');
-      if (want && want !== ACTIVE_STRUCTURE && window.RISK_STRUCTURES && RISK_STRUCTURES[want]) {
+      if (want && want !== window.RENDERED_STRUCTURE && window.RISK_STRUCTURES && RISK_STRUCTURES[want]) {
         applyStructure(want);
       }
     }
@@ -3263,15 +3287,21 @@ function buildSectorTable() {
 const _sectorPriceCache = {};
 async function hydrateSectorPrices() {
   const tickers = [...new Set(SD('SECTOR_ROWS').map(r => r.names.split(',')[0].trim().replace('Short ','')))];
-  const results = await Promise.allSettled(
-    tickers.map(sym => {
-      if (_sectorPriceCache[sym] && Date.now() - _sectorPriceCache[sym].ts < 30000)
-        return Promise.resolve({ sym, data: _sectorPriceCache[sym].data });
-      return fetch(`/api/market?symbol=${encodeURIComponent(sym)}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if(data && data.price) _sectorPriceCache[sym] = {data, ts:Date.now()}; return {sym, data}; });
-    })
-  );
+
+  /* One snapshot read covers the universe; the rest fall through per symbol.
+     Previously this fired one /api/market?symbol= request per sector row at the
+     oil endpoint, which returns no equity price — so no sector row ever
+     showed one. */
+  const fresh = tickers.filter(sym =>
+    !(_sectorPriceCache[sym] && Date.now() - _sectorPriceCache[sym].ts < 30000));
+  const fetched = await getQuotes(fresh);
+  for (const sym in fetched) _sectorPriceCache[sym] = { data: fetched[sym], ts: Date.now() };
+
+  const results = tickers.map(sym => ({
+    status: 'fulfilled',
+    value: { sym, data: _sectorPriceCache[sym] && _sectorPriceCache[sym].data },
+  }));
+
   results.forEach(r => {
     if (r.status !== 'fulfilled' || !r.value?.data?.price) return;
     const { sym, data } = r.value;
@@ -4132,6 +4162,87 @@ function getCountryStocks(countryName) {
    ════════════════════════════════════════════════════════════ */
 const _spCache = {};
 
+/* ═════════════════════════════════════════
+   EQUITY QUOTE LAYER
+   ═════════════════════════════════════════
+   Every equity price on this page used to come from `/api/market?symbol=X`.
+   That endpoint became oil-only (?benchmark=wti|brent) in the July refactor, so
+   the ticker strip, the sector table and the country popup all silently lost
+   their prices and rendered "—".
+
+   Quotes now resolve snapshot-first:
+     1. ONE /api/snapshot call covers the whole 34-name quote universe and is
+        CDN-cached for 5 minutes. This replaces what was ~40 separate requests
+        per page load and removes the Finnhub rate-limit pressure that starved
+        /api/market-equity.
+     2. Anything outside that universe falls through to /api/market-equity,
+        one call each, capped for concurrency.
+
+   A symbol that resolves nowhere is simply absent from the returned map. The
+   caller renders "—". Never a placeholder number. */
+/* Both oil benchmarks in one call. /api/market accepts no parameters — it
+   always returns { updatedAt, wti, brent, eiaVerified }, with a null benchmark
+   when every source for it failed. Nulls stay null; no substitution. */
+async function fetchOilBenchmarks() {
+  try {
+    const r = await fetch('/api/market');
+    if (!r.ok) return {};
+    const j = await r.json();
+    return { wti: j && j.wti, brent: j && j.brent };
+  } catch (e) { return {}; }
+}
+
+const _quoteCache = { at: 0, map: {} };
+const QUOTE_CACHE_MS = 60 * 1000;
+
+async function getQuotes(symbols) {
+  const want = [...new Set((symbols || []).filter(Boolean))];
+  const out  = {};
+  if (!want.length) return out;
+
+  // 1. Shared snapshot map
+  if (Date.now() - _quoteCache.at > QUOTE_CACHE_MS) {
+    try {
+      const r = await fetch('/api/snapshot');
+      if (r.ok) {
+        const j = await r.json();
+        _quoteCache.map = (j && j.quotes) || {};
+        _quoteCache.at  = Date.now();
+      }
+    } catch (e) { /* keep whatever was cached */ }
+  }
+  const missing = [];
+  for (const sym of want) {
+    const q = _quoteCache.map[sym];
+    if (q && typeof q.price === 'number' && isFinite(q.price)) {
+      out[sym] = { price: q.price, percentChange: (typeof q.changePct === 'number') ? q.changePct : null };
+    } else {
+      missing.push(sym);
+    }
+  }
+  if (!missing.length) return out;
+
+  // 2. Off-universe symbols, one call each, 4 at a time
+  for (let i = 0; i < missing.length; i += 4) {
+    await Promise.allSettled(missing.slice(i, i + 4).map(async (sym) => {
+      try {
+        const r = await fetch('/api/market-equity?symbol=' + encodeURIComponent(sym));
+        if (!r.ok) return;
+        const d = await r.json();
+        const q = d && d.quote;
+        if (q && typeof q.price === 'number' && isFinite(q.price)) {
+          out[sym] = {
+            price:         q.price,
+            percentChange: (typeof q.percentChange === 'number' && isFinite(q.percentChange))
+              ? q.percentChange : null,
+          };
+        }
+      } catch (e) { /* absent → renders "—" */ }
+    }));
+  }
+  return out;
+}
+
 async function openStockPopup(countryName) {
   const popup    = document.getElementById('stock-popup');
   const backdrop = document.getElementById('stock-backdrop');
@@ -4154,23 +4265,14 @@ async function openStockPopup(countryName) {
   const stocks = getCountryStocks(countryName);
   const brent  = (window.tickerData || []).find(t => t.id === 'BRENT')?.price || 82.40;
 
-  /* ── Step 1: Pre-fetch prices for the hardcoded country stock list ── */
+  /* ── Step 1: Pre-fetch prices for the hardcoded country stock list ──
+     Equity quotes come from /api/market-equity. /api/market is the OIL endpoint
+     (?benchmark=wti|brent) and has carried no ?symbol= path since the July
+     refactor — calling it here returned nothing, so every ticker rendered "—". */
   const liveSymbols = stocks.slice(0, 4).map(s => s[0]);
   const livePrices  = {};
 
-  await Promise.allSettled(
-    liveSymbols.map(sym =>
-      fetch('/api/market?symbol=' + encodeURIComponent(sym))
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          /* FIX 6.2: strict numeric guard — typeof + isFinite, not loose != null */
-          if (d && typeof d.price === 'number' && isFinite(d.price)) {
-            livePrices[sym] = d;
-          }
-        })
-        .catch(() => null)
-    )
-  );
+  Object.assign(livePrices, await getQuotes(liveSymbols));
 
   /* ── Step 2: AI stock insights ── */
   let aiData = null;
@@ -4200,18 +4302,7 @@ async function openStockPopup(countryName) {
   if (aiData && aiData.stocks) {
     const aiSyms = aiData.stocks.map(s => s.sym).filter(sym => !livePrices[sym]);
     if (aiSyms.length) {
-      await Promise.allSettled(
-        aiSyms.map(sym =>
-          fetch('/api/market?symbol=' + encodeURIComponent(sym))
-            .then(r => r.ok ? r.json() : null)
-            .then(d => {
-              if (d && typeof d.price === 'number' && isFinite(d.price)) {
-                livePrices[sym] = d;
-              }
-            })
-            .catch(() => null)
-        )
-      );
+      Object.assign(livePrices, await getQuotes(aiSyms));
     }
   }
 
@@ -4413,6 +4504,13 @@ function switchTab(id, event) {
    There is no second copy of the numbers in this file.
    ═══════════════════════════════════════════════════════════════════════════ */
 window.ACTIVE_STRUCTURE = (window.DelaxState && DelaxState.get('structure')) || 'hormuz-iran';
+
+/* What the DOM currently DRAWS, which is not the same question as what is
+   selected. The markup ships authored as Hormuz, so that is the honest starting
+   value regardless of what the store says. applyStructure() advances it only
+   once the tables, charts and badges have actually been rebuilt. Every guard
+   compares against THIS, never ACTIVE_STRUCTURE. */
+window.RENDERED_STRUCTURE = 'hormuz-iran';
 
 /* v4.0 — AI payload structure context. Every /api/analyze call includes this, so
    the AI narrates the RIGHT conflict with the RIGHT epistemic caveat. Without it,
@@ -4675,7 +4773,7 @@ function renderWhatIfChips() {
 }
 
 function setStructure(id) {
-  if (!RISK_STRUCTURES[id] || id === ACTIVE_STRUCTURE) return;
+  if (!RISK_STRUCTURES[id] || id === window.RENDERED_STRUCTURE) return;
   if (window.DelaxState) {
     DelaxState.set('structure', id);   // → emits delax:statechange → applyStructure()
     return;
@@ -4709,6 +4807,7 @@ function applyStructure(id) {
   } catch(e) { console.warn('[structure] deep re-render:', e); }
   setScenario(scenario);
   postStructureState();            // GEO Intel globe follows the active structure
+  window.RENDERED_STRUCTURE = id;  // the DOM now matches — set last, never earlier
 }
 
 /* ── CROSS-SURFACE STRUCTURE SYNC ──
@@ -4719,7 +4818,11 @@ function applyStructure(id) {
 if (window.DelaxState) {
   DelaxState.subscribe(function (d) {
     if (d.changed.indexOf('structure') < 0) return;
-    if (d.state.structure === ACTIVE_STRUCTURE) return;   // already applied
+    /* Compare against RENDERED_STRUCTURE. ACTIVE_STRUCTURE is already equal by
+       this point: delax-state.js subscribes when it loads, so its listener runs
+       first and syncs the legacy global before this one is reached. Guarding on
+       ACTIVE_STRUCTURE here silently swallowed every live switch. */
+    if (d.state.structure === window.RENDERED_STRUCTURE) return;
     applyStructure(d.state.structure);
   });
 }
