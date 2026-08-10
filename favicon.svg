@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"
+     role="img" aria-label="DELAX GEO-RISK">
+  <title>DELAX GEO-RISK</title>
+  <!--
+    DELAX GEO-RISK icon — adapted from the DELAXCOM LLC mark.
+
+    CARRIED OVER: the rounded play-triangle silhouette. That shape is the
+    company's existing equity and it is the only element of the original that
+    stays readable at 16px, which is where a favicon actually lives.
+
+    CHANGED, AND WHY:
+    1. The "DELAXCOM / INTERNET · IT · TELECOM" lockup is removed. Below roughly
+       64px it renders as a smudge, and it names a different business than the
+       one this icon fronts.
+    2. Gold moved from the telecom lemon (#f5d236) to the product amber
+       (#f5a623) already used across GEO-RISK, so there is one gold in the
+       system rather than two that look like a mistake side by side.
+    3. The inner circle-and-arrow became the GEO-RISK diamond. A circle feeding
+       an arrow reads as transmission — signal moving through a network — which
+       is right for telecom and wrong for a risk model. The diamond is already
+       the mark in the GEO-RISK header.
+    4. The two leading-edge crescents are dropped. They are thin slivers in the
+       original; at icon sizes they either vanish or bloat and destroy the
+       silhouette. Tested at 16/32px before removing.
+
+    Net: the corporate silhouette holds the product mark — DELAXCOM outside,
+    GEO-RISK inside. Navy stays as the plate because it reads against both light
+    and dark browser chrome.
+  -->
+  <path d="M 123.8 67.4 L 420.2 222.6 Q 484 256 420.2 289.4 L 123.8 444.6 Q 60 478 60 406 L 60 106 Q 60 34 123.8 67.4 Z"
+        fill="#0b1d6f"/>
+  <path d="M 164 256 L 242 160 L 320 256 L 242 352 Z" fill="#f5a623"/>
+</svg>

@@ -6,7 +6,7 @@
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v5.2'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
+const CACHE_NAME  = 'delax-georisk-v5.5'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
                                           // so every returning visitor MUST get the new shell rather than a cached one
                                           // that still references deleted functions.
 const CACHE_URLS  = [
@@ -16,6 +16,10 @@ const CACHE_URLS  = [
   '/delax-state.js',
   '/delax-chrome.js',
   '/delax-chrome.css',
+  '/manifest.json',
+  '/favicon.svg',
+  '/favicon-32.png',
+  '/apple-touch-icon.png',
   '/dashboard-live.js',
   'https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js',
   // globe.gl removed — Fix 2.1 (saves 820KB from precache)

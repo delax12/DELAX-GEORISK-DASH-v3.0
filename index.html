@@ -30,8 +30,12 @@
 <meta name="twitter:image" content="https://delaxcom.org/og-card.png"/>
 <!-- PWA basics -->
 <meta name="theme-color" content="#080c14"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;DELAX GEO-RISK&quot;,&quot;short_name&quot;:&quot;GeoRisk&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#080c14&quot;,&quot;theme_color&quot;:&quot;#f5a623&quot;}"/>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <!-- ECharts -->
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <!-- Live Data Controller — market prices + RSS geopolitical news feed -->
@@ -2081,6 +2085,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // defaults (stale numbers) sat on screen until the first scenario click.
     setScenario(scenario);
     // initGlobeMap removed — Fix 2.1
+    // Apply a non-default structure now that charts and tables exist.
+    if (window.DelaxState) {
+      const want = DelaxState.get('structure');
+      if (want && want !== ACTIVE_STRUCTURE && window.RISK_STRUCTURES && RISK_STRUCTURES[want]) {
+        applyStructure(want);
+      }
+    }
     doRefresh(); // fetch EIA on load
     // Step 14: start GDELT conflict event polling (15 min, no API key)
     pollGdelt();
@@ -2289,6 +2300,18 @@ function showToast(msg, isError=false) {
   setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 4500);
 }
 
+/* Strip markup from RSS/news descriptions before they are rendered as text.
+   Feeds routinely embed <p>, <a> and character entities in the description
+   field; without this the snippet shows raw tags. Called by
+   fetchNewsArticles() — it was referenced but never defined, so the news strip
+   threw on every poll and never rendered a headline. */
+function stripHtml(s) {
+  if (s == null) return '';
+  const el = document.createElement('div');
+  el.innerHTML = String(s);
+  return (el.textContent || el.innerText || '').replace(/\s+/g, ' ').trim();
+}
+
 /* ═════════════════════════════════════════
    SCENARIO CONTROL
    ═════════════════════════════════════════ */
@@ -2296,21 +2319,9 @@ function setScenario(s) {
   scenario = s; customScenarioActive = false;
   const _lbl = SCENARIO_LABELS[s] || s;
   document.getElementById('scenarioLabel').textContent = _lbl;
-  document.getElementById('portfolioScenarioLabel').textContent = _lbl;
-  ['narrativeScenarioTag','eqAiScenarioTag','eqSideScenario'].forEach(id=>{
+  ['narrativeScenarioTag'].forEach(id=>{
     const el = document.getElementById(id); if (el) el.textContent = _lbl;
   });
-  const _sd = document.getElementById('eqSideScenarioDesc');
-  const _descMap = (window.ACTIVE_STRUCTURE === 'taiwan-strait') ? {
-    baseline:    'Year-long blockade · world loses ALL Taiwan chips · −5.0% world GDP (Bloomberg)',
-    optimistic:  'Gray-zone pressure · coercion without interruption · chips keep shipping',
-    pessimistic: 'Invasion drawing in the US · −9.6% world GDP, $10.6T (Bloomberg) · tail −14%',
-  } : {
-    baseline:    'Iran holds leverage over the strait · transits below pre-war · Brent peaks ~$102',
-    optimistic:  'MOU holds · mines cleared · premiums decay · Brent settles $70–78',
-    pessimistic: 'Truce collapses · second closure from a worse base · Brent $150–180',
-  };
-  if (_sd) _sd.textContent = _descMap[s] || '';
   ['baseline','optimistic','pessimistic'].forEach(k=>{
     const b = document.getElementById('btn-'+k);
     if(!b) return;
@@ -4713,18 +4724,10 @@ if (window.DelaxState) {
   });
 }
 
-/* The page markup is authored as Hormuz. If shared state says otherwise on
-   arrival, apply it once the DOM is ready so a Taiwan link or a prior selection
-   lands correctly instead of silently rendering the wrong structure. */
-document.addEventListener('DOMContentLoaded', function () {
-  if (!window.DelaxState) return;
-  var want = DelaxState.get('structure');
-  if (want && want !== 'hormuz-iran' && RISK_STRUCTURES[want]) {
-    applyStructure(want);
-  } else {
-    styleStructureBtns();
-  }
-});
+/* The page markup is authored as Hormuz. If shared state says otherwise, the
+   deferred boot block applies it AFTER initAllCharts() — applying it earlier
+   rebuilt the tables and called updateCharts() against charts that did not yet
+   exist. */
 
 
 /* ═══ TAIWAN NARRATIVE CONTENT (v4.5) ═══════════════════════════════════════

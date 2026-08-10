@@ -1,0 +1,44 @@
+{
+  "name": "DELAX GEO-RISK",
+  "short_name": "GeoRisk",
+  "description": "Cross-asset geopolitical risk analytics for investors.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#f5a623",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Investor Workspace",
+      "short_name": "Workspace",
+      "description": "Research tickers, build a portfolio, see scenario impact and VaR",
+      "url": "/workspace.html"
+    },
+    {
+      "name": "Exposure Desk",
+      "short_name": "Exposure",
+      "url": "/exposure-desk.html"
+    }
+  ]
+}
