@@ -785,8 +785,8 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
             </div>
           </div>
           <div style="margin-top:.65rem;font-family:var(--mono);font-size:.55rem;color:var(--text-dim);line-height:1.6">
-            Projections apply DELAX conflict multipliers to base historical returns.
-            Not financial advice — for scenario planning only.
+            Scenario context only — no forward price target is published for a single ticker.
+            Not financial advice.
           </div>
         </div>
 
@@ -800,7 +800,7 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
           </div>
           <button class="btn cyan" id="eqAiBtn" onclick="eqGetAI()"
             style="margin-top:.85rem;font-size:.7rem;padding:.55rem 1.1rem">
-            🔒 Get AI Analysis (Pro)
+            ✦ Get AI Analysis
           </button>
         </div>
 
@@ -1130,6 +1130,23 @@ document.addEventListener('DOMContentLoaded', function () {
 window.__wsBooted = false;
 function __wsBootDone() { window.__wsBooted = true; }
 
+
+/* Paywall flag and modal copy. Both are read by isProUser() and showProModal()
+   below, and both were left behind in index.html when the equities panel moved
+   here — so isProUser() threw ReferenceError on the FIRST line of eqGetAI(),
+   outside its try/catch. Uncaught, so the "Get AI Analysis" button did nothing
+   at all: no spinner, no error. Keep in sync with index.html; Step 16 replaces
+   both with a real Supabase session check. */
+const PAYWALL_ENABLED = false;
+
+const PRO_MODAL = {
+  // Per-feature title and pitch — shown in the modal header
+  whatif:    { title: 'AI Investor Intelligence',      pitch: 'Ask our AI any question about how this conflict affects your investments.' },
+  kpi:       { title: 'AI KPI Deep-Dive',              pitch: 'Click any metric for a plain-English explanation of what\'s driving it.' },
+  heatmap:   { title: 'AI Heatmap Narrative',          pitch: 'Scenario-aware AI commentary on the regional risk map.' },
+  news:      { title: 'AI News Summary',               pitch: 'Real-time AI one-line summaries of breaking geopolitical headlines.' },
+  geointel:  { title: 'AI GEO Intelligence Briefing',  pitch: 'On-demand AI briefings synthesizing live conflict signals.' },
+};
 
 function isProUser() {
   // While the paywall is disabled, all Pro/AI features are unlocked for the
@@ -2379,7 +2396,7 @@ async function eqGetAI() {
   } catch (err) {
     if (content) content.innerHTML = `<div style="color:var(--red);font-size:.72rem">⚠ ${err.message}</div>`;
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '🔒 Get AI Analysis (Pro)'; }
+    if (btn) { btn.disabled = false; btn.textContent = '✦ Get AI Analysis'; }
   }
 }
 
