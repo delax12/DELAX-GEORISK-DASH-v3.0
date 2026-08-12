@@ -39,6 +39,7 @@
     { key: 'dashboard', href: '/',                    label: 'Dashboard' },
     { key: 'workspace', href: '/workspace.html',      label: 'Workspace' },
     { key: 'exposure',  href: '/exposure-desk.html',  label: 'Exposure'  },
+    { key: 'insights',  href: '/insights.html',       label: 'Insights'  },
     { key: 'method',    href: '/methodology.html',    label: 'Method'    },
   ];
 

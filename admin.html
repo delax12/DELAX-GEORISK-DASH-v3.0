@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — DELAX GEO-RISK</title>
+<meta name="robots" content="noindex, nofollow"/>
+<meta name="theme-color" content="#050a14"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/delax-chrome.css"/>
+<style>
+
+/* ═══════════════════════════════════════════════════════
+   DESIGN SYSTEM v2.2 — CSS VARIABLES
+   Change theme by toggling data-theme on <body>
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --bg-deep:#080c14; --bg-card:#0d1525; --bg-panel:#111d33;
+  --border:#1e3055; --border-dim:#152238;
+  --amber:#f5a623; --amber-dim:#c47e10;
+  --cyan:#00d4ff; --cyan-dim:#0099cc;
+  --green:#00e676; --red:#ff3d4a; --yellow:#ffe040; --purple:#b388ff;
+  --text-pri:#e8edf5; --text-sec:#7a91b3; --text-dim:#7189ad; /* was #5a7299 = 3.96:1, failed AA; #7189ad = 5.42:1 */
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif; --display:'Bebas Neue',sans-serif;
+  --font-scale:1; /* controlled by font-size slider */
+}
+/* OS-level "increase contrast": brighten the dimmest tiers and harden borders.
+   Base palette already passes AA after the --text-dim fix above; this goes further
+   for users who ask for it, and is invisible otherwise. */
+@media (prefers-contrast: more) {
+  :root {
+    --text-sec:#9cb2d0; --text-dim:#9cb2d0;
+    --border:#3a5578;
+  }
+}
+/* Classic / light theme */
+[data-theme="classic"] {
+  --bg-deep:#f0f3f8; --bg-card:#fff; --bg-panel:#f7f9fc;
+  --border:#d0d9e8; --border-dim:#e2e8f2;
+  --amber:#c47e10; --amber-dim:#a06000; --cyan:#0070b8; --cyan-dim:#005a96;
+  --green:#16803c; --red:#c41a27; --yellow:#b45309; --purple:#6d28d9;
+  --text-pri:#0f1923; --text-sec:#374a63; --text-dim:#6b7fa0;
+}
+[data-theme="classic"] body::before{display:none}
+[data-theme="classic"] .header{background:rgba(240,243,248,.97);border-bottom-color:#d0d9e8}
+[data-theme="classic"] .kpi-card.up .kpi-value{color:#c41a27}
+[data-theme="classic"] .kpi-card.down .kpi-value{color:#16803c}
+/* Color-blind safe palette */
+[data-colorblind="true"] { --green:#009E73; --red:#D55E00; --amber:#E69F00; --cyan:#56B4E9; --purple:#CC79A7; }
+
+/* RESET */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:calc(15px * var(--font-scale));scroll-behavior:smooth}
+body{background:var(--bg-deep);color:var(--text-pri);font-family:var(--sans);line-height:1.5;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+/* HEADER */
+.header{position:sticky;top:0;z-index:200;background:rgba(8,12,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;gap:.75rem;flex-wrap:wrap}
+.header-brand{display:flex;align-items:baseline;gap:.6rem}
+.logo{font-family:var(--display);font-size:1.4rem;letter-spacing:.08em;color:var(--amber);line-height:1}
+.subtitle{font-family:var(--mono);font-size:.6rem;color:var(--text-sec);letter-spacing:.12em;text-transform:uppercase}
+.header-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.live-badge{display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--green);letter-spacing:.1em;text-transform:uppercase}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:.4;box-shadow:0 0 3px var(--green)}}
+.timestamp{font-family:var(--mono);font-size:.6rem;color:var(--text-sec)}
+.offline-badge{display:none;font-family:var(--mono);font-size:.58rem;color:var(--yellow);background:rgba(255,224,64,.12);border:1px solid rgba(255,224,64,.3);padding:.2rem .5rem;border-radius:2px}
+.offline-badge.show{display:inline-flex}
+
+/* BUTTONS */
+.btn{background:transparent;border:1px solid var(--border);color:var(--text-sec);font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:.38rem .8rem;border-radius:2px;cursor:pointer;transition:all .2s;white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.amber{border-color:var(--amber);color:var(--amber)}
+.btn.amber:hover{background:var(--amber);color:#000;box-shadow:0 0 18px rgba(245,166,35,.4)}
+.btn.cyan{border-color:var(--cyan);color:var(--cyan)}
+.btn.cyan:hover{background:rgba(0,212,255,.15)}
+.btn.green{border-color:var(--green);color:var(--green)}
+.btn:disabled{opacity:.5;pointer-events:none}
+.refresh-btn{background:transparent;border:1px solid var(--amber);color:var(--amber);font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.4rem .9rem;border-radius:2px;cursor:pointer;transition:all .2s}
+.refresh-btn:hover{background:var(--amber);color:#000;box-shadow:0 0 18px rgba(245,166,35,.4)}
+.refresh-btn:disabled{opacity:.5;pointer-events:none}
+
+/* ALERT BANNER */
+.alert-banner{background:linear-gradient(90deg,rgba(255,61,74,.1),rgba(255,61,74,.03));border:1px solid rgba(255,61,74,.3);border-left:3px solid var(--red);padding:.65rem 1.25rem;margin-bottom:0;border-radius:2px;display:flex;align-items:center;gap:1rem;font-family:var(--mono);font-size:.68rem;color:var(--text-sec)}
+.alert-label{font-weight:600;letter-spacing:.1em;white-space:nowrap;flex-shrink:0}
+.alert-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert-text strong{color:var(--text-pri)}
+@media(max-width:600px){.alert-text{white-space:normal}}
+
+/* MAIN */
+main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 1.25rem 4rem}
+
+/* SECTION LABEL */
+.section-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);margin-bottom:.9rem;display:flex;align-items:center;gap:.6rem}
+.section-label::before{content:'';display:inline-block;width:16px;height:1px;background:var(--amber)}
+
+/* MODE STRIP */
+.mode-strip{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.mode-badge{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;padding:.3rem .75rem;border-radius:2px;border:1px solid var(--border)}
+.mode-badge.beginner{background:rgba(0,212,255,.1);border-color:var(--cyan);color:var(--cyan)}
+.mode-badge.expert{background:rgba(179,136,255,.1);border-color:var(--purple);color:var(--purple)}
+
+/* PROVENANCE ICON */
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:rgba(0,212,255,.15);border:1px solid var(--cyan-dim);color:var(--cyan);font-size:.55rem;cursor:help;flex-shrink:0;font-family:var(--mono);font-style:normal;vertical-align:middle;margin-left:.25rem}
+.provenance-tip{position:fixed;z-index:9500;max-width:260px;background:var(--bg-panel);border:1px solid var(--border);border-left:3px solid var(--cyan);padding:.6rem .85rem;border-radius:2px;font-family:var(--mono);font-size:.6rem;color:var(--text-sec);line-height:1.6;box-shadow:0 8px 32px rgba(0,0,0,.6);pointer-events:none;opacity:0;transition:opacity .15s}
+.provenance-tip.visible{opacity:1}
+
+/* JARGON TOOLTIP */
+[data-jargon]{border-bottom:1px dotted var(--text-dim);cursor:help}
+.jargon-tip{position:fixed;z-index:9400;max-width:270px;background:var(--bg-panel);border:1px solid var(--border);border-left:3px solid var(--amber);padding:.6rem .85rem;border-radius:2px;font-family:var(--sans);font-size:.7rem;color:var(--text-sec);line-height:1.55;box-shadow:0 8px 32px rgba(0,0,0,.5);pointer-events:none;opacity:0;transition:opacity .15s}
+.jargon-tip.visible{opacity:1}
+
+/* TABS */
+/* CONTROLS */
+.controls-row{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap}
+.control-group{display:flex;align-items:center;gap:.4rem}
+.control-label{font-family:var(--mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim)}
+.toggle-btn{background:var(--bg-panel);border:1px solid var(--border);color:var(--text-sec);font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .75rem;border-radius:2px;cursor:pointer;transition:all .18s}
+.toggle-btn.active-baseline{background:rgba(0,212,255,.15);border-color:var(--cyan);color:var(--cyan)}
+.toggle-btn.active-optimistic{background:rgba(0,230,118,.12);border-color:var(--green);color:var(--green)}
+.toggle-btn.active-pessimistic{background:rgba(255,61,74,.12);border-color:var(--red);color:var(--red)}
+.toggle-btn:hover{border-color:var(--text-sec);color:var(--text-pri)}
+.select-ctrl{background:var(--bg-panel);border:1px solid var(--border);color:var(--text-pri);font-family:var(--mono);font-size:.6rem;padding:.3rem .7rem;border-radius:2px;outline:none;cursor:pointer;appearance:none}
+.select-ctrl:focus{border-color:var(--amber)}
+
+/* CHART BOXES */
+.chart-box{background:var(--bg-card);border:1px solid var(--border-dim);border-radius:2px;overflow:hidden;margin-bottom:1.1rem}
+.chart-header{padding:.9rem 1.1rem .65rem;border-bottom:1px solid var(--border-dim);display:flex;align-items:baseline;justify-content:space-between;gap:1rem}
+.chart-title{font-family:var(--display);font-size:1.1rem;letter-spacing:.06em;color:var(--text-pri)}
+.chart-desc{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase}
+.chart-body{padding:.65rem .4rem .4rem}
+.echart{width:100%}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.1rem}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.1rem;margin-bottom:1.1rem}
+@media(max-width:900px){.two-col,.three-col{grid-template-columns:1fr}}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:.3rem;font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;padding:.22rem .55rem;border-radius:2px;font-weight:600}
+.badge-buy{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.4)}
+.badge-avoid{background:rgba(255,61,74,.15);color:var(--red);border:1px solid rgba(255,61,74,.4)}
+.badge-monitor{background:rgba(255,224,64,.12);color:var(--yellow);border:1px solid rgba(255,224,64,.3)}
+
+
+/* ══ ADMIN ══ */
+main{max-width:1000px;margin:0 auto;padding:1.5rem 1.25rem 4rem}
+@media(max-width:600px){main{padding:1rem .85rem 3rem}}
+
+.ad-gate{max-width:420px;margin:3rem auto;padding:1.75rem;background:var(--bg-card);
+  border:1px solid var(--border);border-radius:3px}
+.ad-gate h1{font-family:var(--display);font-size:1.3rem;letter-spacing:.05em;
+  color:var(--text-pri);margin-bottom:.6rem}
+.ad-gate p{font-family:var(--mono);font-size:.65rem;color:var(--text-sec);
+  line-height:1.85;margin-bottom:1.1rem}
+.ad-input{width:100%;background:var(--bg-deep);border:1px solid var(--border);
+  color:var(--text-pri);font-family:var(--mono);font-size:.7rem;padding:.6rem .7rem;
+  border-radius:2px;outline:none;margin-bottom:.6rem}
+.ad-input:focus{border-color:var(--cyan)}
+textarea.ad-input{resize:vertical;line-height:1.8;min-height:90px}
+.ad-msg{font-family:var(--mono);font-size:.62rem;line-height:1.8;margin-top:.7rem;
+  padding:.55rem .7rem;border-radius:2px;border-left:2px solid var(--cyan);
+  background:var(--bg-deep);color:var(--text-sec);display:none}
+.ad-msg.show{display:block}
+.ad-msg.err{border-left-color:var(--red);color:var(--red)}
+.ad-msg.ok{border-left-color:var(--green)}
+
+.ad-bar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  padding-bottom:.9rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border-dim)}
+.ad-who{font-family:var(--mono);font-size:.62rem;color:var(--text-sec)}
+.ad-role{font-family:var(--mono);font-size:.5rem;letter-spacing:.13em;text-transform:uppercase;
+  padding:.14rem .4rem;border-radius:2px;color:var(--amber);
+  border:1px solid rgba(255,224,64,.32);background:rgba(255,224,64,.08)}
+
+.ad-tabs{display:flex;gap:.3rem;margin-bottom:1.25rem;flex-wrap:wrap}
+.ad-tab{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  background:transparent;border:1px solid var(--border-dim);color:var(--text-dim);
+  padding:.45rem .8rem;border-radius:2px;cursor:pointer;min-height:36px}
+.ad-tab[aria-selected="true"]{color:var(--cyan);border-color:var(--cyan);background:rgba(0,212,255,.08)}
+
+.ad-panel{display:none}
+.ad-panel.active{display:block}
+
+.ad-card{background:var(--bg-card);border:1px solid var(--border);border-radius:3px;
+  padding:1rem;margin-bottom:.7rem}
+.ad-card h3{font-family:var(--display);font-size:.95rem;color:var(--text-pri);
+  letter-spacing:.03em;margin-bottom:.3rem}
+.ad-row{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap}
+.ad-label{font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text-dim);margin-bottom:.3rem;display:block}
+.ad-note{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);line-height:1.75;margin-top:.3rem}
+.ad-pill{font-family:var(--mono);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:.12rem .4rem;border-radius:2px;border:1px solid var(--border-dim);color:var(--text-dim)}
+.ad-pill.live{color:var(--green);border-color:rgba(0,230,160,.3);background:rgba(0,230,160,.07)}
+.ad-actions{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.7rem}
+.ad-guard{font-family:var(--mono);font-size:.6rem;color:var(--text-dim);line-height:1.9;
+  padding:.7rem .85rem;border:1px dashed var(--border);border-radius:2px;
+  background:var(--bg-deep);margin-bottom:1.25rem}
+.ad-guard strong{color:var(--amber)}
+
+</style>
+</head>
+<body data-theme="cyberpunk">
+
+<main>
+  <!-- ══ SIGN IN ══ -->
+  <section class="ad-gate" id="adGate">
+    <h1>DELAX Admin</h1>
+    <p>Sign in with a magic link. Access is by invitation — an address without an
+       invitation can sign in and will simply see nothing.</p>
+    <input class="ad-input" id="adEmail" type="email" placeholder="you@example.com"
+      autocomplete="email" aria-label="Email address"/>
+    <button class="btn green" id="adSendBtn" onclick="sendLink()" style="width:100%">Send magic link</button>
+    <div class="ad-msg" id="adGateMsg"></div>
+  </section>
+
+  <!-- ══ CONSOLE ══ -->
+  <section id="adConsole" style="display:none">
+    <div class="ad-bar">
+      <strong style="font-family:var(--display);font-size:1.05rem;letter-spacing:.05em;color:var(--text-pri)">
+        DELAX <span style="color:var(--amber)">ADMIN</span></strong>
+      <span class="ad-who" id="adWho"></span>
+      <span class="ad-role" id="adRole"></span>
+      <span style="flex:1"></span>
+      <a class="btn" href="/">← Site</a>
+      <button class="btn" onclick="signOut()">Sign out</button>
+    </div>
+
+    <!-- The constraint, stated where an editor will actually read it. -->
+    <div class="ad-guard">
+      <strong>Prose only.</strong> This console edits words, never numbers. Sector betas,
+      prices, scenario multipliers and evidence tiers live in the model and cannot be
+      reached from here — by design, so that no published figure can bypass the
+      evidence-tier system. If a number on the site is wrong, it is a model change,
+      not an edit.
+    </div>
+
+    <div class="ad-tabs" role="tablist">
+      <button class="ad-tab" role="tab" data-panel="articles"  aria-selected="true"  onclick="showPanel('articles')">Articles</button>
+      <button class="ad-tab" role="tab" data-panel="content"   aria-selected="false" onclick="showPanel('content')">Site copy</button>
+      <button class="ad-tab" role="tab" data-panel="people"    aria-selected="false" onclick="showPanel('people')" id="adPeopleTab">People</button>
+    </div>
+
+    <div class="ad-msg" id="adMsg"></div>
+
+    <!-- ARTICLES -->
+    <div class="ad-panel active" id="panel-articles">
+      <div class="ad-card">
+        <span class="ad-label">New article</span>
+        <input class="ad-input" id="naTitle" placeholder="Title" aria-label="Title"/>
+        <input class="ad-input" id="naSlug"  placeholder="url-slug (lowercase, hyphens)" aria-label="Slug"/>
+        <input class="ad-input" id="naSummary" placeholder="One-line summary (optional)" aria-label="Summary"/>
+        <textarea class="ad-input" id="naBody" rows="8"
+          placeholder="Body — markdown: # heading, **bold**, *italic*, - list, [link](https://…)"
+          aria-label="Body"></textarea>
+        <div class="ad-actions">
+          <button class="btn green" onclick="createArticle('draft')">Save draft</button>
+          <button class="btn" onclick="createArticle('published')">Publish now</button>
+        </div>
+        <div class="ad-note">Publishing stamps the date. A published article always carries one —
+          an undated post cannot be cited.</div>
+      </div>
+      <div id="adArticles"></div>
+    </div>
+
+    <!-- SITE COPY -->
+    <div class="ad-panel" id="panel-content">
+      <div id="adContent"></div>
+      <div class="ad-note">Each block has default copy written into the page. Clearing a block
+        here restores that default rather than leaving a gap.</div>
+    </div>
+
+    <!-- PEOPLE -->
+    <div class="ad-panel" id="panel-people">
+      <div class="ad-card" id="adInviteCard">
+        <span class="ad-label">Invite someone</span>
+        <div class="ad-row">
+          <input class="ad-input" id="invEmail" placeholder="colleague@example.com"
+            style="flex:1;min-width:200px;margin-bottom:0" aria-label="Invite email"/>
+          <select class="ad-input" id="invRole" style="width:auto;margin-bottom:0" aria-label="Role">
+            <option value="editor">Editor</option>
+            <option value="owner">Owner</option>
+          </select>
+          <button class="btn green" onclick="sendInvite()">Invite</button>
+        </div>
+        <div class="ad-note">The invitee signs in with a magic link at this address and receives
+          the role automatically. Editors can write and publish; only owners manage people.</div>
+      </div>
+      <div id="adPeople"></div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+/**
+ * DELAX Admin console.
+ *
+ * Auth and writes need a session, so this page (and only this page) loads
+ * supabase-js. Public pages read through plain fetch in /delax-cms.js and carry
+ * no SDK at all.
+ *
+ * SECURITY MODEL: nothing here is trusted. The publishable key below is public
+ * by design and grants nothing on its own; row-level security in Postgres
+ * decides every read and write. The UI hides controls a user may not use, but
+ * the database is what actually refuses them — an editor who forges a request
+ * to promote themselves is rejected by the policy, not by this file.
+ */
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://hlxfhyspisejfnhncjyz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_9RGWMyidXv6sPGtHqL5Dmw_r-yOmvJV';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+let ME = null;          // { user_id, email, role }
+
+/* ── helpers ─────────────────────────────────────────────── */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+function msg(text, kind, el) {
+  const box = $(el || 'adMsg');
+  box.textContent = text;
+  box.className = 'ad-msg show' + (kind ? ' ' + kind : '');
+  if (kind === 'ok') setTimeout(() => { box.className = 'ad-msg'; }, 4000);
+}
+
+function slugify(s) {
+  return String(s || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+}
+
+/* ── auth ────────────────────────────────────────────────── */
+window.sendLink = async function () {
+  const email = $('adEmail').value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return msg('Enter a valid email address.', 'err', 'adGateMsg');
+  }
+  const btn = $('adSendBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const { error } = await sb.auth.signInWithOtp({
+    email, options: { emailRedirectTo: location.origin + '/admin.html' },
+  });
+  btn.disabled = false; btn.textContent = 'Send magic link';
+  if (error) return msg(error.message, 'err', 'adGateMsg');
+  msg('Check your inbox for a sign-in link. It expires shortly.', 'ok', 'adGateMsg');
+};
+
+window.signOut = async function () { await sb.auth.signOut(); location.reload(); };
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+
+  /* Role comes from the database, never from the client. A user with no
+     admin_users row reads nothing and writes nothing. */
+  const { data: rows } = await sb.from('admin_users')
+    .select('user_id,email,role').eq('user_id', session.user.id).limit(1);
+
+  if (!rows || !rows.length) {
+    $('adGate').innerHTML =
+      '<h1>No access</h1><p>' + esc(session.user.email) + ' is signed in but has not been ' +
+      'invited to the admin console. Ask an owner for an invitation, then sign in again.</p>' +
+      '<button class="btn" onclick="signOut()" style="width:100%">Sign out</button>';
+    return;
+  }
+
+  ME = rows[0];
+  $('adGate').style.display = 'none';
+  $('adConsole').style.display = '';
+  $('adWho').textContent = ME.email;
+  $('adRole').textContent = ME.role;
+
+  /* Owners manage people; editors do not see the tab at all. The database
+     enforces this regardless — hiding it is courtesy, not security. */
+  if (ME.role !== 'owner') {
+    $('adPeopleTab').style.display = 'none';
+    $('adInviteCard').style.display = 'none';
+  }
+
+  loadArticles(); loadContent();
+  if (ME.role === 'owner') loadPeople();
+}
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'SIGNED_IN' && !ME) boot();
+});
+
+/* ── panels ──────────────────────────────────────────────── */
+window.showPanel = function (name) {
+  document.querySelectorAll('.ad-panel').forEach(p =>
+    p.classList.toggle('active', p.id === 'panel-' + name));
+  document.querySelectorAll('.ad-tab').forEach(t =>
+    t.setAttribute('aria-selected', t.dataset.panel === name ? 'true' : 'false'));
+};
+
+/* ── articles ────────────────────────────────────────────── */
+async function loadArticles() {
+  const { data, error } = await sb.from('articles')
+    .select('id,slug,title,summary,status,published_at,updated_at')
+    .order('updated_at', { ascending: false });
+  if (error) return msg('Could not load articles: ' + error.message, 'err');
+
+  const wrap = $('adArticles');
+  if (!data.length) { wrap.innerHTML = '<div class="ad-note">No articles yet.</div>'; return; }
+
+  wrap.innerHTML = data.map(a => `
+    <div class="ad-card">
+      <div class="ad-row">
+        <div style="min-width:0">
+          <h3>${esc(a.title)}</h3>
+          <div class="ad-note">/insights.html?slug=${esc(a.slug)}</div>
+        </div>
+        <span class="ad-pill ${a.status === 'published' ? 'live' : ''}">${esc(a.status)}</span>
+      </div>
+      ${a.summary ? `<div class="ad-note">${esc(a.summary)}</div>` : ''}
+      <div class="ad-actions">
+        ${a.status === 'published'
+          ? `<button class="btn" onclick="setStatus('${a.id}','draft')">Unpublish</button>
+             <a class="btn" href="/insights.html?slug=${esc(a.slug)}" target="_blank" rel="noopener">View</a>`
+          : `<button class="btn green" onclick="setStatus('${a.id}','published')">Publish</button>`}
+        <button class="btn" onclick="editBody('${a.id}')">Edit body</button>
+        <button class="btn" style="border-color:var(--red);color:var(--red)"
+          onclick="removeArticle('${a.id}')">Delete</button>
+      </div>
+      <div id="edit-${a.id}" style="display:none;margin-top:.7rem"></div>
+    </div>`).join('');
+}
+
+window.createArticle = async function (status) {
+  const title = $('naTitle').value.trim();
+  const body  = $('naBody').value;
+  let slug    = slugify($('naSlug').value || title);
+
+  if (title.length < 3)  return msg('Title needs at least 3 characters.', 'err');
+  if (slug.length < 3)   return msg('Slug needs at least 3 characters.', 'err');
+
+  const row = {
+    slug, title, body,
+    summary: $('naSummary').value.trim() || null,
+    status,
+    /* The database rejects a published row without a date; set it here so the
+       constraint never has to fire on a normal path. */
+    published_at: status === 'published' ? new Date().toISOString() : null,
+    author_email: ME.email,
+  };
+
+  const { error } = await sb.from('articles').insert(row);
+  if (error) {
+    return msg(/duplicate key/.test(error.message)
+      ? 'That slug is already in use — choose another.'
+      : error.message, 'err');
+  }
+  ['naTitle','naSlug','naSummary','naBody'].forEach(id => $(id).value = '');
+  msg(status === 'published' ? 'Published.' : 'Draft saved.', 'ok');
+  loadArticles();
+};
+
+window.setStatus = async function (id, status) {
+  const patch = { status, published_at: status === 'published' ? new Date().toISOString() : null };
+  const { error } = await sb.from('articles').update(patch).eq('id', id);
+  if (error) return msg(error.message, 'err');
+  msg(status === 'published' ? 'Published.' : 'Unpublished.', 'ok');
+  loadArticles();
+};
+
+window.editBody = async function (id) {
+  const box = $('edit-' + id);
+  if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+  const { data } = await sb.from('articles').select('body').eq('id', id).limit(1);
+  const body = (data && data[0] && data[0].body) || '';
+  box.style.display = '';
+  box.innerHTML =
+    `<textarea class="ad-input" id="body-${id}" rows="10">${esc(body)}</textarea>` +
+    `<button class="btn green" onclick="saveBody('${id}')">Save body</button>`;
+};
+
+window.saveBody = async function (id) {
+  const { error } = await sb.from('articles').update({ body: $('body-' + id).value }).eq('id', id);
+  msg(error ? error.message : 'Body saved.', error ? 'err' : 'ok');
+};
+
+window.removeArticle = async function (id) {
+  if (!confirm('Delete this article? This cannot be undone.')) return;
+  const { error } = await sb.from('articles').delete().eq('id', id);
+  if (error) return msg(error.message, 'err');
+  msg('Deleted.', 'ok'); loadArticles();
+};
+
+/* ── site copy ───────────────────────────────────────────── */
+async function loadContent() {
+  const { data, error } = await sb.from('site_content').select('key,value,note').order('key');
+  if (error) return msg('Could not load site copy: ' + error.message, 'err');
+
+  $('adContent').innerHTML = data.map(c => `
+    <div class="ad-card">
+      <span class="ad-label">${esc(c.key)}</span>
+      ${c.note ? `<div class="ad-note" style="margin-bottom:.5rem">${esc(c.note)}</div>` : ''}
+      <textarea class="ad-input" id="sc-${esc(c.key)}" rows="3">${esc(c.value)}</textarea>
+      <button class="btn green" onclick="saveContent('${esc(c.key)}')">Save</button>
+    </div>`).join('');
+}
+
+window.saveContent = async function (key) {
+  const value = $('sc-' + key).value;
+  const { error } = await sb.from('site_content').update({ value, updated_by: ME.user_id }).eq('key', key);
+  msg(error ? error.message : 'Saved. Live within five minutes.', error ? 'err' : 'ok');
+};
+
+/* ── people ──────────────────────────────────────────────── */
+async function loadPeople() {
+  const [{ data: admins }, { data: invites }] = await Promise.all([
+    sb.from('admin_users').select('user_id,email,role,created_at').order('created_at'),
+    sb.from('invites').select('id,email,role,accepted_at,created_at').order('created_at', { ascending: false }),
+  ]);
+
+  const pending = (invites || []).filter(i => !i.accepted_at);
+  $('adPeople').innerHTML =
+    `<div class="ad-card"><span class="ad-label">Admins</span>` +
+    (admins || []).map(a => `
+      <div class="ad-row" style="padding:.4rem 0;border-top:1px solid var(--border-dim)">
+        <span class="ad-who">${esc(a.email)}</span>
+        <span class="ad-pill">${esc(a.role)}</span>
+        ${a.user_id === ME.user_id
+          ? '<span class="ad-note">you</span>'
+          : `<button class="btn" style="border-color:var(--red);color:var(--red)"
+               onclick="revoke('${a.user_id}')">Revoke</button>`}
+      </div>`).join('') + `</div>` +
+    (pending.length
+      ? `<div class="ad-card"><span class="ad-label">Pending invitations</span>` +
+        pending.map(i => `
+          <div class="ad-row" style="padding:.4rem 0;border-top:1px solid var(--border-dim)">
+            <span class="ad-who">${esc(i.email)}</span>
+            <span class="ad-pill">${esc(i.role)}</span>
+            <button class="btn" onclick="cancelInvite('${i.id}')">Cancel</button>
+          </div>`).join('') + `</div>`
+      : '');
+}
+
+window.sendInvite = async function () {
+  const email = $('invEmail').value.trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return msg('Enter a valid email address.', 'err');
+  const { error } = await sb.from('invites')
+    .insert({ email, role: $('invRole').value, invited_by: ME.user_id });
+  if (error) {
+    return msg(/duplicate key/.test(error.message)
+      ? 'That address has already been invited.' : error.message, 'err');
+  }
+  $('invEmail').value = '';
+  msg('Invited. They receive the role when they sign in at /admin.html.', 'ok');
+  loadPeople();
+};
+
+window.cancelInvite = async function (id) {
+  const { error } = await sb.from('invites').delete().eq('id', id);
+  if (error) return msg(error.message, 'err');
+  msg('Invitation cancelled.', 'ok'); loadPeople();
+};
+
+window.revoke = async function (userId) {
+  if (!confirm('Revoke this person\'s admin access?')) return;
+  const { error } = await sb.from('admin_users').delete().eq('user_id', userId);
+  if (error) return msg(error.message, 'err');
+  msg('Access revoked.', 'ok'); loadPeople();
+};
+
+boot();
+</script>
+</body>
+</html>

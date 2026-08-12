@@ -30,6 +30,7 @@
 <script src="/delax-state.js"></script>
 <link rel="stylesheet" href="/delax-chrome.css"/>
 <script src="/delax-chrome.js" defer></script>
+<script src="/delax-cms.js" defer></script>
 <script src="/risk-structures.js"></script>
 
 <style>
@@ -639,8 +640,8 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
 
     <div id="holdingsBody" style="display:none">
       <p class="ws-muted">
-        Enter holdings to see modelled scenario impact and 1-week Value at Risk.
-        Stored in this browser only — nothing is uploaded.
+        <span data-cms-slot="workspace.holdings_note">Enter holdings to see modelled scenario impact and 1-week Value at Risk.
+        Stored in this browser only — nothing is uploaded.</span>
       </p>
 
       <div class="ws-label">Load a preset</div>
