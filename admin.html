@@ -15,6 +15,7 @@
 <!-- The preview uses the SAME renderer as the public page, so what is shown
      here is exactly what publishes. -->
 <script src="/delax-cms.js"></script>
+<script src="/delax-share.js"></script>
 <style>
 
 /* ═══════════════════════════════════════════════════════
@@ -541,6 +542,12 @@ window.showPanel = function (name) {
 };
 
 /* ── articles ────────────────────────────────────────────── */
+/* Fallback hook when an article has no summary. Deliberately minimal — the
+   server builds a proper excerpt from the body for meta tags; here we only need
+   something sensible for the share text, and inventing prose would be worse
+   than using the title. */
+function excerptOf(title) { return String(title || '').trim(); }
+
 async function loadArticles() {
   const { data, error } = await sb.from('articles')
     .select('id,slug,title,summary,status,published_at,updated_at')
@@ -555,7 +562,7 @@ async function loadArticles() {
       <div class="ad-row">
         <div style="min-width:0">
           <h3>${esc(a.title)}</h3>
-          <div class="ad-note">/insights.html?slug=${esc(a.slug)}</div>
+          <div class="ad-note">/insights/${esc(a.slug)}</div>
         </div>
         <span class="ad-pill ${a.status === 'published' ? 'live' : ''}">${esc(a.status)}</span>
       </div>
@@ -563,14 +570,27 @@ async function loadArticles() {
       <div class="ad-actions">
         ${a.status === 'published'
           ? `<button class="btn" onclick="setStatus('${a.id}','draft')">Unpublish</button>
-             <a class="btn" href="/insights.html?slug=${esc(a.slug)}" target="_blank" rel="noopener">View</a>`
+             <a class="btn" href="/insights/${esc(a.slug)}" target="_blank" rel="noopener">View</a>`
           : `<button class="btn green" onclick="setStatus('${a.id}','published')">Publish</button>`}
         <button class="btn" onclick="editBody('${a.id}')">Edit body</button>
         <button class="btn" style="border-color:var(--red);color:var(--red)"
           onclick="removeArticle('${a.id}')">Delete</button>
       </div>
+      ${a.status === 'published' && window.DelaxShare
+        ? DelaxShare.rowHtml({
+            url:   location.origin + '/insights/' + a.slug,
+            /* Same sentence the public page uses: summary, or an excerpt when
+               none was written. One definition of "what this piece is". */
+            hook:  a.summary || excerptOf(a.title),
+            title: a.title,
+          })
+        : ''}
       <div id="edit-${a.id}" style="display:none;margin-top:.7rem"></div>
     </div>`).join('');
+
+  /* Bind the freshly-rendered rows: the native-sheet and copy handlers are
+     added by delax-share.js, which only sees markup that exists when it runs. */
+  if (window.DelaxShare) DelaxShare.bind(wrap);
 }
 
 window.createArticle = async function (status) {

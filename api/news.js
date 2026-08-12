@@ -176,6 +176,41 @@ function excerpt(md, max) {
   return cut.slice(0, cut.lastIndexOf(' ')) + '…';
 }
 
+/* Share row, rendered server-side.
+   Only X accepts pre-filled text: Facebook dropped custom parameters from
+   sharer.php and LinkedIn deprecated title/summary, so both build their card
+   from the og: tags this page already emits. Passing text those two ignore
+   would look like it works and silently wouldn't, so we don't.
+   Instagram has no web share URL at all — the native sheet and the Copy button
+   in /delax-share.js are the only routes, which is why Copy is permanent. */
+const X_LIMIT = 280, X_URL_LEN = 23, X_MARGIN = 2;
+
+function fitText(text, max) {
+  text = String(text || '').trim();
+  if (!text || text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const sp  = cut.lastIndexOf(' ');
+  return (sp > max * 0.5 ? cut.slice(0, sp) : cut).replace(/[\s,;:.–—-]+$/, '') + '…';
+}
+
+function shareRow(url, hook, title) {
+  const u = encodeURIComponent(url);
+  const xText = encodeURIComponent(fitText(hook, X_LIMIT - X_URL_LEN - X_MARGIN));
+  return `<div class="dx-share" data-url="${esc(url)}" data-hook="${esc(hook)}" data-title="${esc(title)}">
+    <span class="dx-share-label">Share</span>
+    <a class="dx-share-btn" data-share="x" target="_blank" rel="noopener noreferrer"
+       href="https://twitter.com/intent/tweet?text=${xText}&amp;url=${u}" aria-label="Share on X">X</a>
+    <a class="dx-share-btn" data-share="facebook" target="_blank" rel="noopener noreferrer"
+       href="https://www.facebook.com/sharer/sharer.php?u=${u}" aria-label="Share on Facebook">Facebook</a>
+    <a class="dx-share-btn" data-share="linkedin" target="_blank" rel="noopener noreferrer"
+       href="https://www.linkedin.com/sharing/share-offsite/?url=${u}" aria-label="Share on LinkedIn">LinkedIn</a>
+    <button type="button" class="dx-share-btn" data-share="native" hidden
+       aria-label="Share via your device, including Instagram">More…</button>
+    <button type="button" class="dx-share-btn" data-share="copy"
+       aria-label="Copy post text and link">Copy</button>
+  </div>`;
+}
+
 function fmtDate(iso) {
   if (!iso) return '';
   try {
@@ -302,6 +337,7 @@ ${opts.body}
 <div id="dxFooter"></div>
 <script src="/delax-state.js"></script>
 <script src="/delax-chrome.js"></script>
+<script src="/delax-share.js" defer></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     if (window.DelaxChrome) DelaxChrome.render({ page: 'Insights', active: 'insights' });
@@ -369,6 +405,7 @@ async function renderArticle(req, res, slug) {
     <div class="ins-meta">${esc(fmtDate(a.published_at))}</div>
     ${img ? `<img class="ins-hero" src="${esc(img)}" alt="${esc(a.image_alt || a.title)}" loading="lazy"/>` : ''}
     <div class="ins-body">${renderMarkdown(a.body)}</div>
+    ${shareRow(url, desc, a.title)}
     <div class="ins-foot">
       DELAX GEO-RISK publishes cross-asset geopolitical risk analytics with an explicit
       evidence tier on every figure. <a href="/methodology.html">Methodology</a>.

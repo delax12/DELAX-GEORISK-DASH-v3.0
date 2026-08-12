@@ -6,7 +6,7 @@
    Strategy: Cache-first for static assets, network-first for API calls.
    ═══════════════════════════════════════════════════ */
 
-const CACHE_NAME  = 'delax-georisk-v6.0'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
+const CACHE_NAME  = 'delax-georisk-v6.1'; // bumped — v5.0 workspace split; index.html lost the equities/portfolio tabs,
                                           // so every returning visitor MUST get the new shell rather than a cached one
                                           // that still references deleted functions.
 const CACHE_URLS  = [
@@ -17,6 +17,7 @@ const CACHE_URLS  = [
   '/delax-chrome.js',
   '/delax-chrome.css',
   '/delax-cms.js',
+  '/delax-share.js',
   '/manifest.json',
   '/favicon.svg',
   '/favicon-32.png',
@@ -53,7 +54,7 @@ self.addEventListener('fetch', event => {
 
   // Shared state module: network-first, because a stale copy can disagree with
   // the page reading it about which structure is selected.
-  if (url.endsWith('/admin.html') || url.endsWith('/delax-cms.js') ||
+  if (url.endsWith('/admin.html') || url.endsWith('/delax-cms.js') || url.endsWith('/delax-share.js') ||
       url.includes('/insights') ||
       url.endsWith('/delax-state.js') || url.endsWith('/risk-structures.js') ||
       url.endsWith('/delax-chrome.js') || url.endsWith('/delax-chrome.css')) {

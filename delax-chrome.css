@@ -310,3 +310,39 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-ra
   .dx-state-label{display:none}
   .dx-context{font-size:.54rem}
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SHARE ROW
+   Three platform anchors render server-side (so they work without JS and are
+   crawlable); the native-sheet and copy buttons are added by /delax-share.js.
+   The native button stays hidden until the API is confirmed present — offering
+   a share sheet that cannot open is worse than not offering one.
+   ═══════════════════════════════════════════════════════════════ */
+.dx-share{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;
+  padding:.85rem 0;margin:1.25rem 0;
+  border-top:1px solid var(--border-dim);border-bottom:1px solid var(--border-dim)}
+.dx-share-label{font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-dim);margin-right:.2rem}
+.dx-share-btn{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;
+  background:transparent;border:1px solid var(--border-dim);color:var(--text-sec);
+  padding:.4rem .7rem;border-radius:2px;cursor:pointer;text-decoration:none;
+  transition:border-color .15s,color .15s,background .15s;
+  min-height:34px;display:inline-flex;align-items:center;white-space:nowrap}
+.dx-share-btn:hover{border-color:var(--cyan);color:var(--cyan);
+  background:rgba(0,212,255,.07);text-decoration:none}
+.dx-share-btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.dx-share-btn[data-share="copy"]{border-color:var(--border);color:var(--text-pri)}
+.dx-share-btn[data-share="copy"]:hover{border-color:var(--green);color:var(--green);
+  background:rgba(0,230,160,.07)}
+@media(pointer:coarse){ .dx-share-btn{min-height:44px;padding:.5rem .8rem} }
+@media(max-width:420px){ .dx-share-label{flex-basis:100%;margin-bottom:.15rem} }
+
+.dx-share-toast{position:fixed;bottom:1.25rem;left:50%;
+  transform:translateX(-50%) translateY(140%);
+  background:var(--bg-card);border:1px solid var(--border);
+  border-left:3px solid var(--green);color:var(--text-pri);
+  font-family:var(--mono);font-size:.66rem;line-height:1.5;
+  padding:.7rem 1rem;border-radius:2px;z-index:1200;max-width:min(90vw,400px);
+  box-shadow:0 12px 40px rgba(0,0,0,.5);
+  transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.dx-share-toast.show{transform:translateX(-50%) translateY(0)}
