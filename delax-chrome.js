@@ -64,16 +64,20 @@
     return { id: id, name: fb.name, tier: fb.tier };
   }
 
+  function navHtml(opts) {
+    return NAV.map(function (n) {
+      var current = (n.key === opts.active);
+      var href = (global.DelaxState && !current) ? DelaxState.linkTo(n.href) : n.href;
+      return '<a href="' + esc(href) + '" data-nav="' + n.key + '"' +
+             (current ? ' aria-current="page"' : '') +
+             ' title="' + esc(n.label) + '"><span class="dx-nav-label">' +
+             esc(n.label) + '</span></a>';
+    }).join('');
+  }
+
   function headerHtml(opts) {
     var meta = structureMeta();
     var scenario = global.DelaxState ? DelaxState.get('scenario') : 'baseline';
-
-    var nav = NAV.map(function (n) {
-      var current = (n.key === opts.active);
-      var href = (global.DelaxState && !current) ? DelaxState.linkTo(n.href) : n.href;
-      return '<a href="' + esc(href) + '"' + (current ? ' aria-current="page"' : '') + '>' +
-             esc(n.label) + '</a>';
-    }).join('');
 
     var seg = SCENARIOS.map(function (s) {
       var on = (s.id === scenario);
@@ -82,7 +86,43 @@
              'title="' + esc(s.label) + ' scenario">' + esc(s.label.slice(0, 4)) + '</button>';
     }).join('');
 
-    return '' +
+    /* STATE CHIP — two modes.
+       Display mode shows the active structure and its tier.
+       Switcher mode hands the page an empty #structureBtns plus #tierBadge, which
+       the host page's own buildStructureBar()/styleStructureBtns() populate. That
+       keeps the dashboard's existing structure logic working untouched while the
+       layout consolidates around it. The tier badge sits INSIDE the switcher so
+       the evidence grade is visible at the moment of choosing, not after. */
+    var stateChip = opts.structureSwitcher
+      ? '<div class="dx-state dx-state-switch" id="dxState">' +
+          '<span class="dx-state-label">Risk structure</span>' +
+          '<div id="structureBtns" role="tablist" aria-label="Risk structure"></div>' +
+          '<span class="dx-tier" id="tierBadge"></span>' +
+        '</div>'
+      : '<div class="dx-state" id="dxState" title="Active risk structure and evidence tier">' +
+          '<span class="dx-state-name" id="dxStateName">' + esc(meta.name) + '</span>' +
+          '<span class="dx-tier" id="dxStateTier" data-tier="' + esc(meta.tier) + '">' +
+            esc(meta.tier) + '</span>' +
+        '</div>';
+
+    /* The scenario control is optional: the dashboard already carries its own,
+       labelled with structure-specific scenario names ("Armed Truce"), which is
+       more informative than the generic three. Two scenario controls on one page
+       is worse than one good one. */
+    var scenarioCtl = (opts.scenario === false) ? ''
+      : '<div class="dx-scenario" id="dxScenario" role="group" aria-label="Scenario">' + seg + '</div>';
+
+    /* LAYOUT — two bands, never three.
+       Band 1 is identity and navigation: who this is, where you are, where you
+       can go. Band 2 is the instrument row: which model is loaded, what it says
+       right now, and the actions that change it.
+
+       The state chip belongs in band 2 rather than beside the nav. Rendered at
+       1280px with the nav it forced a wrap to a third line, which is the exact
+       problem this consolidation exists to remove — and the tier badge reads
+       better sitting with the live data it qualifies than floating in the
+       navigation. It stays above the fold at every width. */
+    var row1 =
       '<div class="dx-header-row">' +
         '<a class="dx-brand" href="/" aria-label="DELAX GEO-RISK home">' +
           '<span class="dx-mark" aria-hidden="true">◆</span>' +
@@ -90,15 +130,19 @@
         '</a>' +
         (opts.page ? '<span class="dx-divider" aria-hidden="true"></span>' +
                      '<span class="dx-page">' + esc(opts.page) + '</span>' : '') +
+        (opts.subtitle ? '<span class="dx-subtitle" id="structSubtitle">' + esc(opts.subtitle) + '</span>' : '') +
         '<span class="dx-spacer"></span>' +
-        '<div class="dx-state" id="dxState" title="Active risk structure and evidence tier">' +
-          '<span class="dx-state-name" id="dxStateName">' + esc(meta.name) + '</span>' +
-          '<span class="dx-tier" id="dxStateTier" data-tier="' + esc(meta.tier) + '">' +
-            esc(meta.tier) + '</span>' +
-        '</div>' +
-        '<div class="dx-scenario" id="dxScenario" role="group" aria-label="Scenario">' + seg + '</div>' +
-        '<nav class="dx-nav" aria-label="Primary">' + nav + '</nav>' +
+        scenarioCtl +
+        '<nav class="dx-nav" aria-label="Primary">' + navHtml(opts) + '</nav>' +
       '</div>';
+
+    var row2 = (opts.context || opts.structureSwitcher || !opts.structureSwitcher)
+      ? '<div class="dx-context">' + stateChip +
+        (opts.context ? '<span class="dx-spacer"></span>' + opts.context : '') +
+        '</div>'
+      : '';
+
+    return row1 + row2;
   }
 
   function footerHtml(opts) {
@@ -138,6 +182,17 @@
       tierEl.setAttribute('data-tier', meta.tier);
       tierEl.style.display = meta.tier ? '' : 'none';
     }
+    /* Nav hrefs carry the current selection, so they must be refreshed whenever
+       structure or scenario moves — otherwise a link shares stale state. */
+    var nav = document.querySelectorAll('.dx-nav a[data-nav]');
+    Array.prototype.forEach.call(nav, function (a) {
+      if (a.getAttribute('aria-current') === 'page') return;
+      var key = a.getAttribute('data-nav');
+      for (var i = 0; i < NAV.length; i++) {
+        if (NAV[i].key === key && global.DelaxState) a.href = DelaxState.linkTo(NAV[i].href);
+      }
+    });
+
     var scenario = global.DelaxState ? DelaxState.get('scenario') : 'baseline';
     var wrap = document.getElementById('dxScenario');
     if (wrap) {

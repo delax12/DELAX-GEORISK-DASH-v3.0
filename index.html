@@ -40,6 +40,8 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <!-- Live Data Controller — market prices + RSS geopolitical news feed -->
 <script src="/delax-state.js"></script>
+<link rel="stylesheet" href="/delax-chrome.css"/>
+<script src="/delax-chrome.js" defer></script>
 <script src="/risk-structures.js"></script>
 <script src="/dashboard-live.js" defer></script>
 <!-- Globe.gl — 3D interactive globe (spinnable, zoomable, country labels) -->
@@ -100,7 +102,18 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .header-brand{display:flex;align-items:baseline;gap:.6rem}
 .logo{font-family:var(--display);font-size:1.4rem;letter-spacing:.08em;color:var(--amber);line-height:1}
 .subtitle{font-family:var(--mono);font-size:.6rem;color:var(--text-sec);letter-spacing:.12em;text-transform:uppercase}
-.header-meta{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+/* WTI readout in the context strip. Was 200 characters of inline style on the
+   element; now a class, so it can respond at small widths. */
+.dx-wti{display:inline-flex;align-items:baseline;gap:6px;
+  background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.28);
+  border-radius:4px;padding:3px 10px;white-space:nowrap}
+.dx-wti-label{font-size:9px;color:#7a91b3;letter-spacing:.12em;text-transform:uppercase;font-family:var(--mono)}
+#brentHeaderPrice{font-size:14px;color:var(--amber);font-weight:700;font-family:var(--display)}
+#brentHeaderChg{font-size:10px;color:var(--text-dim);font-family:var(--mono)}
+@media(max-width:520px){
+  .dx-wti{padding:2px 8px}
+  #brentHeaderPrice{font-size:13px}
+}
 .live-badge{display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.6rem;color:var(--green);letter-spacing:.1em;text-transform:uppercase}
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.8s infinite}
 @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--green)}50%{opacity:.4;box-shadow:0 0 3px var(--green)}}
@@ -531,63 +544,17 @@ body.beginner-mode body.beginner-mode
 </head>
 <body>
 
-<!-- ═══════════════ HEADER (Fix 2.7 — decluttered) ═══════════════ -->
-<header class="header" role="banner">
-  <div class="header-brand">
-    <div class="logo" aria-label="DELAX GEO-RISK">DELAX | GEO-RISK</div>
-    <div class="subtitle" id="structSubtitle">Iran War · Global Economic Impact · 2026–2036</div>
-  </div>
-  <div class="header-meta">
-    <!-- Exposure Desk CTA (Phase 1 — links to standalone page) -->
-    <a href="/workspace.html" id="wsCtaLink" aria-label="Open Investor Workspace"
-      style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;
-      border:1px solid var(--amber);border-radius:4px;padding:5px 12px;
-      font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--amber);background:rgba(255,224,64,.07);
-      white-space:nowrap;transition:background .2s">
-      💹 Workspace
-    </a>
-    <a href="/exposure-desk.html" id="edCtaLink" class="ed-cta" aria-label="Open Exposure Desk (new feature)"
-      style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;
-      border:1px solid var(--cyan);border-radius:4px;padding:5px 12px;
-      font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--cyan);background:rgba(0,212,255,.07);box-shadow:0 0 12px rgba(0,212,255,.20);
-      white-space:nowrap;transition:background .2s">
-      ⚡ Exposure Desk
-      <span style="font-size:.5rem;background:var(--cyan);color:#06121a;padding:2px 6px;
-        border-radius:3px;font-weight:700;letter-spacing:.12em">NEW</span>
-    </a>
-    <div class="live-badge" aria-live="polite">
-      <div class="live-dot" aria-hidden="true"></div>LIVE MODEL
-    </div>
-    <div class="offline-badge" id="offlineBadge">📦 CACHED MODEL</div>
-    <!-- Live WTI pill — populated by fetchEIABrent() (now WTI) -->
-    <div id="brentHeaderPill" style="display:flex;align-items:baseline;gap:6px;
-      background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.28);
-      border-radius:4px;padding:4px 12px;cursor:default" title="Live EIA WTI Crude (West Texas Intermediate)">
-      <span style="font-size:9px;color:#7a91b3;letter-spacing:0.12em;text-transform:uppercase;font-family:var(--mono)">WTI</span>
-      <span id="brentHeaderPrice" style="font-size:15px;color:var(--amber);font-weight:700;font-family:var(--display)">—</span>
-      <span id="brentHeaderChg"   style="font-size:10px;color:var(--text-dim);font-family:var(--mono)"></span>
-    </div>
-    <div class="timestamp" id="ts" aria-label="Last updated time">—</div>
-    <button class="refresh-btn" id="refreshBtn" onclick="doRefresh()" aria-label="Refresh live data">↺ Refresh</button>
-    <button class="btn" id="settingsBtn" onclick="openSettingsDrawer()" aria-label="Settings">⚙ Settings</button>
-  </div>
-</header>
+<!-- ═══════════════ HEADER ═══════════════
+     Rendered by /delax-chrome.js so every surface shares one header. The former
+     layout stacked three bands on a phone — two CTA buttons, a LIVE MODEL pill,
+     the WTI pill, a timestamp, Refresh and Settings, then an entire second bar
+     for the risk structure. Eight targets before any content.
 
-<!-- ═══ STRUCTURE SWITCHER (v4.0) ═══
-     Structures come from window.RISK_STRUCTURES — the single source of truth.
-     The tier badge is NOT decoration: it is the honesty system, on the face of
-     the product, before any number is read. -->
-<div id="structureBar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:8px 24px;background:#0a1322;border-bottom:1px solid var(--border-dim,#152238)">
-  <span style="font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--text-dim,#5a7299)">Risk Structure</span>
-  <div id="structureBtns" style="display:flex;gap:6px" role="tablist" aria-label="Risk structure"></div>
-  <span id="tierBadge" style="font-family:var(--mono);font-size:.56rem;letter-spacing:.1em;
-    padding:3px 10px;border-radius:3px;border:1px solid;white-space:nowrap"></span>
-  <span id="reviewStamp"></span>
-</div>
+     Now two bands: identity + structure + nav, then a context strip carrying the
+     live readouts and page actions. Every element id below is unchanged, so
+     buildStructureBar(), styleStructureBtns(), fetchEIABrent() and doRefresh()
+     bind exactly as before. -->
+<div id="dxHeader"></div>
 
 <!-- SETTINGS DRAWER — houses controls moved from header (Fix 2.7) -->
 <div class="drawer-overlay" id="settingsOverlay" onclick="closeSettingsDrawer()"></div>
@@ -2083,7 +2050,44 @@ let customScenarioActive = false;
 /* ═════════════════════════════════════════
    INIT
    ═════════════════════════════════════════ */
+/* ── SHARED CHROME ──
+   Must render before anything else: buildStructureBar() fills #structureBtns,
+   styleStructureBtns() fills #tierBadge, and fetchEIABrent() writes
+   #brentHeaderPrice — all of which live inside the header this call creates.
+   Handlers fire in registration order, so this one runs first.
+
+   The context strip is passed as raw HTML rather than rebuilt, so every id and
+   class the existing code binds to survives verbatim. */
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.DelaxChrome) {
+    DelaxChrome.render({
+      page:   'Dashboard',
+      active: 'dashboard',
+      /* The dashboard already has a scenario control labelled with
+         structure-specific names ("Armed Truce"), which says more than a
+         generic three-way. Two scenario controls is worse than one good one. */
+      scenario: false,
+      structureSwitcher: true,
+      subtitle: 'Global economic impact · 2026\u20132036',
+      context:
+        '<div class="live-badge" aria-live="polite">' +
+          '<div class="live-dot" aria-hidden="true"></div>LIVE MODEL' +
+        '</div>' +
+        '<div class="offline-badge" id="offlineBadge">\uD83D\uDCE6 CACHED</div>' +
+        '<span class="dx-ctx-sep dx-ctx-hide-sm" aria-hidden="true">\u00b7</span>' +
+        '<div id="brentHeaderPill" class="dx-wti" title="Live EIA WTI Crude (West Texas Intermediate)">' +
+          '<span class="dx-wti-label">WTI</span>' +
+          '<span id="brentHeaderPrice">\u2014</span>' +
+          '<span id="brentHeaderChg"></span>' +
+        '</div>' +
+        '<span class="dx-ctx-sep dx-ctx-hide-sm" aria-hidden="true">\u00b7</span>' +
+        '<div class="timestamp dx-ctx-hide-sm" id="ts" aria-label="Last updated time">\u2014</div>' +
+        '<span class="dx-spacer"></span>' +
+        '<button class="refresh-btn" id="refreshBtn" onclick="doRefresh()" aria-label="Refresh live data">\u21ba <span class="dx-ctx-hide-sm">Refresh</span></button>' +
+        '<button class="btn" id="settingsBtn" onclick="openSettingsDrawer()" aria-label="Settings">\u2699 <span class="dx-ctx-hide-sm">Settings</span></button>',
+    });
+  }
+
   initTheme();
   updateTimestamp();
   setInterval(updateTimestamp, 60000);

@@ -26,6 +26,7 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-ra
 
 /* ═══ HEADER ═══ */
 .dx-header{
+  width:100%;
   position:sticky; top:0; z-index:600;
   background:var(--bg-panel);
   border-bottom:1px solid var(--border);
@@ -121,6 +122,10 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-ra
 }
 .dx-nav a:hover{ color:var(--text-pri); background:rgba(255,255,255,.04); text-decoration:none; }
 .dx-nav a[aria-current="page"]{ color:var(--amber); }
+/* Wrapper kept so nav labels stay addressable. Icons were tried and rejected —
+   emoji rendered inconsistently across platforms and an abbreviation is a
+   guess — so this carries no styling; the nav scrolls at narrow widths. */
+.dx-nav-label{ display:inline; }
 
 /* ── RESPONSIVE ──
    Below 860px the row wraps: identity on line one, model state on line two.
@@ -171,4 +176,137 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-ra
 @media(max-width:600px){
   .footer{ padding:1.25rem .9rem 1.75rem; }
   .footer-links{ gap:.3rem .8rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE CHIP — SWITCHER MODE
+   The dashboard's structure buttons and tier badge live INSIDE the chip, so the
+   evidence grade is visible at the moment of choosing rather than in a separate
+   bar below. #structureBtns and #tierBadge are populated by the host page.
+   ═══════════════════════════════════════════════════════════════ */
+.dx-state-switch{gap:.45rem;padding:.28rem .45rem}
+.dx-state-label{
+  font-family:var(--mono); font-size:.5rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--text-dim); white-space:nowrap;
+}
+.dx-state-switch #structureBtns{display:flex; gap:4px}
+/* Touch targets: the structure buttons were 4px vertical padding — roughly 24px
+   tall against a 44px minimum. Enforced here so the host page's inline styles
+   (which set colour, not size) do not need editing. */
+.dx-state-switch #structureBtns button{
+  min-height:32px; padding:5px 12px !important;
+}
+@media(pointer:coarse){
+  .dx-state-switch #structureBtns button{min-height:44px; padding:8px 14px !important}
+}
+
+/* ═══ CONTEXT STRIP — live readouts and page actions ═══ */
+.dx-context{
+  max-width:1180px; margin:0 auto;
+  display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+  padding:.4rem 0 .5rem; border-top:1px solid var(--border-dim);
+  font-family:var(--mono); font-size:.6rem; color:var(--text-sec);
+}
+.dx-context .dx-ctx-sep{color:var(--border); user-select:none}
+.dx-context button{min-height:32px}
+@media(pointer:coarse){ .dx-context button{min-height:44px} }
+
+/* Live/cached status reduced to a dot plus label — the old pill was a full
+   badge competing with the brand for attention. */
+.dx-status{display:inline-flex; align-items:center; gap:.35rem; white-space:nowrap}
+.dx-status-dot{
+  width:6px; height:6px; border-radius:50%; background:var(--green);
+  box-shadow:0 0 6px rgba(0,230,160,.6); flex-shrink:0;
+}
+.dx-status[data-state="cached"] .dx-status-dot{background:var(--text-dim); box-shadow:none}
+
+/* ═══ SUBTITLE ═══ */
+.dx-subtitle{
+  font-family:var(--mono); font-size:.56rem; color:var(--text-dim);
+  letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:22rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   Verified by rendering at 1280 / 900 / 390px, not by reading the rules. The
+   first draft passed a CSS review and still wrapped the nav onto a third line
+   at 1280px and overflowed horizontally at 390px.
+
+   Invariant: the tier badge is never hidden at any width. Everything else may
+   shed — tier is the honesty system and must be on screen before any number.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Nothing in the header may exceed the viewport. */
+.dx-header,.dx-header *{box-sizing:border-box}
+.dx-header-row,.dx-context{min-width:0}
+.dx-header-row>*,.dx-context>*{min-width:0}
+
+/* Band 1 stays a single line: brand and page truncate before the nav wraps. */
+.dx-header-row{flex-wrap:nowrap}
+.dx-brand{flex-shrink:0}
+.dx-page{overflow:hidden;text-overflow:ellipsis}
+.dx-nav{flex-shrink:0}
+
+/* Long tier text truncates rather than pushing the row wider. */
+.dx-tier{overflow:hidden;text-overflow:ellipsis;max-width:16rem}
+
+@media(max-width:1180px){
+  .dx-subtitle{display:none}
+  .dx-tier{max-width:12rem}
+}
+
+/* The clock is the least valuable thing in the instrument row — the WTI figure
+   and its 7-day move carry the information. Dropping it first is what keeps the
+   row to a single line at tablet widths instead of spilling to a third band. */
+@media(max-width:1080px){
+  .timestamp,.dx-ctx-sep{display:none}
+  /* "RISK STRUCTURE" is a label for a control whose buttons already say what
+     they are, and "LIVE MODEL" is a caption for a dot that already carries the
+     meaning in colour. Both are the cheapest width to reclaim, and dropping
+     them is what keeps the instrument row to one line on a tablet. */
+  .dx-state-label{display:none}
+  .dx-context .live-badge{font-size:0; gap:0}
+  .dx-context .live-badge .live-dot{margin:0}
+}
+
+@media(max-width:860px){
+  .dx-header{padding:0 .9rem}
+  /* flex-shrink:0 above keeps the nav intact at wide widths; here it must be
+     allowed to shrink or its scroll container cannot fit and the whole document
+     overflows horizontally. */
+  .dx-nav{flex-shrink:1;min-width:0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .dx-nav::-webkit-scrollbar{display:none}
+  .dx-header-row{min-height:46px}
+  .dx-context{gap:.45rem;font-size:.56rem;padding:.35rem 0 .45rem}
+  /* The structure switcher takes the full width and scrolls rather than
+     shrinking its buttons below a usable size. */
+  .dx-state-switch{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* One break after the structure chip, then readouts and actions share the
+     next line — actions pinned right rather than wrapping onto a row of their
+     own. Applied from 860 down, not just on phones: the 520–860 band was
+     otherwise the tallest layout on the site at 190px. */
+  .dx-context{row-gap:.4rem}
+  .dx-context>.dx-spacer{flex-basis:100%;height:0;order:0}
+  .dx-context .live-badge,.dx-context .dx-wti{order:1}
+  .dx-context .refresh-btn{order:2;margin-left:auto}
+  .dx-context #settingsBtn{order:3}
+  .dx-context .refresh-btn,.dx-context #settingsBtn{padding:.3rem .5rem}
+  .dx-tier{max-width:none}
+}
+
+@media(max-width:520px){
+  .dx-header{padding:0 .7rem}
+  .dx-page,.dx-divider{display:none}
+  .dx-wordmark{font-size:.86rem}
+  /* Nav keeps WORDS. Icons were tried and rejected: the emoji set rendered
+     inconsistently across platforms and an abbreviation is a guess, which is
+     the wrong trade on a tool whose whole claim is clarity. The nav scrolls
+     horizontally instead. */
+  .dx-nav{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .dx-nav::-webkit-scrollbar{display:none}
+  .dx-nav a{padding:.34rem .4rem;font-size:.54rem}
+  .dx-ctx-hide-sm{display:none !important}
+  .dx-state-label{display:none}
+  .dx-context{font-size:.54rem}
 }
