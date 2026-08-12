@@ -1,0 +1,20 @@
+# DELAX GEO-RISK — https://delaxcom.org
+#
+# Article pages under /insights/ are server-rendered, so their text is present
+# in the raw HTML. That is deliberate: Bing's JavaScript rendering is unreliable
+# and the AI crawlers execute none at all, so client-rendered content cannot be
+# cited by the systems most likely to cite it.
+
+User-agent: *
+Allow: /
+
+# The admin console is behind auth and has nothing to index.
+Disallow: /admin.html
+
+# Query-string variants of the insights index duplicate the clean paths.
+Disallow: /insights.html
+
+# API endpoints return JSON for the app, not pages for readers.
+Disallow: /api/
+
+Sitemap: https://delaxcom.org/sitemap.xml

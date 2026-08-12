@@ -2,25 +2,95 @@
   "version": 2,
   "cleanUrls": true,
   "functions": {
-    "api/snapshot.js": { "maxDuration": 60 }
+    "api/snapshot.js": {
+      "maxDuration": 60
+    }
   },
   "crons": [
-    { "path": "/api/snapshot", "schedule": "5 5 * * *" }
+    {
+      "path": "/api/snapshot",
+      "schedule": "5 5 * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/georisk-intelligence.html", "destination": "/georisk-intelligence.html" },
-    { "source": "/sw.js",                     "destination": "/sw.js"                     },
-    { "source": "/dashboard-live.js",         "destination": "/dashboard-live.js"         },
-    { "source": "/risk-structures.js",        "destination": "/risk-structures.js"        }
+    {
+      "source": "/georisk-intelligence.html",
+      "destination": "/georisk-intelligence.html"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
+      "source": "/dashboard-live.js",
+      "destination": "/dashboard-live.js"
+    },
+    {
+      "source": "/risk-structures.js",
+      "destination": "/risk-structures.js"
+    },
+    {
+      "source": "/insights",
+      "destination": "/api/news?type=insights"
+    },
+    {
+      "source": "/insights/:slug",
+      "destination": "/api/news?type=article&slug=:slug"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/news?type=sitemap"
+    }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin",  "value": "*"                  },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type"       }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
       ]
+    },
+    {
+      "source": "/insights/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/insights.html",
+      "has": [
+        {
+          "type": "query",
+          "key": "slug",
+          "value": "(?<s>[a-z0-9-]+)"
+        }
+      ],
+      "destination": "/insights/:s",
+      "permanent": true
+    },
+    {
+      "source": "/insights.html",
+      "destination": "/insights",
+      "permanent": true
     }
   ]
 }

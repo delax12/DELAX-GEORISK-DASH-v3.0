@@ -135,18 +135,42 @@
 
   /* Minimal markdown. Everything is HTML-escaped FIRST, then a small, closed
      set of formatting is applied to the escaped text — so no editor input can
-     ever become markup. No raw HTML passthrough, and no image or script
-     syntax. Links are restricted to http(s) and relative paths, which blocks
-     javascript: URLs. */
+     ever become markup. No raw HTML passthrough, no image or script syntax.
+     Links are restricted to http(s) and relative paths, which blocks
+     javascript: and data: URLs.
+
+     PARAGRAPH RULE (changed Aug 2026): a SINGLE newline ends a paragraph.
+     Strict markdown needs a blank line, and that is what shipped first — with
+     the result that an article pasted from a rendered source, where the blank
+     lines had already been stripped, fused into one unreadable block. An author
+     pressing Enter once means "new paragraph", so that is what this does. Blank
+     lines still work and still collapse, so anything already written is
+     unaffected. */
   function renderMarkdown(src) {
     var text = esc(src || '');
     var lines = text.split('\n');
-    var out = [], para = [], inList = false;
+    var out = [], listType = null;
 
-    function flushPara() {
-      if (para.length) { out.push('<p>' + inline(para.join(' ')) + '</p>'); para = []; }
+    /* HEADING NORMALISATION.
+       The page supplies the h1 (the article title), so author headings start at
+       h2. But authors differ: some write '#' for sections, others '##'. Mapping
+       by raw depth meant a document using '##' throughout produced h3s directly
+       under the h1 — a skipped level, which is an accessibility and SEO fault.
+       Instead the SHALLOWEST heading actually present becomes h2 and the rest
+       cascade from there, so both conventions come out correct. */
+    var minH = 9;
+    for (var q = 0; q < lines.length; q++) {
+      var mh = lines[q].trim().match(/^(#{1,4})\s+\S/);
+      if (mh) minH = Math.min(minH, mh[1].length);
     }
-    function closeList() { if (inList) { out.push('</ul>'); inList = false; } }
+    var hOffset = (minH === 9) ? 1 : (2 - minH);
+
+    function closeList() {
+      if (listType) { out.push('</' + listType + '>'); listType = null; }
+    }
+    function openList(kind) {
+      if (listType !== kind) { closeList(); out.push('<' + kind + '>'); listType = kind; }
+    }
 
     function inline(s) {
       return s
@@ -163,26 +187,29 @@
     }
 
     for (var i = 0; i < lines.length; i++) {
-      var line = lines[i];
-      var h = line.match(/^(#{1,4})\s+(.*)$/);
-      var li = line.match(/^[-*]\s+(.*)$/);
+      var raw  = lines[i];
+      var line = raw.trim();
 
-      if (h) {
-        flushPara(); closeList();
-        var lvl = Math.min(h[1].length + 1, 5);   // '#' → h2, page owns h1
-        out.push('<h' + lvl + '>' + inline(h[2]) + '</h' + lvl + '>');
-      } else if (li) {
-        flushPara();
-        if (!inList) { out.push('<ul>'); inList = true; }
-        out.push('<li>' + inline(li[1]) + '</li>');
-      } else if (!line.trim()) {
-        flushPara(); closeList();
-      } else {
-        closeList();
-        para.push(line.trim());
-      }
+      if (!line) { closeList(); continue; }          // blank line: just closes a list
+
+      var h  = line.match(/^(#{1,4})\s+(.*)$/);
+      var ul = line.match(/^[-*+]\s+(.*)$/);
+      var ol = line.match(/^\d{1,3}[.)]\s+(.*)$/);
+      /* Matches &gt; not > — the source is HTML-escaped before parsing, so by
+         this point a blockquote marker is already an entity. */
+      var bq = line.match(/^&gt;\s?(.*)$/);
+      var hr = /^(-{3,}|\*{3,}|_{3,})$/.test(line);
+
+      if (hr)      { closeList(); out.push('<hr/>'); }
+      else if (h)  { closeList();
+                     var lvl = Math.min(Math.max(h[1].length + hOffset, 2), 5);
+                     out.push('<h' + lvl + '>' + inline(h[2]) + '</h' + lvl + '>'); }
+      else if (ul) { openList('ul'); out.push('<li>' + inline(ul[1]) + '</li>'); }
+      else if (ol) { openList('ol'); out.push('<li>' + inline(ol[1]) + '</li>'); }
+      else if (bq) { closeList(); out.push('<blockquote>' + inline(bq[1]) + '</blockquote>'); }
+      else         { closeList(); out.push('<p>' + inline(line) + '</p>'); }
     }
-    flushPara(); closeList();
+    closeList();
     return out.join('\n');
   }
 

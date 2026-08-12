@@ -12,6 +12,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/delax-chrome.css"/>
+<!-- The preview uses the SAME renderer as the public page, so what is shown
+     here is exactly what publishes. -->
+<script src="/delax-cms.js"></script>
 <style>
 
 /* ═══════════════════════════════════════════════════════
@@ -200,6 +203,56 @@ textarea.ad-input{resize:vertical;line-height:1.8;min-height:90px}
   background:var(--bg-deep);margin-bottom:1.25rem}
 .ad-guard strong{color:var(--amber)}
 
+/* ══ SPLIT EDITOR ══
+   Markdown left, live preview right, rendered by the SAME function the public
+   page uses. The first article was pasted from a rendered source, which had
+   already stripped its headings and blank lines — invisible until it was live.
+   A preview makes that failure visible at the moment it happens. */
+.ad-split{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;align-items:start}
+@media(max-width:820px){
+  .ad-split{grid-template-columns:1fr}
+  .ad-split .ad-pane[data-pane="preview"]{display:none}
+  .ad-split.show-preview .ad-pane[data-pane="write"]{display:none}
+  .ad-split.show-preview .ad-pane[data-pane="preview"]{display:block}
+}
+.ad-pane{min-width:0}
+.ad-pane-label{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.3rem}
+.ad-preview{background:var(--bg-deep);border:1px solid var(--border);border-radius:2px;
+  padding:.9rem 1rem;min-height:220px;max-height:520px;overflow-y:auto;
+  font-family:ui-serif,Georgia,'Times New Roman',serif;font-size:.92rem;
+  line-height:1.7;color:#c8d6ee}
+.ad-preview p{margin-bottom:.85rem}
+.ad-preview h2{font-family:var(--display);font-size:1.15rem;color:var(--text-pri);margin:1.3rem 0 .5rem}
+.ad-preview h3{font-family:var(--display);font-size:1rem;color:var(--text-pri);margin:1.1rem 0 .4rem}
+.ad-preview h4,.ad-preview h5{font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-dim);margin:1rem 0 .4rem}
+.ad-preview ul,.ad-preview ol{margin:0 0 .85rem 1.2rem}
+.ad-preview li{margin-bottom:.3rem}
+.ad-preview blockquote{border-left:2px solid var(--amber);padding-left:.8rem;
+  margin:0 0 .85rem;font-style:italic;color:var(--text-sec)}
+.ad-preview hr{border:none;border-top:1px solid var(--border-dim);margin:1.2rem 0}
+.ad-preview code{font-family:var(--mono);font-size:.85em;background:var(--bg-card);
+  border:1px solid var(--border-dim);padding:.1rem .3rem;border-radius:2px;color:var(--amber)}
+.ad-preview strong{color:var(--text-pri)}
+.ad-preview a{color:var(--cyan)}
+.ad-preview:empty::before{content:'Preview appears here as you type.';color:var(--text-dim);
+  font-family:var(--mono);font-size:.62rem}
+.ad-preview-btn{display:none}
+@media(max-width:820px){.ad-preview-btn{display:inline-block}}
+
+.ad-cheat{font-family:var(--mono);font-size:.55rem;color:var(--text-dim);
+  line-height:1.9;margin-top:.4rem}
+.ad-cheat code{background:var(--bg-deep);border:1px solid var(--border-dim);
+  padding:.05rem .3rem;border-radius:2px;color:var(--text-sec)}
+
+/* ══ HERO IMAGE ══ */
+.ad-img{display:flex;gap:.7rem;align-items:flex-start;flex-wrap:wrap}
+.ad-img-preview{width:150px;height:79px;object-fit:cover;border-radius:2px;
+  border:1px solid var(--border-dim);background:var(--bg-deep);flex-shrink:0}
+.ad-img-empty{width:150px;height:79px;border:1px dashed var(--border);border-radius:2px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+  font-size:.5rem;color:var(--text-dim);text-align:center;flex-shrink:0;background:var(--bg-deep)}
+
 </style>
 </head>
 <body data-theme="cyberpunk">
@@ -252,15 +305,47 @@ textarea.ad-input{resize:vertical;line-height:1.8;min-height:90px}
         <input class="ad-input" id="naTitle" placeholder="Title" aria-label="Title"/>
         <input class="ad-input" id="naSlug"  placeholder="url-slug (lowercase, hyphens)" aria-label="Slug"/>
         <input class="ad-input" id="naSummary" placeholder="One-line summary (optional)" aria-label="Summary"/>
-        <textarea class="ad-input" id="naBody" rows="8"
-          placeholder="Body — markdown: # heading, **bold**, *italic*, - list, [link](https://…)"
-          aria-label="Body"></textarea>
+
+        <span class="ad-label" style="margin-top:.6rem">Hero image <span style="text-transform:none;letter-spacing:0">— used as the link card when shared. 1200×630 works best.</span></span>
+        <div class="ad-img">
+          <div class="ad-img-empty" id="naImgBox">no image</div>
+          <div style="flex:1;min-width:180px">
+            <input class="ad-input" id="naImgFile" type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif" aria-label="Hero image"
+              onchange="uploadHero(this)"/>
+            <input class="ad-input" id="naImgAlt" placeholder="Describe the image (alt text)" aria-label="Image alt text"/>
+            <input type="hidden" id="naImgUrl"/>
+          </div>
+        </div>
+
+        <div class="ad-pane-label" style="margin-top:.7rem">
+          <span class="ad-label" style="margin:0">Body</span>
+          <button class="btn ad-preview-btn" onclick="togglePreview()" id="naPreviewBtn">Preview</button>
+        </div>
+        <div class="ad-split" id="naSplit">
+          <div class="ad-pane" data-pane="write">
+            <textarea class="ad-input" id="naBody" rows="16" style="margin-bottom:0"
+              placeholder="Write in markdown. One Enter starts a new paragraph."
+              aria-label="Body" oninput="renderPreview()"></textarea>
+            <div class="ad-cheat">
+              <code># Heading</code> · <code>## Sub-heading</code> ·
+              <code>**bold**</code> · <code>*italic*</code> · <code>- list</code> ·
+              <code>1. numbered</code> · <code>&gt; quote</code> ·
+              <code>[text](https://…)</code> · <code>---</code> rule
+            </div>
+          </div>
+          <div class="ad-pane" data-pane="preview">
+            <div class="ad-preview" id="naPreview"></div>
+          </div>
+        </div>
+
         <div class="ad-actions">
           <button class="btn green" onclick="createArticle('draft')">Save draft</button>
           <button class="btn" onclick="createArticle('published')">Publish now</button>
         </div>
         <div class="ad-note">Publishing stamps the date. A published article always carries one —
-          an undated post cannot be cited.</div>
+          an undated post cannot be cited. Check the preview before publishing: pasting from a
+          rendered document silently drops headings and paragraph breaks.</div>
       </div>
       <div id="adArticles"></div>
     </div>
@@ -326,6 +411,64 @@ function msg(text, kind, el) {
   box.textContent = text;
   box.className = 'ad-msg show' + (kind ? ' ' + kind : '');
   if (kind === 'ok') setTimeout(() => { box.className = 'ad-msg'; }, 4000);
+}
+
+/* Live preview through the shared renderer. window.DelaxCMS comes from
+   /delax-cms.js — the same file the public page loads — so the preview cannot
+   drift from what publishes. If it failed to load, the preview says so rather
+   than silently showing nothing. */
+window.renderPreview = function () {
+  const box = $('naPreview');
+  if (!box) return;
+  const src = $('naBody').value;
+  if (!window.DelaxCMS) {
+    box.innerHTML = '<em style="color:var(--red)">Preview unavailable — the renderer did not load.</em>';
+    return;
+  }
+  box.innerHTML = DelaxCMS.renderMarkdown(src);
+};
+
+window.togglePreview = function () {
+  const split = $('naSplit');
+  const on = split.classList.toggle('show-preview');
+  $('naPreviewBtn').textContent = on ? 'Write' : 'Preview';
+  if (on) renderPreview();
+};
+
+/* Hero image upload straight to Supabase Storage from the browser. The bucket
+   is public-read and admin-write, enforced by storage policies — the same RLS
+   model as the tables, so no server is involved and no function is consumed. */
+window.uploadHero = async function (input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  if (file.size > 3 * 1024 * 1024) {
+    input.value = '';
+    return msg('Image must be under 3 MB. Resize it and try again.', 'err');
+  }
+
+  msg('Uploading image…');
+  const ext  = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const path = 'hero/' + Date.now() + '-' + Math.abs(hashString(file.name)) + '.' + ext;
+
+  const { error } = await sb.storage.from('article-images')
+    .upload(path, file, { cacheControl: '31536000', upsert: false, contentType: file.type });
+
+  if (error) { input.value = ''; return msg('Upload failed: ' + error.message, 'err'); }
+
+  const { data } = sb.storage.from('article-images').getPublicUrl(path);
+  $('naImgUrl').value = data.publicUrl;
+
+  const box = $('naImgBox');
+  box.outerHTML = '<img class="ad-img-preview" id="naImgBox" src="' + esc(data.publicUrl) + '" alt="Hero preview"/>';
+  msg('Image uploaded.', 'ok');
+};
+
+/* Deterministic filename component — no Math.random anywhere in this project. */
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+  return h;
 }
 
 function slugify(s) {
@@ -441,6 +584,8 @@ window.createArticle = async function (status) {
   const row = {
     slug, title, body,
     summary: $('naSummary').value.trim() || null,
+    image_url: $('naImgUrl').value || null,
+    image_alt: $('naImgAlt').value.trim() || null,
     status,
     /* The database rejects a published row without a date; set it here so the
        constraint never has to fire on a normal path. */
@@ -454,7 +599,11 @@ window.createArticle = async function (status) {
       ? 'That slug is already in use — choose another.'
       : error.message, 'err');
   }
-  ['naTitle','naSlug','naSummary','naBody'].forEach(id => $(id).value = '');
+  ['naTitle','naSlug','naSummary','naBody','naImgUrl','naImgAlt','naImgFile']
+    .forEach(id => { const el = $(id); if (el) el.value = ''; });
+  const box = $('naImgBox');
+  if (box) box.outerHTML = '<div class="ad-img-empty" id="naImgBox">no image</div>';
+  renderPreview();
   msg(status === 'published' ? 'Published.' : 'Draft saved.', 'ok');
   loadArticles();
 };
@@ -474,8 +623,20 @@ window.editBody = async function (id) {
   const body = (data && data[0] && data[0].body) || '';
   box.style.display = '';
   box.innerHTML =
-    `<textarea class="ad-input" id="body-${id}" rows="10">${esc(body)}</textarea>` +
-    `<button class="btn green" onclick="saveBody('${id}')">Save body</button>`;
+    `<div class="ad-split">
+       <div class="ad-pane">
+         <textarea class="ad-input" id="body-${id}" rows="14"
+           oninput="renderEditPreview('${id}')">${esc(body)}</textarea>
+       </div>
+       <div class="ad-pane"><div class="ad-preview" id="prev-${id}"></div></div>
+     </div>
+     <button class="btn green" onclick="saveBody('${id}')">Save body</button>`;
+  renderEditPreview(id);
+};
+
+window.renderEditPreview = function (id) {
+  const box = $('prev-' + id);
+  if (box && window.DelaxCMS) box.innerHTML = DelaxCMS.renderMarkdown($('body-' + id).value);
 };
 
 window.saveBody = async function (id) {
