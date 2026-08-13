@@ -1866,9 +1866,9 @@ const STRUCTURE_CHROME = {
       { month:30, label:'M30 — RECONSTRUCTION' },   { month:36, label:'M36 — NEW EQUILIBRIUM' },
     ],
     /* Sidebar Key Markets. Oil leads because oil IS the transmission channel here. */
-    marketRows: ['BRENT','WTI','NG','VIX','DXY','GOLD','US10Y','EMCS'],
+    marketRows: ['BRENT','WTI','GOLD','US10Y','EMCS'],
     /* Live equity symbols to poll. Oil majors + defense primes. */
-    equities: ['XOM','LMT','RTX','DAL','SPY','GLD','VIX'],
+    equities: ['XOM','LMT','RTX','DAL','SPY','GLD'],
     /* Historical analogues that are actually analogues for an oil chokepoint. */
     analogKind: 'oil',
   },
@@ -1902,8 +1902,8 @@ const STRUCTURE_CHROME = {
     /* Oil is not a channel in this structure, so Brent/WTI/NG do not lead the panel.
        The rows kept are structure-neutral macro that stay meaningful under any
        structure; the chip-specific names are picked up live in `equities`.        */
-    marketRows: ['VIX','DXY','GOLD','US10Y','EMCS'],
-    equities: ['TSM','ASML','NVDA','AMD','SPY','GLD','VIX'],
+    marketRows: ['GOLD','US10Y','EMCS'],
+    equities: ['TSM','ASML','NVDA','AMD','SPY','GLD'],
     analogKind: 'supply-chain',
   },
 };
@@ -1928,6 +1928,10 @@ function applyStructureChrome() {
    list are hidden outright rather than shown with a stale number: under TAIWAN a
    Brent row is not merely irrelevant, it invites the reader to price the wrong
    channel.                                                                        */
+/* NG / VIX / DXY are retained as MAP ENTRIES but appear in no structure's
+   marketRows, so applyMarketRows() hides their rows under every structure. The
+   entries stay because removing them would leave three orphan rows in the markup
+   that nothing hides. They have no reachable price source — see TICK_SYMBOLS. */
 const MARKET_ROW_IDS = { BRENT:'m-brent', WTI:'m-wti', NG:'m-lng', VIX:'m-vix',
                          DXY:'m-dxy', GOLD:'m-gold', US10Y:'m-10y', EMCS:'m-spread' };
 function applyMarketRows() {
@@ -2130,23 +2134,51 @@ function getCountryStress(name) {
    ═══════════════════════════════════════ */
 // Ticker seeds — equities updated live by Finnhub (/api/market)
 // EIA updates BRENT/WTI/NG · Finnhub updates XOM/LMT/RTX/DAL/GOLD/SPX
+/* ROW SET — every row here has a REACHABLE SOURCE. Rows that did not were removed
+   rather than left to scroll a permanent dash in the most-read strip on the page:
+     · NAT GAS  — carried by no endpoint this page can call.
+     · USD IDX  — an index, not a tradeable symbol; no quote source.
+     · VIX      — absent from the snapshot quote universe and not carried on the
+                  equity provider's free tier. A ^VIX request returns nothing.
+   S&P 500 was renamed. The only reachable source for it is the SPY ETF, whose
+   price is ~1/10 the index level; publishing SPY under an "S&P 500" label states
+   a number the label does not describe. The row is now SPY and says so.
+   Chip names (TSM/ASML/NVDA/AMD) were added because the TAIWAN structure lists
+   them in `equities` while the strip carried no row for any of them — under that
+   structure the ticker had nothing structure-relevant to show.                   */
 const TICK_SYMBOLS = [
-  { id:'BRENT', label:'BRENT',    price:121.88, prev:121.88, unit:'$/bbl',   live:false },
-  { id:'WTI',   label:'WTI',      price:118.20, prev:118.20, unit:'$/bbl',   live:false },
-  { id:'NG',    label:'NAT GAS',  price:9.42,   prev:9.42,   unit:'$/MMBtu', live:false },
-  { id:'XOM',   label:'XOM',      price:114.82, prev:114.82, unit:'$',       live:false },
-  { id:'LMT',   label:'LMT',      price:462.10, prev:462.10, unit:'$',       live:false },
-  { id:'RTX',   label:'RTX',      price:101.55, prev:101.55, unit:'$',       live:false },
-  { id:'DAL',   label:'DAL',      price:44.21,  prev:44.21,  unit:'$',       live:false },
-  { id:'GOLD',  label:'GLD ETF',  price:213.40, prev:213.40, unit:'$',       live:false },
-  { id:'SPX',   label:'S&P 500',  price:5280,   prev:5280,   unit:'',        live:false },
-  { id:'VIX',   label:'VIX',      price:28.4,   prev:28.4,   unit:'',        live:false },
-  { id:'DXY',   label:'USD IDX',  price:104.82, prev:104.82, unit:'',        live:false },
-  { id:'EMCS',  label:'EM ETF',   price:42.0,   prev:42.0,   unit:'$',       live:false },
+  { id:'BRENT', label:'BRENT',    unit:'$/bbl', live:false },
+  { id:'WTI',   label:'WTI',      unit:'$/bbl', live:false },
+  { id:'XOM',   label:'XOM',      unit:'$',     live:false },
+  { id:'LMT',   label:'LMT',      unit:'$',     live:false },
+  { id:'RTX',   label:'RTX',      unit:'$',     live:false },
+  { id:'DAL',   label:'DAL',      unit:'$',     live:false },
+  { id:'GOLD',  label:'GLD ETF',  unit:'$',     live:false },
+  { id:'SPY',   label:'SPY',      unit:'$',     live:false },
+  { id:'EMCS',  label:'EEM ETF',  unit:'$',     live:false },
+  { id:'TSM',   label:'TSM',      unit:'$',     live:false },
+  { id:'ASML',  label:'ASML',     unit:'$',     live:false },
+  { id:'NVDA',  label:'NVDA',     unit:'$',     live:false },
+  { id:'AMD',   label:'AMD',      unit:'$',     live:false },
 ];
-/* Every row starts STALE. A row only loses that flag when a fetch confirms it, so a
-   failed or slow provider degrades to a dash instead of to the 2026 seed value. */
-let tickerData = TICK_SYMBOLS.map(t=>({...t, stale:true}));
+/* NO SEED PRICES. Every row starts at price:null, stale:true, and only ever holds
+   a number a fetch actually returned.
+
+   The seeds were not merely cosmetic. `stale` correctly suppressed them in the
+   strip and the sidebar, but three call sites read `.price` directly — the alert
+   strip, the natural-language query and the stock popup — and every one of them
+   found 121.88 sitting there and shipped it onward as live Brent, including into
+   AI prompts. A seed that survives in state will eventually be read by something
+   that does not check the flag. There is nothing to read now. */
+let tickerData = TICK_SYMBOLS.map(t=>({...t, price:null, prev:null, stale:true}));
+
+/* THE ONLY sanctioned way to ask for the oil price. Returns null when no print
+   has landed. Every prompt and alert path goes through this — reading
+   tickerData[].price directly is the defect class this exists to close. */
+function confirmedBrent() {
+  const b = tickerData.find(t => t.id === 'BRENT');
+  return (b && !b.stale && typeof b.price === 'number' && isFinite(b.price)) ? b.price : null;
+}
 
 /* ── MARKET REFRESH ────────────────────────────────────────────────────────────
    WAS `jitterMarkets`, and it random-walked every row not flagged `live`: VIX, EM
@@ -2178,11 +2210,16 @@ function updateTicker() {
      them as a market row or a live equity. */
   const keep = new Set([...(chrome().marketRows||[]), ...(chrome().equities||[])]);
   const rows = tickerData.filter(t => keep.has(t.id) || keep.has(t.label));
+  /* CHANGE %. Prefer the provider's own change figure (`pctHint`) over a delta
+     against our last poll. The poll delta measured the gap between two fetches in
+     this browser session — on a first load it is zero by construction, and it was
+     never the day's move the arrow implies. When no provider figure is carried,
+     no percentage is shown at all rather than a session artefact dressed as one. */
   const html = [...rows,...rows].map(t=>{
-    const delta = t.price - t.prev;
-    const pct = t.stale ? '' : (Math.abs(delta)/t.prev*100).toFixed(2);
-    const dir = t.stale ? 'flat' : Math.abs(delta) < 0.001 ? 'flat' : delta>0?'up':'dn';
-    const arrow = t.stale ? '' : dir==='up'?'▲':dir==='dn'?'▼':'—';
+    const hint  = (typeof t.pctHint === 'number' && isFinite(t.pctHint)) ? t.pctHint : null;
+    const pct   = (t.stale || hint === null) ? '' : Math.abs(hint).toFixed(2);
+    const dir   = (t.stale || hint === null) ? 'flat' : Math.abs(hint) < 0.005 ? 'flat' : hint>0?'up':'dn';
+    const arrow = (t.stale || hint === null) ? '' : dir==='up'?'▲':dir==='dn'?'▼':'—';
     const pfx = t.unit.startsWith('$')?t.unit+' ':'';
     const sfx = !t.unit.startsWith('$')&&t.unit?' '+t.unit:'';
     const dispPrice = t.stale ? '—'
@@ -2198,7 +2235,7 @@ function updateTicker() {
     return `<div class="tick-item">
       <span class="tick-sym">${t.label}${liveDot}</span>
       <span class="tick-val">${pfx}${dispPrice}${sfx}</span>
-      <span class="tick-chg ${dir}">${arrow}${pct}%</span>
+      <span class="tick-chg ${dir}">${arrow}${pct}${pct ? '%' : ''}</span>
     </div>`;
   }).join('');
   track.innerHTML = html;
@@ -2208,9 +2245,6 @@ function updateSidebarMetrics() {
   const sm = SCENARIO_MULT[scenario];
   const b = tickerData.find(t=>t.id==='BRENT');
   const w = tickerData.find(t=>t.id==='WTI');
-  const n = tickerData.find(t=>t.id==='NG');
-  const v = tickerData.find(t=>t.id==='VIX');
-  const d = tickerData.find(t=>t.id==='DXY');
   const g = tickerData.find(t=>t.id==='GOLD');
   const y = tickerData.find(t=>t.id==='US10Y');
   const s = tickerData.find(t=>t.id==='EMCS');
@@ -2223,9 +2257,8 @@ function updateSidebarMetrics() {
   const live = t => t && !t.stale;
   if(b) set('m-brent', live(b)?`$${b.price.toFixed(2)}`:'—', live(b)?(b.price>120?'up':b.price<90?'dn':''):'');
   if(w) set('m-wti',   live(w)?`$${w.price.toFixed(2)}`:'—', live(w)?(w.price>115?'up':''):'');
-  if(n) set('m-lng',   live(n)?`$${n.price.toFixed(2)}`:'—', live(n)?(n.price>8?'up':''):'');
-  if(v) set('m-vix',   live(v)?v.price.toFixed(1):'—',       live(v)?(v.price>25?'warn':v.price>35?'dn':''):'');
-  if(d) set('m-dxy',   live(d)?d.price.toFixed(2):'—',       '');
+  /* m-lng / m-vix / m-dxy have no writer any more. Their rows are hidden by
+     applyMarketRows() under every structure because no source reaches them. */
   if(g) set('m-gold',  live(g)?`$${g.price.toLocaleString('en',{maximumFractionDigits:0})}`:'—', live(g)?(g.price>2000?'up':''):'');
   if(y) set('m-10y',   live(y)?`${y.price.toFixed(2)}%`:'—', '');
   // EMCS is the EEM ETF price now, not a bp spread — render as a dollar price.
@@ -2246,7 +2279,13 @@ function updateShockNodes() {
   if (sn('sn-oil')) {
     if (!oilStructure)            sn('sn-oil').textContent = 'n/a';
     else if (!bRow || bRow.stale) sn('sn-oil').textContent = '—';
-    else                          sn('sn-oil').textContent = `+${(((bRow.price/anchor)-1)*100).toFixed(0)}%`;
+    else {
+      /* The `+` used to be hardcoded. With the seed removed, the first real Brent
+         print can land BELOW the $70 pre-war anchor — and did, in the harness —
+         producing "+-5%". The sign comes from the number now. */
+      const pct = ((bRow.price / anchor) - 1) * 100;
+      sn('sn-oil').textContent = (pct >= 0 ? '+' : '') + pct.toFixed(0) + '%';
+    }
   }
   if(sn('sn-cpi'))     sn('sn-cpi').textContent   = `+${(3.8*sm.cpi).toFixed(1)}pp`;
   if(sn('sn-rates'))   sn('sn-rates').textContent = `+${Math.round(200*sm.stress)}bp`;
@@ -2328,12 +2367,12 @@ function updateShockEngineMessage() {
   }
   
   /* Collect market stress signals from ticker data */
-  const brent = tickerData.find(t => t.id === 'BRENT');
-  const vix = tickerData.find(t => t.id === 'VIX');
-  const emcs = tickerData.find(t => t.id === 'EMCS');
-  
-  if (brent && brent.price > 120) alerts.push(`Oil spike to $${brent.price.toFixed(0)}`);
-  if (vix && vix.price > 28) alerts.push(`VIX stress ${vix.price.toFixed(1)}`);
+  /* Was `brent.price > 120` against a row that carried the 121.88 seed whether or
+     not anything had been fetched — so "Oil spike to $122" scrolled permanently
+     under the globe on a page where no oil price had loaded. It reads through
+     confirmedBrent() now: no print, no alert. The VIX line is gone with the row. */
+  const brentPx = confirmedBrent();
+  if (brentPx != null && brentPx > 120) alerts.push(`Oil spike to $${brentPx.toFixed(0)}`);
   // (EM-spread bp alert retired: EMCS now carries the EEM ETF price, on which a
   //  ">350bp" test is meaningless. No substitute spread source exists in-file.)
   
@@ -2544,27 +2583,36 @@ function shareCardEpistemic() {
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function buildShareCardSVG() {
+/* ══════════════════════════════════════════════════════════════════════════════
+   CARD MODE. There are two cards, and which one builds depends on whether a
+   country is selected.
+
+   Previously there was only one. It read STRUCTURE_STATE.regionalStress, took the
+   top three regions, and stamped the date — `selectedCountry` appeared nowhere in
+   it. So a user could click through Canada, Japan, Egypt and India, hit SHARE each
+   time, and get four byte-identical images. The card was structure-level by
+   construction and nothing about it moved when the selection did.
+
+   COUNTRY MODE now builds whenever a country is selected: that country's own
+   numbers, from the same accessors the right-hand panel reads, so the card and the
+   panel can never disagree. STRUCTURE MODE is unchanged and still correct — it is
+   what you want when no country is selected, and it stays the default.
+
+   Nulls render as an em dash. An uncovered country is labelled Not Covered rather
+   than scored, exactly as the panel labels it.                                  */
+function shareCardMode() {
+  return (selectedCountry && COUNTRIES[selectedCountry]) ? 'country' : 'structure';
+}
+
+/* Shared frame — brand block, structure/tier/scenario line, epistemic footer.
+   Both modes draw inside it so the two cards are recognisably the same object. */
+function shareCardFrame(bodySVG, headline, subhead) {
   const W = 1200, H = 675;
-  const name  = activeStructureName();
   const tier  = String(activeTier() || '').toUpperCase();
   const scen  = activeScenarioLabel();
-  const regions = shareCardTopRegions();
   const epi   = shareCardEpistemic();
   const stamp = new Date().toISOString().slice(0, 10);
-
   const tierColor = tier.indexOf('UNPRICED') > -1 ? '#FFB830' : '#00F085';
-
-  const regionRows = regions.map((r, idx) => {
-    const y = 366 + idx * 62;
-    const barW = Math.max(6, Math.min(1, r.v / 10) * 620);
-    const heat = r.v >= 7 ? '#FF5F6B' : r.v >= 4 ? '#FFB830' : '#00E5FF';
-    return `
-      <text x="70" y="${y}" font-family="'IBM Plex Mono',monospace" font-size="26" fill="#C8DCF0" font-weight="700">${esc(r.region)}</text>
-      <rect x="360" y="${y - 22}" width="620" height="14" rx="7" fill="#0d2840"/>
-      <rect x="360" y="${y - 22}" width="${barW}" height="14" rx="7" fill="${heat}"/>
-      <text x="1000" y="${y}" font-family="'IBM Plex Mono',monospace" font-size="26" fill="${heat}" font-weight="700">${r.v.toFixed(1)}</text>`;
-  }).join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <defs>
@@ -2583,15 +2631,15 @@ function buildShareCardSVG() {
   <text x="70" y="92" font-family="'Bebas Neue',sans-serif" font-size="52" letter-spacing="4" fill="#FFFFFF">DELAX <tspan fill="#00E5FF">GEO-RISK</tspan></text>
   <text x="70" y="122" font-family="'IBM Plex Mono',monospace" font-size="18" letter-spacing="3" fill="#8BADC8">CROSS-ASSET GEOPOLITICAL RISK INTELLIGENCE</text>
 
-  <!-- structure + tier -->
-  <text x="70" y="214" font-family="'Bebas Neue',sans-serif" font-size="66" letter-spacing="2" fill="#FFFFFF">${esc(String(name).toUpperCase())}</text>
+  <!-- headline + tier -->
+  <text x="70" y="214" font-family="'Bebas Neue',sans-serif" font-size="66" letter-spacing="2" fill="#FFFFFF">${esc(String(headline).toUpperCase())}</text>
   <rect x="70" y="238" width="${20 + tier.length * 15}" height="34" rx="4" fill="none" stroke="${tierColor}" stroke-width="2"/>
   <text x="82" y="262" font-family="'IBM Plex Mono',monospace" font-size="20" letter-spacing="2" fill="${tierColor}" font-weight="700">${esc(tier)}</text>
   <text x="${110 + tier.length * 15}" y="262" font-family="'IBM Plex Mono',monospace" font-size="20" letter-spacing="1" fill="#C8DCF0">SCENARIO: ${esc(String(scen).toUpperCase())}</text>
 
   <!-- section label -->
-  <text x="70" y="322" font-family="'IBM Plex Mono',monospace" font-size="18" letter-spacing="3" fill="#8BADC8">REGIONAL STRESS · TOP EXPOSURES (0–10)</text>
-  ${regionRows || '<text x="70" y="366" font-family="\'IBM Plex Mono\',monospace" font-size="24" fill="#8BADC8">No structure loaded — open from the dashboard.</text>'}
+  <text x="70" y="322" font-family="'IBM Plex Mono',monospace" font-size="18" letter-spacing="3" fill="#8BADC8">${esc(subhead)}</text>
+  ${bodySVG}
 
   <!-- epistemic line: the differentiator -->
   <rect x="70" y="556" width="1060" height="2" fill="#1a3a52"/>
@@ -2602,6 +2650,93 @@ function buildShareCardSVG() {
   <text x="360" y="636" font-family="'IBM Plex Mono',monospace" font-size="20" fill="#8BADC8">@DelaxGeoRisk</text>
   <text x="1130" y="636" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="18" fill="#5a7299">${esc(stamp)}</text>
 </svg>`;
+}
+
+/* Formatters. A null is an em dash, never a zero — a zero is a measurement. */
+function _scNum(v, digits, suffix, signed) {
+  if (v == null || typeof v !== 'number' || !isFinite(v)) return '—';
+  const s = (signed && v > 0) ? '+' : '';
+  return s + v.toFixed(digits == null ? 1 : digits) + (suffix || '');
+}
+
+/* ── STRUCTURE MODE: top three regions by stress at the current horizon ── */
+function buildStructureCardSVG() {
+  const regions = shareCardTopRegions();
+  const rows = regions.map((r, idx) => {
+    const y = 366 + idx * 62;
+    const barW = Math.max(6, Math.min(1, r.v / 10) * 620);
+    const heat = r.v >= 7 ? '#FF5F6B' : r.v >= 4 ? '#FFB830' : '#00E5FF';
+    return `
+      <text x="70" y="${y}" font-family="'IBM Plex Mono',monospace" font-size="26" fill="#C8DCF0" font-weight="700">${esc(r.region)}</text>
+      <rect x="360" y="${y - 22}" width="620" height="14" rx="7" fill="#0d2840"/>
+      <rect x="360" y="${y - 22}" width="${barW}" height="14" rx="7" fill="${heat}"/>
+      <text x="1000" y="${y}" font-family="'IBM Plex Mono',monospace" font-size="26" fill="${heat}" font-weight="700">${r.v.toFixed(1)}</text>`;
+  }).join('');
+  const body = rows || '<text x="70" y="366" font-family="\'IBM Plex Mono\',monospace" font-size="24" fill="#8BADC8">No structure loaded — open from the dashboard.</text>';
+  return shareCardFrame(body, activeStructureName(), 'REGIONAL STRESS · TOP EXPOSURES (0–10)');
+}
+
+/* ── COUNTRY MODE: the selected country's reading, same accessors as the panel ── */
+function buildCountryCardSVG(name) {
+  const c      = COUNTRIES[name] || {};
+  const stress = getCountryStress(name);
+  const inv    = investabilityScore(name);
+  const rl     = riskLabel(stress)[0];
+  const heat   = (stress == null) ? '#8BADC8' : stress >= 7 ? '#FF5F6B' : stress >= 4 ? '#FFB830' : '#00E5FF';
+
+  /* Four metric tiles. Oil dependency is shown only under the oil structure —
+     under TAIWAN it is not a transmission variable and the panel omits it too, so
+     the slot carries FX stress instead rather than a number with no channel. */
+  const oilStructure = activeStructureId() === 'hormuz-iran';
+  const tiles = [
+    { label:'STRESS INDEX',   value: _scNum(stress, 1, '/10'),                 color: heat },
+    { label:'CPI EXCESS',     value: _scNum(cCpiExcess(name), 1, 'pp', true),  color: '#FF6B35' },
+    { label:'GDP DRAG',       value: _scNum(cGdpDrag(name), 1, 'pp', true),    color: '#FF5F6B' },
+    oilStructure
+      ? { label:'OIL DEPENDENCY', value: (typeof c.oilDep === 'number') ? c.oilDep + '%' : '—', color:'#FFB830' }
+      : { label:'FX STRESS',      value: _scNum(cFxStress(name), 0, '/100'),   color:'#FFB830' },
+  ];
+
+  const tileSVG = tiles.map((t, i) => {
+    const x = 70 + (i % 2) * 545;
+    const y = 356 + Math.floor(i / 2) * 92;
+    return `
+      <rect x="${x}" y="${y - 26}" width="515" height="78" rx="3" fill="#071522" stroke="#12314a" stroke-width="1"/>
+      <text x="${x + 20}" y="${y}" font-family="'IBM Plex Mono',monospace" font-size="15" letter-spacing="2" fill="#8BADC8">${esc(t.label)}</text>
+      <text x="${x + 20}" y="${y + 36}" font-family="'IBM Plex Mono',monospace" font-size="32" font-weight="700" fill="${t.color}">${esc(t.value)}</text>`;
+  }).join('');
+
+  /* Investability bar. A null score means the country is not covered by this
+     structure — the bar is suppressed entirely rather than drawn at zero, which
+     would read as the worst possible score instead of as an absence. */
+  const invColor = (inv.score == null) ? '#8BADC8' : inv.score >= 65 ? '#00F085' : inv.score >= 40 ? '#FFB830' : '#FF5F6B';
+  const invSVG = (inv.score == null)
+    ? `<text x="70" y="540" font-family="'IBM Plex Mono',monospace" font-size="20" fill="#8BADC8">INVESTABILITY · ${esc(inv.label)}</text>`
+    : `
+      <text x="70" y="524" font-family="'IBM Plex Mono',monospace" font-size="15" letter-spacing="2" fill="#8BADC8">INVESTABILITY SCORE</text>
+      <rect x="70" y="532" width="900" height="12" rx="6" fill="#0d2840"/>
+      <rect x="70" y="532" width="${Math.max(6, (inv.score / 100) * 900)}" height="12" rx="6" fill="${invColor}"/>
+      <text x="1000" y="544" font-family="'IBM Plex Mono',monospace" font-size="26" font-weight="700" fill="${invColor}">${inv.score}</text>
+      <text x="70" y="516" font-family="'IBM Plex Mono',monospace" font-size="17" fill="${invColor}" text-anchor="start" opacity="0">${esc(inv.label)}</text>`;
+
+  const body = `
+      <text x="70" y="346" font-family="'IBM Plex Mono',monospace" font-size="17" fill="${heat}" font-weight="700">${esc(String(c.region || '').toUpperCase())}${c.region ? ' · ' : ''}${esc(String(rl).toUpperCase())}</text>
+      ${tileSVG}
+      ${invSVG}`;
+
+  return shareCardFrame(body, name, 'COUNTRY READING · ' + String(activeStructureName()).toUpperCase());
+}
+
+function buildShareCardSVG() {
+  return (shareCardMode() === 'country')
+    ? buildCountryCardSVG(selectedCountry)
+    : buildStructureCardSVG();
+}
+
+/* Filename and post text follow the card, so a shared file is self-describing. */
+function shareCardSlug() {
+  const base = (shareCardMode() === 'country') ? selectedCountry : activeStructureName();
+  return 'delax-georisk-' + String(base).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.png';
 }
 
 /* Rasterise the SVG to a PNG blob via an offscreen canvas. */
@@ -2639,7 +2774,10 @@ async function generateShareCard() {
     const imgEl = document.getElementById('shareCardImg');
     const dl    = document.getElementById('shareCardDownload');
     if (imgEl) imgEl.src = _shareCardBlobUrl;
-    if (dl)    dl.href   = _shareCardBlobUrl;
+    /* Filename follows the card. The static delax-georisk-card.png meant a user
+       who exported four countries ended up with four files that overwrote each
+       other in the download folder. */
+    if (dl) { dl.href = _shareCardBlobUrl; dl.setAttribute('download', shareCardSlug()); }
     document.getElementById('shareCardModal').classList.add('open');
   } catch (e) {
     alert('Could not build the card: ' + e.message);
@@ -2670,9 +2808,14 @@ async function copyShareCard() {
    image. (X does not accept image bytes via URL, so text-intent + image paste is the
    reliable path.) */
 function tweetShareCard() {
-  const name = activeStructureName();
   const scen = activeScenarioLabel();
-  const text = `${name} · ${scen} — cross-asset geopolitical risk read via DELAX GEO-RISK. delaxcom.org`;
+  /* Names the country when the card is a country card, so the post and the image
+     say the same thing. A post reading "Hormuz/Iran" attached to a Canada card is
+     the same mismatch the card itself had. */
+  const head = (shareCardMode() === 'country')
+    ? `${selectedCountry} · ${activeStructureName()}`
+    : activeStructureName();
+  const text = `${head} · ${scen} — cross-asset geopolitical risk read via DELAX GEO-RISK. delaxcom.org`;
   window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank', 'noopener');
 }
 
@@ -3914,76 +4057,155 @@ window.addEventListener('resize', () => {
   if (window.innerWidth > 768) closeAllMobPanels();
 });
 
-/* ════════════════════════════════════════════════════════════
-   LIVE TICKER
-   Polls /api/market for all displayable rows. The proxy owns source selection
-   (EIA / Alpha Vantage / FRED / Finnhub) and symbol normalisation.
-   ════════════════════════════════════════════════════════════ */
-/* FINNHUB_EQUITY_IDS retired: /api/market now normalises symbols server-side, so
-   the client no longer needs a per-symbol id map. See fetchTickerRows / MARKET_QUERY. */
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   LIVE TICKER (v2) — full-coverage single-source fetch.
+   LIVE TICKER (v3) — snapshot-first quotes, paramless oil call.
    ──────────────────────────────────────────────────────────────────────────────
-   The old version fetched only 7 equity symbols and dropped VIX on a missing map
-   key, so the strip dashed BRENT, WTI, NAT GAS, DXY, VIX, EM and S&P forever — not
-   because the data was unavailable, but because it was never requested.
+   WHAT WAS WRONG. Every row on this page dashed, permanently. The cause was not
+   a provider outage — it was a contract this file believed in and the backend
+   never implemented. fetchTickerRows() called:
 
-   /api/market was upgraded (Jun 2026) to route each of those to a real source:
-   BRENT/WTI -> EIA spot, NG -> Alpha Vantage, DXY -> FRED, VIX/SPX/EMCS -> Finnhub
-   via ^VIX / SPY / EEM. All of them return the SAME uniform payload shape, so the
-   client no longer needs a per-symbol map — the endpoint owns normalisation. We
-   just ask for the row id and store what comes back.
+       /api/market?symbol=XOM
 
-   CADENCE. The commodity/index rows are DAILY series behind a 6h edge cache;
-   polling them every 30s only burns edge requests to redraw an identical number.
-   So there are two fetch tiers: equities on the fast timer, daily series on a slow
-   one. See the schedulers in the boot block.
+   /api/market accepts NO parameters. It is the oil endpoint and always answers
+   with { updatedAt, wti, brent, eiaVerified }. There is no top-level `price`, so
+   the client's `typeof d.price === 'number'` guard was false for every symbol on
+   every poll, every row stayed `stale`, and updateTicker() rendered a dash. The
+   honesty layer worked exactly as designed; the request was aimed at the wrong
+   endpoint. Vercel logs confirm the shape of it: /api/market served only CDN
+   cache hits and 304s — the client was re-reading a cached oil payload it could
+   not parse — while /api/market-equity showed healthy live invocations from the
+   pages that had already migrated.
 
-   HONESTY (unchanged from Batch 2.2). A row goes live ONLY when a price actually
-   lands. A failed or slow fetch leaves it `stale`, which updateTicker() renders as
-   an em dash — never the seed value drifting under a live dot.                    */
+   The dashboard hit this same wall in the July refactor and resolved it. This is
+   that resolution, ported: quotes resolve SNAPSHOT-FIRST.
 
-/* Rows served through /api/market. The `id` is both our ticker id and the symbol
-   the endpoint keys on — the map is gone because the backend normalises now. */
-const TICKER_FAST = ['XOM','LMT','RTX','DAL','SPY','GOLD','VIX','EMCS'];   // equities/ETFs, 30s
-const TICKER_SLOW = ['BRENT','WTI','NG','DXY'];                            // daily series, 10min
+     1. ONE /api/snapshot call covers the whole quote universe and is CDN-cached.
+        That replaces one request per row and removes the rate-limit pressure
+        that was starving /api/market-equity.
+     2. Symbols outside that universe (the chip names) fall through to
+        /api/market-equity, one call each, four at a time.
+     3. BRENT and WTI come from a single PARAMLESS /api/market call, read off
+        j.brent.price / j.wti.price. A null benchmark stays null. One benchmark's
+        value is never substituted into the other's field.
 
-/* The endpoint keys GLD as 'GLD' and S&P as 'SPX'; our row ids are GOLD and SPX.
-   One tiny id->query map, only where the two genuinely differ. */
-const MARKET_QUERY = { GOLD:'GLD', SPX:'SPX', EMCS:'EMCS', SPY:'SPX' };
+   CADENCE. Equities on the fast timer, oil on the slow one — oil is a daily
+   series behind an edge cache and polling it every 30s only redraws an identical
+   number.
 
-async function fetchTickerRows(ids) {
-  const results = await Promise.allSettled(
-    ids.map(id => {
-      const q = MARKET_QUERY[id] || id;
-      return fetch('/api/market?symbol=' + encodeURIComponent(q))
-        .then(r => r.ok ? r.json() : null)
-        .then(d => (d && typeof d.price === 'number') ? { id, d } : null)
-        .catch(() => null);
-    })
-  );
-  let updated = false;
-  results.forEach(r => {
-    if (r.status !== 'fulfilled' || !r.value) return;
-    const { id, d } = r.value;
-    tickerData = tickerData.map(t => {
-      if (t.id !== id) return t;
-      updated = true;
-      // stale:false is the affirmative "a price landed" flag the renderer keys on.
-      return { ...t, prev: t.price, price: parseFloat(Number(d.price).toFixed(4)),
-               live: true, stale: false };
-    });
-  });
-  if (updated) { updateTicker(); updateSidebarMetrics(); }
+   HONESTY. A row goes live ONLY when a price actually lands. Nothing else can
+   set it, because there is no seed left in tickerData to fall back to.        */
+
+/* Row id -> the symbol the quote layer knows it by. Only where they differ. */
+const TICKER_QUERY = { GOLD:'GLD', EMCS:'EEM' };
+const TICKER_EQUITY = ['XOM','LMT','RTX','DAL','GOLD','SPY','EMCS','TSM','ASML','NVDA','AMD'];
+const TICKER_OIL    = { BRENT:'brent', WTI:'wti' };
+
+/* Both benchmarks in one call. /api/market takes no query params — asking it for
+   a symbol is what broke this page. Nulls stay null; no substitution. */
+async function fetchOilBenchmarks() {
+  try {
+    const r = await fetch('/api/market');
+    if (!r.ok) return {};
+    const j = await r.json();
+    return { wti: j && j.wti, brent: j && j.brent };
+  } catch (e) { return {}; }
 }
 
-/* Kept as the equity-tier entry point so existing schedulers keep working. */
-async function fetchFinnhubTicker() { return fetchTickerRows(TICKER_FAST); }
+/* Shared quote map. 60s client cache on top of the endpoint's own edge cache so a
+   structure switch or a popup open does not re-request the same 34 names. */
+const _quoteCache = { at: 0, map: {} };
+const QUOTE_CACHE_MS = 60 * 1000;
 
-/* Daily-cadence tier: BRENT/WTI/NG/DXY. Also the single owner of Brent/WTI now —
-   the old fetchLiveAPIs() EIA path is retired below to stop the two racing. */
-async function fetchDailyMarketRows() { return fetchTickerRows(TICKER_SLOW); }
+async function getQuotes(symbols) {
+  const want = [...new Set((symbols || []).filter(Boolean))];
+  const out  = {};
+  if (!want.length) return out;
+
+  if (Date.now() - _quoteCache.at > QUOTE_CACHE_MS) {
+    try {
+      const r = await fetch('/api/snapshot');
+      if (r.ok) {
+        const j = await r.json();
+        _quoteCache.map = (j && j.quotes) || {};
+        _quoteCache.at  = Date.now();
+      }
+    } catch (e) { /* keep whatever was cached */ }
+  }
+
+  const missing = [];
+  for (const sym of want) {
+    const q = _quoteCache.map[sym];
+    if (q && typeof q.price === 'number' && isFinite(q.price)) {
+      out[sym] = { price: q.price, percentChange: (typeof q.changePct === 'number') ? q.changePct : null };
+    } else {
+      missing.push(sym);
+    }
+  }
+  if (!missing.length) return out;
+
+  /* Off-universe names, one call each, four at a time. A symbol that resolves
+     nowhere is simply absent from the map and the caller renders a dash. */
+  for (let i = 0; i < missing.length; i += 4) {
+    await Promise.allSettled(missing.slice(i, i + 4).map(async (sym) => {
+      try {
+        const r = await fetch('/api/market-equity?symbol=' + encodeURIComponent(sym));
+        if (!r.ok) return;
+        const d = await r.json();
+        const q = d && d.quote;
+        if (q && typeof q.price === 'number' && isFinite(q.price)) {
+          out[sym] = {
+            price:         q.price,
+            percentChange: (typeof q.percentChange === 'number' && isFinite(q.percentChange))
+              ? q.percentChange : null,
+          };
+        }
+      } catch (e) { /* absent -> dash */ }
+    }));
+  }
+  return out;
+}
+
+/* Commit a landed price onto a row. `prev` is seeded from the row's own previous
+   confirmed price; on the FIRST landing there is none, so prev is set equal to
+   price and the row renders flat rather than computing a change against null. */
+function applyTickerPrice(id, price, pctHint) {
+  let touched = false;
+  tickerData = tickerData.map(t => {
+    if (t.id !== id) return t;
+    const px = Number(price);
+    if (!isFinite(px)) return t;
+    touched = true;
+    const prev = (typeof t.price === 'number' && isFinite(t.price)) ? t.price : px;
+    return { ...t, prev, price: parseFloat(px.toFixed(4)), live: true, stale: false,
+             pctHint: (typeof pctHint === 'number' && isFinite(pctHint)) ? pctHint : null };
+  });
+  return touched;
+}
+
+/* Equity tier. Kept under the original name so the boot schedulers still bind. */
+async function fetchFinnhubTicker() {
+  const map = await getQuotes(TICKER_EQUITY.map(id => TICKER_QUERY[id] || id));
+  let updated = false;
+  TICKER_EQUITY.forEach(id => {
+    const q = map[TICKER_QUERY[id] || id];
+    if (q && applyTickerPrice(id, q.price, q.percentChange)) updated = true;
+  });
+  if (updated) { updateTicker(); updateSidebarMetrics(); updateShockNodes(); }
+}
+
+/* Oil tier — the single owner of BRENT and WTI. */
+async function fetchDailyMarketRows() {
+  const oil = await fetchOilBenchmarks();
+  let updated = false;
+  Object.entries(TICKER_OIL).forEach(([id, key]) => {
+    const src = oil[key];
+    if (src && typeof src.price === 'number' && isFinite(src.price)) {
+      if (applyTickerPrice(id, src.price, src.changePct7d)) updated = true;
+    }
+  });
+  if (updated) { updateTicker(); updateSidebarMetrics(); updateShockNodes(); }
+}
 
 /* ════════════════════════════════════════════════════════════
    STOCK INSIGHTS POPUP — AI narration + live prices
@@ -4065,27 +4287,35 @@ async function openStockPopup(countryName) {
   const c      = COUNTRIES[countryName] || {};
   const sm     = SCENARIO_MULT[scenario];
   const stress = getCountryStress(countryName);
-  const brent  = (tickerData.find(t=>t.id==='BRENT')||{}).price || 121;
+  /* `|| 121` never fired. tickerData carried the 121.88 seed, which is truthy, so
+     this handed the model a Brent print nobody had fetched and the note was
+     written against it. There is no seed now and no fallback constant: null means
+     null, and the oil line is omitted from the prompt entirely below. */
+  const brent  = confirmedBrent();
 
-  // Fetch live prices from Finnhub for the top 4 symbols
+  /* Prices come from the shared quote layer — snapshot first, /api/market-equity
+     for anything outside it. The previous call was /api/market?symbol=SYM, which
+     that endpoint does not accept, so every row in this popup rendered a dash. */
   const liveSymbols = stocks.slice(0,4).map(s=>s[0]);
-  const livePrices  = {};
-  await Promise.allSettled(
-    liveSymbols.map(sym =>
-      fetch('/api/market?symbol=' + sym)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d && d.price) livePrices[sym] = d; })
-        .catch(() => null)
-    )
-  );
+  const livePrices  = await getQuotes(liveSymbols);
 
   // Build AI prompt
   const stockList = stocks.slice(0,6).map(s=>s[0]+' ('+s[1]+')').join(', ');
-  const prompt = 'You are a sell-side equity analyst at a global investment bank covering the Iran War 2026 scenario.' +
+  /* Was hard-coded to "the Iran War 2026 scenario" under EVERY structure, so a
+     TAIWAN session asked for an oil-war note about a semiconductor blockade. It
+     names the active structure now. The Brent line appears only when a price has
+     actually landed — an omitted input is recoverable, an invented one is not. */
+  const oilLine = (brent != null) ? ' | Brent: $' + brent.toFixed(0) + '/bbl' : '';
+  const prompt = 'You are a sell-side equity analyst at a global investment bank covering the ' +
+    activeStructureName() + ' risk structure.' +
     '\n\nCOUNTRY: ' + countryName +
-    '\nSCENARIO: ' + scenario.toUpperCase() + ' | Brent: $' + brent.toFixed(0) + '/bbl' +
+    '\nSCENARIO: ' + activeScenarioLabel().toUpperCase() + oilLine +
     '\nStress Index: ' + stress.toFixed(1) + '/10 | CPI: ' + (c.cpi||0).toFixed(1) + '% | GDP: ' + (c.gdp||0).toFixed(1) + '%' +
-    '\nOil dependency: ' + (c.oilDep||0) + '% | FX Vol: ' + (c.fxVol||0) + '%' +
+    /* Oil dependency is an input only where oil is the channel. The country
+       briefing already nulls it off-structure; this path was still shipping it
+       under TAIWAN, where it is not a transmission variable. */
+    ((activeStructureId() === 'hormuz-iran') ? '\nOil dependency: ' + (c.oilDep||0) + '%' : '') +
+    '\nFX Vol: ' + (c.fxVol||0) + '%' +
     '\n\nRELEVANT STOCKS: ' + stockList +
     '\n\nWrite a concise investor note (max 120 words total) in this exact JSON format:' +
     '\n{' +
@@ -4150,7 +4380,9 @@ async function openStockPopup(countryName) {
   const allStocks = aiStocks.length > 0 ? aiStocks : stocks.slice(0,4).map(s=>({sym:s[0],signal:'WATCH',reason:'Monitors geopolitical exposure.'}));
 
   out += '<div class="sp-section">' +
-    '<div class="sp-sect-hdr">INVESTOR SIGNALS — Live Prices via Finnhub</div>';
+    /* Provider name removed. Data and AI provider names do not appear in the UI —
+       the platform is the source of record, not the vendor behind it. */
+    '<div class="sp-sect-hdr">INVESTOR SIGNALS — LIVE PRICES</div>';
 
   allStocks.slice(0,5).forEach(st => {
     const stockName = (COUNTRY_STOCKS[countryName]||[]).find(s=>s[0]===st.sym)?.[1] || st.sym;
@@ -4325,10 +4557,14 @@ async function fetchLiveAPIs() {
     // (which is WTI/RWTC) to the BRENT row, causing the visible mismatch
     // between the main header WTI pill and this iframe's WTI sidebar metric.
     // The /api/eia-oil endpoint now returns nested {wti, brent} objects.
-    /* EIA BRENT/WTI handling retired here. Both now come through
-       /api/market?symbol=BRENT|WTI (same EIA source, same 6h edge cache) on the
-       daily tier, so running this branch too just raced two writers to the same
-       two rows. fetchLiveAPIs now owns only the macro sidebar values below. */
+    /* EIA BRENT/WTI handling retired here. Both come through the daily tier's
+       single PARAMLESS /api/market call (fetchDailyMarketRows), so running this
+       branch too just raced two writers to the same two rows. fetchLiveAPIs owns
+       only the macro sidebar values below.
+       NOTE: the previous wording here said the rows came from
+       /api/market?symbol=BRENT|WTI. That request shape does not exist — the
+       endpoint takes no parameters — and believing it did is what left the whole
+       strip dashed. See the LIVE TICKER (v3) block. */
     if (mktRes.status === 'fulfilled' && mktRes.value?.results) {
       const m = mktRes.value.results;
       if (m.macro) {
