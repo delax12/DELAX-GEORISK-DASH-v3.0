@@ -216,6 +216,15 @@ const RISK_STRUCTURES = {
              ACTION: refit betas with the new window added (the 2026 fit pipeline
              pattern), regression-gate, bump version, update methodology.html.  */
         },
+        /* v4.3 — WATCH TRIGGERS AS DATA.
+           These conditions previously existed only as JS comments above the
+           switches, so the product could not display them. The dashboard's
+           "What to watch" line reads this array. Prose only — no figures, so
+           no calculation path can depend on it. Keep in sync with switches. */
+        watchTriggers: [
+          'Truce status: full normalisation of transits, or re-escalation toward a second closure. Either one retires the Armed Truce base case.',
+          'A new measurable shock window — that would trigger a beta refit, a version bump, and a methodology update.',
+        ],
         log: [
           { date: '2026-07-15', version: '3.1',
             note: 'v3.1 shipped: recalibrated to the real 2026 war (was Ukraine-proxy). ' +
@@ -432,6 +441,13 @@ const RISK_STRUCTURES = {
          switch below is ON. Flipping a switch is therefore a real action: the
          site itself starts announcing that maintenance is due.               ═══ */
       review: {
+        /* v4.3 — see the hormuz note above. Taiwan's triggers concern whether
+           the structure ever becomes PRICEABLE, which is the live question for
+           an 'unpriced' structure. */
+        watchTriggers: [
+          'Any episode that produces a real, measurable price window — Taiwan is unpriced because no analogue has yet produced a coherent fear signal.',
+          'Foundry equity behaviour during escalation: the observed signal has been inverted or absent in every tested episode.',
+        ],
         lastReviewed:  '2026-07-15',
         nextScheduled: '2027-01-15',        // semi-annual floor: Jan 15 / Jul 15
         cadence:       'semi-annual',

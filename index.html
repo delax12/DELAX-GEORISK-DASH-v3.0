@@ -11,7 +11,7 @@
 </script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>DELAX GEO-RISK | Global Economic Impact Dashboard v2.2</title>
+<title>DELAX GEO-RISK — Geopolitical Risk, Priced and Calibrated</title>
 <meta name="description" content="Cross-asset geopolitical risk intelligence for investors. Model conflicts as swappable risk structures with calibrated sector sensitivities, scenario probabilities, and portfolio exposure scoring — across stocks, currencies, and commodities."/>
 <!-- Social unfurl: a bare link is a silent conversion killer. These make delaxcom.org
      render as a rich card when pasted into X / LinkedIn / Slack. og:image points at a
@@ -440,8 +440,68 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 .tl-period{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.06em}
 .tl-desc{font-family:var(--sans);font-size:.75rem;color:var(--text-sec);line-height:1.65}
 
-/* KPI BOTTOM BAR — scrolls with page, sits right above footer */
-body.beginner-mode body.beginner-mode 
+/* ═══ HERO — first-visit identity band (Phase 1) ═══ */
+.dx-hero{background:linear-gradient(180deg,var(--bg-card) 0%,var(--bg-deep) 100%);
+  border-bottom:1px solid var(--border-dim);padding:2.25rem 1.25rem 1.5rem;position:relative}
+.dx-hero-inner{max-width:940px;margin:0 auto}
+.dx-hero-h{font-family:var(--display);font-size:1.62rem;line-height:1.32;font-weight:600;
+  color:var(--text-pri);margin:0 0 .7rem;letter-spacing:.005em;max-width:26ch}
+.dx-hero-sub{font-family:var(--sans);font-size:.86rem;line-height:1.65;color:var(--text-sec);
+  margin:0 0 1.15rem;max-width:62ch}
+.dx-hero-cta{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.1rem}
+.dx-hero-btn{font-family:var(--mono);font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;
+  padding:.55rem 1.05rem;border:1px solid var(--border);border-radius:3px;background:transparent;
+  color:var(--text-sec);cursor:pointer;text-decoration:none;transition:all .15s;display:inline-block}
+.dx-hero-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.dx-hero-btn.primary{border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.06)}
+.dx-hero-btn.primary:hover{background:rgba(0,212,255,.13)}
+/* DGSI slot — reserved for Phase 2 (DELAX Global Strain Index). Renders nothing
+   until the index ships. Do NOT populate with a placeholder number. */
+.dx-hero-index{display:flex;align-items:baseline;gap:.6rem;margin-bottom:.9rem}
+.dx-hero-proof{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;
+  font-family:var(--mono);font-size:.6rem;letter-spacing:.05em;color:var(--text-dim)}
+.dx-hero-proof strong{color:var(--text-sec);font-weight:600}
+.dx-hero-sep{color:var(--border)}
+.dx-hero-cal{padding:2px 7px;border-radius:2px;border:1px solid var(--green);
+  color:var(--green);font-size:.55rem;letter-spacing:.08em;text-transform:uppercase}
+.dx-hero-cal.unpriced{border-color:var(--amber);color:var(--amber)}
+.dx-hero-dismiss{position:absolute;top:.7rem;right:1rem;background:transparent;
+  border:1px solid var(--border-dim);border-radius:2px;color:var(--text-dim);cursor:pointer;
+  font-family:var(--mono);font-size:.55rem;letter-spacing:.09em;padding:.25rem .6rem}
+.dx-hero-dismiss:hover{color:var(--text-sec);border-color:var(--border)}
+.dx-hero-bar{width:100%;display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  background:var(--bg-card);border:none;border-bottom:1px solid var(--border-dim);
+  padding:.55rem 1.25rem;cursor:pointer;text-align:left;
+  font-family:var(--sans);font-size:.72rem;color:var(--text-sec)}
+.dx-hero-bar:hover{color:var(--text-pri)}
+.dx-hero-bar-more{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;
+  color:var(--text-dim);white-space:nowrap;flex-shrink:0}
+@media(max-width:640px){
+  .dx-hero{padding:1.6rem 1rem 1.15rem}
+  .dx-hero-h{font-size:1.22rem;max-width:none}
+  .dx-hero-sub{font-size:.79rem}
+  .dx-hero-btn{flex:1;text-align:center}
+  .dx-hero-dismiss{top:.5rem;right:.7rem}
+}
+
+/* ═══ INSIGHT BLOCK — What changed / Why it matters / What to watch ═══ */
+.dx-insight{border:1px solid var(--border-dim);border-left:3px solid var(--cyan);
+  border-radius:3px;background:var(--bg-card);padding:.9rem 1.05rem;margin-bottom:1.1rem}
+.dx-insight-row{display:grid;grid-template-columns:8.5rem 1fr;gap:.75rem;
+  padding:.42rem 0;align-items:baseline}
+.dx-insight-row+.dx-insight-row{border-top:1px solid var(--border-dim)}
+.dx-insight-k{font-family:var(--mono);font-size:.56rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--text-dim);white-space:nowrap}
+.dx-insight-v{font-family:var(--sans);font-size:.78rem;line-height:1.6;color:var(--text-sec)}
+.dx-insight-v strong{color:var(--text-pri);font-weight:600}
+.dx-insight-v ul{margin:0;padding-left:1.05rem}
+.dx-insight-v li+li{margin-top:.28rem}
+.dx-insight-stale{color:var(--text-dim);font-style:italic}
+@media(max-width:640px){
+  .dx-insight-row{grid-template-columns:1fr;gap:.15rem}
+  .dx-insight-v{font-size:.75rem}
+}
+
 /* FOOTER */
 .footer{background:var(--bg-card);border-top:1px solid var(--border-dim);padding:1.75rem 1.25rem;margin-top:2.5rem;font-family:var(--mono);font-size:.8rem;color:var(--text-sec);text-align:center;letter-spacing:.04em;line-height:1.75}
 .footer strong{color:var(--text-sec)}
@@ -662,6 +722,40 @@ body.beginner-mode body.beginner-mode
 <!-- ═══ MAIN ═══ -->
 <main role="main">
 
+<!-- ═══════════════ HERO ═══════════════
+     Phase 1. Before this existed there was nowhere on the page that said what
+     DELAX is — a first-time visitor got eight tabs, eight cards and a conflict
+     name. Collapses to a one-line bar on return visits (dxHeroCollapse).
+     No claim here may outrun the model: the platform decomposes shocks and
+     labels its confidence. It does not forecast ahead of the market. -->
+<section id="dxHero" class="dx-hero" aria-label="What DELAX GEO-RISK does">
+  <div class="dx-hero-inner">
+    <h1 class="dx-hero-h">Geopolitical events, translated into market outcomes — with the error bars shown.</h1>
+    <p class="dx-hero-sub">Oil, inflation, shipping, FX, food, defense. Every figure carries its evidence tier:
+      fitted to a real event, modelled, or honestly unpriced.</p>
+    <div class="dx-hero-cta">
+      <button class="dx-hero-btn primary" onclick="dxHeroGoAnalysis()">Risk Landscape &rarr;</button>
+      <a class="dx-hero-btn" href="/exposure-desk.html">Your Exposure &rarr;</a>
+    </div>
+    <!-- DGSI SLOT — reserved for the DELAX Global Strain Index (Phase 2).
+         Stays hidden and EMPTY until the index publishes. Never place a
+         placeholder figure here. -->
+    <div id="dxHeroIndex" class="dx-hero-index" hidden></div>
+    <div class="dx-hero-proof" id="dxHeroProof">
+      <span id="dxHeroStruct">&mdash;</span>
+      <span class="dx-hero-sep">&middot;</span>
+      <span id="dxHeroCal" class="dx-hero-cal">&mdash;</span>
+      <span class="dx-hero-sep">&middot;</span>
+      <span>Brent <strong id="dxHeroBrent">&mdash;</strong></span>
+    </div>
+  </div>
+  <button class="dx-hero-dismiss" onclick="dxHeroCollapse(true)" aria-label="Collapse introduction">Hide &#9650;</button>
+</section>
+<button id="dxHeroBar" class="dx-hero-bar" hidden onclick="dxHeroExpand()" aria-label="Show introduction">
+  <span>Geopolitical events, translated into market outcomes &mdash; with the error bars shown.</span>
+  <span class="dx-hero-bar-more">What is this? &#9662;</span>
+</button>
+
 <!-- NAV TABS — sticky right above Global News banner -->
 <!-- AMBIENT NEWS STRIP — 28px, always visible, rotates top headline — Fix 2.3 -->
 <div id="newsStatusBar" style="background:#060b16;border-bottom:1px solid #111d33;
@@ -710,6 +804,45 @@ body.beginner-mode body.beginner-mode
 <div id="tab-charts" class="tab-content active" role="tabpanel">
 
 
+  <!-- ═══ INSIGHT BLOCK — the 30-second answer ═══
+       What changed  : live-derived. Fails CLOSED — if no verified price is
+                       available it says so rather than inventing movement.
+       Why it matters: read from the structure's own meta (flow + status).
+       What to watch : read from meta.review.watchTriggers in risk-structures.js.
+       Nothing here is authored twice; every line is engine-sourced. -->
+  <div class="dx-insight" id="dxInsight" aria-live="polite">
+    <div class="dx-insight-row">
+      <div class="dx-insight-k">What changed</div>
+      <div class="dx-insight-v" id="dxInsChanged"><span class="dx-insight-stale">Checking live feed&hellip;</span></div>
+    </div>
+    <div class="dx-insight-row">
+      <div class="dx-insight-k">Why it matters</div>
+      <div class="dx-insight-v" id="dxInsMatters">&mdash;</div>
+    </div>
+    <div class="dx-insight-row">
+      <div class="dx-insight-k">What to watch</div>
+      <div class="dx-insight-v" id="dxInsWatch">&mdash;</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS — moved above the indicator grid (Phase 1). The scenario
+       selector previously sat below eight cards and the AI panel, which meant
+       NORMALISATION — the de-escalation case, and Taiwan's most probable
+       outcome at 60% — was invisible without scrolling. -->
+  <div class="controls-row">
+    <div class="control-group">
+      <span class="control-label">Scenario:</span>
+      <button class="toggle-btn active-baseline" id="btn-baseline"    onclick="setScenario('baseline')"    aria-pressed="true">Armed Truce</button>
+      <button class="toggle-btn"                 id="btn-optimistic"   onclick="setScenario('optimistic')"  aria-pressed="false">Normalisation</button>
+      <button class="toggle-btn"                 id="btn-pessimistic"  onclick="setScenario('pessimistic')" aria-pressed="false">Re-escalation</button>
+      <button class="btn" onclick="openScenarioBuilder()" title="Build custom scenario" aria-haspopup="dialog">&#9881; Custom</button>
+    </div>
+    <div class="export-row" style="margin-bottom:0">
+      <button class="btn" onclick="exportPDF()" aria-label="Export PDF report">&#128196; PDF</button>
+      <button class="btn" onclick="exportCSV('kpi')" aria-label="Export KPIs to CSV">&#128202; CSV</button>
+    </div>
+  </div>
+
   <!-- KPI HERO ROW — top of Charts tab, Fix 2.6 -->
   <div style="margin-bottom:1.5rem">
     <div class="mode-strip" style="padding:.4rem 0 .6rem;border-bottom:none">
@@ -727,7 +860,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-plain">Armed Truce peak Brent ~$102. The war reached ceasefire; the crisis has not — Brent is back near $69 but the strait never normalised.</div>
       <div class="kpi-delta">Pre-war Brent: $70 · <span>+45.7% at model peak</span></div>
       <div class="kpi-ts" id="kpiTsOil">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     <div class="kpi-card up clickable" onclick="showKPINarrative('cpi','Global CPI Impact (Yr 1)',document.getElementById('kpiCPI').textContent)" role="button" tabindex="0">
@@ -737,7 +870,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-plain">Everyday prices run about 1.2% hotter than they would without this standoff.</div>
       <div class="kpi-delta">Stagflation Risk: <span>HIGH</span></div>
       <div class="kpi-ts" id="kpiTsCPI">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     <div class="kpi-card warn clickable" onclick="showKPINarrative('gdp','Global GDP Loss (Yr 1)',document.getElementById('kpiGDP').textContent)" role="button" tabindex="0">
@@ -745,9 +878,9 @@ body.beginner-mode body.beginner-mode
         <i class="info-icon" data-prov="Source: IMF WEO + DELAX multiplier · 2003 Iraq = −0.5% · Confidence: 79%">i</i></div>
       <div class="kpi-value" id="kpiGDP">−1.9%</div>
       <div class="kpi-plain">The world economy grows a bit slower — about 0.7% of output lost in year one.</div>
-      <div class="kpi-delta">2003 Iraq = −0.5% · <span>3.8× worse</span></div>
+      <div class="kpi-delta">2003 Iraq = −0.5% · <span>1.4× that loss</span></div>
       <div class="kpi-ts" id="kpiTsGDP">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     <div class="kpi-card up clickable" onclick="showKPINarrative('ship','Shipping Cost Index',document.getElementById('kpiShip').textContent)" role="button" tabindex="0">
@@ -755,9 +888,9 @@ body.beginner-mode body.beginner-mode
         <i class="info-icon" data-prov="Source: Baltic Exchange BDI · Hormuz/Suez premium · Confidence: 85%">i</i></div>
       <div class="kpi-value" id="kpiShip">+310%</div>
       <div class="kpi-plain">Moving goods by sea costs about 2.2× normal: insurers still charge war rates.</div>
-      <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting</div>
+      <div class="kpi-delta"><span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting · <span>2.2× normal freight</span></div>
       <div class="kpi-ts" id="kpiTsShip">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     <div class="kpi-card up clickable" onclick="showKPINarrative('def','Global Defense Spend ΔYr1',document.getElementById('kpiDef').textContent)" role="button" tabindex="0">
@@ -767,7 +900,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-plain">Governments spend ~$480B extra on defense — good for defense stocks, paid by taxpayers.</div>
       <div class="kpi-delta">NATO · Gulf · Israel · India</div>
       <div class="kpi-ts" id="kpiTsDef">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     <div class="kpi-card down clickable" onclick="showKPINarrative('fao','Food Price Index (FAO)',document.getElementById('kpiFAO').textContent)" role="button" tabindex="0">
@@ -777,7 +910,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-plain">Food runs ~12% pricier; poorer, import-dependent countries feel it most.</div>
       <div class="kpi-delta">Fertilizer + fuel · <span>N. Africa critical</span></div>
       <div class="kpi-ts" id="kpiTsFAO">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     <div class="kpi-card info clickable" onclick="showKPINarrative('fx','USD / EM FX Pressure',document.getElementById('kpiFX').textContent)" role="button" tabindex="0">
@@ -787,7 +920,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-plain">Emerging-market currencies slip ~5% vs the dollar, making their imports dearer.</div>
       <div class="kpi-delta">Flight-to-safety inflows</div>
       <div class="kpi-ts" id="kpiTsFX">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     <div class="kpi-card warn clickable" onclick="showKPINarrative('dur','Conflict Duration Estimate',document.getElementById('kpiDur').textContent)" role="button" tabindex="0">
@@ -797,7 +930,7 @@ body.beginner-mode body.beginner-mode
       <div class="kpi-plain">Expect this uneasy standoff to last roughly 1 to 2.5 years.</div>
       <div class="kpi-delta">Baseline: 24M · <span>P(5yr): 28%</span></div>
       <div class="kpi-ts" id="kpiTsDur">—</div>
-      <div class="kpi-click-hint">🔒 Pro · Click for AI</div>
+      <div class="kpi-click-hint" data-gate="ai">Click for AI analysis</div>
     </div>
 
     </div><!-- end kpi-grid -->
@@ -819,46 +952,11 @@ body.beginner-mode body.beginner-mode
     </div>
     <!-- Prompt chips — investor-friendly examples -->
     <div id="whatifChips" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem" aria-label="Example questions">
-      <button onclick="setWhatIfChip(this)" class="whatif-chip"
-        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
-          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
-          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
-        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
-        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
-        What happens to my energy stocks if Hormuz closes?
-      </button>
-      <button onclick="setWhatIfChip(this)" class="whatif-chip"
-        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
-          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
-          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
-        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
-        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
-        How does this affect inflation over the next 2 years?
-      </button>
-      <button onclick="setWhatIfChip(this)" class="whatif-chip"
-        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
-          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
-          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
-        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
-        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
-        Should I be buying defense stocks right now?
-      </button>
-      <button onclick="setWhatIfChip(this)" class="whatif-chip"
-        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
-          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
-          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
-        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
-        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
-        What if a ceasefire is announced next month?
-      </button>
-      <button onclick="setWhatIfChip(this)" class="whatif-chip"
-        style="font-family:var(--mono);font-size:.6rem;color:var(--text-sec);
-          background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
-          padding:.3rem .7rem;cursor:pointer;transition:all .15s"
-        onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'"
-        onmouseout="this.style.borderColor='var(--border-dim)';this.style.color='var(--text-sec)'">
-        How exposed is my portfolio if oil hits $200?
-      </button>
+      <!-- Populated by renderWhatIfChips() from WHATIF_CHIPS, which is
+           structure-aware and exposure-framed. This container ships EMPTY on
+           purpose: the previous static fallback asked "Should I be buying
+           defense stocks right now?" — a directional question the platform is
+           architecturally barred from answering. -->
     </div>
     <!-- Input row -->
     <div style="display:flex;gap:.6rem;align-items:center">
@@ -907,21 +1005,6 @@ body.beginner-mode body.beginner-mode
       <!-- Error state -->
       <div id="whatifError" style="display:none;padding:.85rem;font-family:var(--mono);
         font-size:.65rem;color:var(--red)"></div>
-    </div>
-  </div>
-
-  <!-- CONTROLS -->
-  <div class="controls-row">
-    <div class="control-group">
-      <span class="control-label">Scenario:</span>
-      <button class="toggle-btn active-baseline" id="btn-baseline"    onclick="setScenario('baseline')"    aria-pressed="true">Armed Truce</button>
-      <button class="toggle-btn"                 id="btn-optimistic"   onclick="setScenario('optimistic')"  aria-pressed="false">Normalisation</button>
-      <button class="toggle-btn"                 id="btn-pessimistic"  onclick="setScenario('pessimistic')" aria-pressed="false">Re-escalation</button>
-      <button class="btn" onclick="openScenarioBuilder()" title="Build custom scenario" aria-haspopup="dialog">⚙ Custom</button>
-    </div>
-    <div class="export-row" style="margin-bottom:0">
-      <button class="btn" onclick="exportPDF()" aria-label="Export PDF report">📄 PDF</button>
-      <button class="btn" onclick="exportCSV('kpi')" aria-label="Export KPIs to CSV">📊 CSV</button>
     </div>
   </div>
 
@@ -1708,6 +1791,44 @@ const KPI_MAP = {
   optimistic:  {oil:'$78', cpi:'+0.3%',gdp:'−0.3%',ship:'+25%', def:'+$320B',fao:'+5%', fx:'−2%', dur:'6–12M'},
   pessimistic: {oil:'$165',cpi:'+4.2%',gdp:'−2.2%',ship:'+400%',def:'+$780B',fao:'+30%',fx:'−12%',dur:'12–36M'},
 };
+/* KPI_DELTA_STATIC — the non-numeric sublines. Numeric ones are DERIVED in
+   kpiDeltas() below and must never be hardcoded here. */
+const KPI_DELTA_STATIC = {
+  baseline:    {cpi:'Stagflation Risk: <span>HIGH</span>',   dur:'Baseline: 24M · <span>P(5yr): 28%</span>'},
+  optimistic:  {cpi:'Stagflation Risk: <span>LOW</span>',    dur:'Baseline: 9M · <span>P(5yr): 12%</span>'},
+  pessimistic: {cpi:'Stagflation Risk: <span>SEVERE</span>', dur:'Baseline: 24M · <span>P(5yr): 46%</span>'},
+};
+/* kpiDeltas — DERIVES every numeric subline from KPI_MAP at render time.
+   Root cause of the stale-multiplier defect: the delta lines were authored once,
+   in HTML, against v3.0 numbers, and never re-derived when v3.1 recalibrated
+   the scenarios. Anything computed from a figure now recomputes with it. */
+const IRAQ_2003_GDP_LOSS = 0.5;   // %, 2003 Iraq war — the stated comparator
+const PREWAR_BRENT       = 70;    // $/bbl, MEASURED pre-war Brent (v3.1 anchor)
+function kpiDeltas(sc) {
+  const m   = KPI_MAP[sc] || KPI_MAP.baseline;
+  const st  = KPI_DELTA_STATIC[sc] || KPI_DELTA_STATIC.baseline;
+  const num = v => parseFloat(String(v).replace(/[^0-9.]/g, ''));
+  const oilPeak = num(m.oil);
+  const gdpLoss = Math.abs(num(m.gdp));
+  const shipPct = Math.abs(num(m.ship));
+  const oilPrem = ((oilPeak / PREWAR_BRENT - 1) * 100);
+  const gdpMult = gdpLoss / IRAQ_2003_GDP_LOSS;
+  // Live spot wins for the oil card when EIA has answered; otherwise the
+  // model-peak premium. Never a stale constant.
+  const oilLine = (typeof liveBrentPrice === 'number' && liveBrentPrice > 0)
+    ? `Brent Spot: $${liveBrentPrice.toFixed(2)} · <span>${(((liveBrentPrice / PREWAR_BRENT) - 1) * 100).toFixed(1)}% vs pre-war $${PREWAR_BRENT}</span>`
+    : `Pre-war Brent: $${PREWAR_BRENT} · <span>${oilPrem >= 0 ? '+' : ''}${oilPrem.toFixed(1)}% at model peak</span>`;
+  return {
+    oil:  oilLine,
+    cpi:  st.cpi,
+    gdp:  `2003 Iraq = −${IRAQ_2003_GDP_LOSS}% · <span>${gdpMult.toFixed(1)}× that loss</span>`,
+    ship: `<span data-jargon="Suez">Suez</span>/<span data-jargon="Hormuz">Hormuz</span> rerouting · <span>${(1 + shipPct / 100).toFixed(1)}× normal freight</span>`,
+    def:  'NATO · Gulf · Israel · India',
+    fao:  'Fertilizer + fuel · <span>N. Africa critical</span>',
+    fx:   'Flight-to-safety inflows',
+    dur:  st.dur,
+  };
+}
 /* KPI_PLAIN — one plain-English sentence per KPI per scenario. Written for a
    first-time investor; a retiree should understand every line. MIRRORS KPI_MAP:
    if scenario values change, these sentences change with them. */
@@ -2368,6 +2489,7 @@ function setScenario(s) {
   } else {
     const kpi = KPI_MAP[s];
     const plain = KPI_PLAIN[s] || {};
+    const deltas = kpiDeltas(s);            // v4.3 — derived, never authored
     const KEYMAP = {Oil:'oil',CPI:'cpi',GDP:'gdp',Ship:'ship',Def:'def',FAO:'fao',FX:'fx',Dur:'dur'};
     ['Oil','CPI','GDP','Ship','Def','FAO','FX','Dur'].forEach((k,i)=>{
       const el = document.getElementById('kpi'+k);
@@ -2376,7 +2498,11 @@ function setScenario(s) {
       // HTML that had gone stale against the v3.1 numbers shown above it).
       if(el){ const card = el.closest('.kpi-card');
         const p = card && card.querySelector('.kpi-plain');
-        if (p && plain[KEYMAP[k]]) p.textContent = plain[KEYMAP[k]]; }
+        if (p && plain[KEYMAP[k]]) p.textContent = plain[KEYMAP[k]];
+        // v4.3: the same treatment for the delta subline. This is the line that
+        // claimed a 3.8x ratio under a −0.7% value.
+        const d = card && card.querySelector('.kpi-delta');
+        if (d && deltas[KEYMAP[k]]) d.innerHTML = deltas[KEYMAP[k]]; }
     });
   }
   // (Removed legacy live-spot override of kpiOil — per Hotfix A, the tile shows
@@ -4741,7 +4867,7 @@ function styleStructureBtns() {
     : 'Sources: EIA · FRED · Twelve Data · GDELT · IMF WEO · SIPRI · FAO · Baltic Exchange';
   const sub = document.getElementById('structSubtitle');
   if (sub) sub.textContent = ACTIVE_STRUCTURE === 'hormuz-iran'
-    ? 'Iran War · Global Economic Impact · 2026–2036'
+    ? 'Hormuz / Iran · Chokepoint structure · Armed truce since 8 Apr 2026'
     : 'Taiwan Strait · The Unpriced Semiconductor Chokepoint';
 }
 
@@ -5115,6 +5241,141 @@ function renderTaiwanCapacityChart(chartId, horizon) {
 }
 
 document.addEventListener('DOMContentLoaded', () => { buildStructureBar(); });
+
+/* ══════════════════════════════════════════════════════════════════
+   PHASE 1 — HERO, INSIGHT BLOCK, HONEST GATE HINTS
+   No new endpoints. No new figures. Everything below either reads the
+   structure registry or reads a value already fetched and verified.
+   ══════════════════════════════════════════════════════════════════ */
+
+const DX_HERO_KEY = 'delax.hero.collapsed';
+
+function dxHeroCollapse(persist) {
+  const hero = document.getElementById('dxHero');
+  const bar  = document.getElementById('dxHeroBar');
+  if (hero) hero.hidden = true;
+  if (bar)  bar.hidden  = false;
+  if (persist) { try { localStorage.setItem(DX_HERO_KEY, '1'); } catch (e) {} }
+}
+function dxHeroExpand() {
+  const hero = document.getElementById('dxHero');
+  const bar  = document.getElementById('dxHeroBar');
+  if (hero) hero.hidden = false;
+  if (bar)  bar.hidden  = true;
+  try { localStorage.removeItem(DX_HERO_KEY); } catch (e) {}
+}
+/* Phase 3 replaces this with a route to the Global Risk Landscape view.
+   Until that exists, the landscape IS the active structure's indicator
+   surface, so the CTA scrolls there rather than linking to a dead page. */
+function dxHeroGoAnalysis() {
+  const t = document.getElementById('dxInsight');
+  if (t && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* Proof strip — live values only. Any element without a verified value keeps
+   its em-dash rather than showing a guess. */
+function renderHeroProof() {
+  const S = (window.RISK_STRUCTURES || {})[window.ACTIVE_STRUCTURE || 'hormuz-iran'];
+  const elS = document.getElementById('dxHeroStruct');
+  const elC = document.getElementById('dxHeroCal');
+  const elB = document.getElementById('dxHeroBrent');
+  if (S && elS) elS.textContent = S.meta.short;
+  if (S && elC) {
+    const cal = S.meta.calibration;
+    if (cal === 'empirical') {
+      elC.textContent = 'Empirical · fitted to the 2026 war · ±2.5 pts';
+      elC.className = 'dx-hero-cal';
+    } else if (cal === 'unpriced') {
+      elC.textContent = 'Unpriced · no analogue has priced this';
+      elC.className = 'dx-hero-cal unpriced';
+    } else {
+      elC.textContent = 'Draft · not yet fitted';
+      elC.className = 'dx-hero-cal unpriced';
+    }
+  }
+  if (elB) elB.textContent = (typeof liveBrentPrice === 'number' && liveBrentPrice > 0)
+    ? '$' + liveBrentPrice.toFixed(2)
+    : '\u2014';
+}
+
+/* ── INSIGHT BLOCK ────────────────────────────────────────────────
+   "What changed" is the only line with a number in it, and it is drawn
+   exclusively from the EIA response already validated upstream. If that
+   response has not arrived, the line says so. It never fabricates movement —
+   the same rule that removed applyModelJitter(). */
+function renderInsight() {
+  const S = (window.RISK_STRUCTURES || {})[window.ACTIVE_STRUCTURE || 'hormuz-iran'];
+  if (!S) return;
+  const elC = document.getElementById('dxInsChanged');
+  const elM = document.getElementById('dxInsMatters');
+  const elW = document.getElementById('dxInsWatch');
+
+  if (elC) {
+    if (typeof liveBrentPrice === 'number' && liveBrentPrice > 0) {
+      const vsPre = ((liveBrentPrice / 70 - 1) * 100);
+      const parts = ['Brent <strong>$' + liveBrentPrice.toFixed(2) + '</strong> ('
+        + (vsPre >= 0 ? '+' : '') + vsPre.toFixed(1) + '% vs the pre-war $70 anchor)'];
+      if (typeof liveDataDate === 'string' && liveDataDate) parts.push('EIA print ' + liveDataDate);
+      parts.push('model unchanged since v' + S.meta.modelVersion + ' (' + S.meta.modelDate + ')');
+      elC.innerHTML = parts.join(' &middot; ') + '.';
+    } else {
+      elC.innerHTML = '<span class="dx-insight-stale">No verified price update available &mdash; '
+        + 'live feed unreachable. Model unchanged since v' + S.meta.modelVersion
+        + ' (' + S.meta.modelDate + ').</span>';
+    }
+  }
+
+  if (elM) {
+    const sc  = (S.scenarios || []).find(x => x.id === (typeof scenario !== 'undefined' ? scenario : 'baseline'));
+    const bits = [];
+    if (S.meta.flow) bits.push('This structure sits on <strong>' + S.meta.flow + '</strong>');
+    if (sc) bits.push('the selected case is <strong>' + sc.label + '</strong> at '
+      + Math.round((sc.probability || 0) * 100) + '% modelled probability');
+    elM.innerHTML = bits.join('; ') + '.';
+  }
+
+  if (elW) {
+    const w = ((S.meta.review || {}).watchTriggers) || [];
+    elW.innerHTML = w.length
+      ? '<ul>' + w.map(t => '<li>' + t + '</li>').join('') + '</ul>'
+      : '<span class="dx-insight-stale">No review triggers declared for this structure.</span>';
+  }
+}
+
+/* Gate hints reflect the ACTUAL gate. The paywall is off for the showcase
+   (PAYWALL_ENABLED=false), yet all eight cards showed a padlock — eight locks
+   in front of a first-time visitor, on features that were already open. */
+function renderGateHints() {
+  const locked = (typeof PAYWALL_ENABLED !== 'undefined') && PAYWALL_ENABLED
+    && typeof isProUser === 'function' && !isProUser();
+  document.querySelectorAll('[data-gate="ai"]').forEach(el => {
+    el.textContent = locked ? '\uD83D\uDD12 Pro \u00B7 Click for AI' : 'Click for AI analysis';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  let collapsed = false;
+  try { collapsed = localStorage.getItem(DX_HERO_KEY) === '1'; } catch (e) {}
+  if (collapsed) dxHeroCollapse(false);
+  renderGateHints();
+  // renderWhatIfChips() previously ran only inside applyStructure(), which the
+  // boot path SKIPS when the default structure is already active. Call it here
+  // so the exposure-framed chips render on a first visit too.
+  if (typeof renderWhatIfChips === 'function') renderWhatIfChips();
+  renderHeroProof();
+  renderInsight();
+});
+
+/* Keep hero + insight in step with structure, scenario and live-price changes. */
+document.addEventListener('delax:statechange', () => { renderHeroProof(); renderInsight(); });
+(function () {
+  let last = null;
+  setInterval(() => {
+    const now = (typeof liveBrentPrice === 'number' ? liveBrentPrice : null) + '|'
+      + (window.ACTIVE_STRUCTURE || '') + '|' + (typeof scenario !== 'undefined' ? scenario : '');
+    if (now !== last) { last = now; renderHeroProof(); renderInsight(); }
+  }, 2000);
+})();
 </script>
 </body>
 </html>
