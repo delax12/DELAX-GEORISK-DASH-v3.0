@@ -440,10 +440,19 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 .tl-period{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);margin-bottom:.4rem;letter-spacing:.06em}
 .tl-desc{font-family:var(--sans);font-size:.75rem;color:var(--text-sec);line-height:1.65}
 
+/* [hidden] must beat any author display rule. Without this, `display:flex` on
+   a component silently defeats the hidden attribute. This is why the collapsed
+   hero bar rendered at the same time as the expanded hero. */
+[hidden]{display:none !important}
+
 /* ═══ HERO — first-visit identity band (Phase 1) ═══ */
 .dx-hero{background:linear-gradient(180deg,var(--bg-card) 0%,var(--bg-deep) 100%);
-  border-bottom:1px solid var(--border-dim);padding:2.25rem 1.25rem 1.5rem;position:relative}
-.dx-hero-inner{max-width:940px;margin:0 auto}
+  border-bottom:1px solid var(--border-dim);padding:2.25rem 0 1.5rem;position:relative}
+/* No container of its own: inherits <main>'s grid so the headline's left edge
+   lands on the same rail as the structure bar and the KPI grid. The measure
+   constraint lives on the h1 (max-width:26ch), which is a readability rule,
+   not a layout one. */
+.dx-hero-inner{position:relative}
 .dx-hero-h{font-family:var(--display);font-size:1.62rem;line-height:1.32;font-weight:600;
   color:var(--text-pri);margin:0 0 .7rem;letter-spacing:.005em;max-width:26ch}
 .dx-hero-sub{font-family:var(--sans);font-size:.86rem;line-height:1.65;color:var(--text-sec);
@@ -465,7 +474,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 .dx-hero-cal{padding:2px 7px;border-radius:2px;border:1px solid var(--green);
   color:var(--green);font-size:.55rem;letter-spacing:.08em;text-transform:uppercase}
 .dx-hero-cal.unpriced{border-color:var(--amber);color:var(--amber)}
-.dx-hero-dismiss{position:absolute;top:.7rem;right:1rem;background:transparent;
+.dx-hero-dismiss{position:absolute;top:0;right:0;background:transparent;
   border:1px solid var(--border-dim);border-radius:2px;color:var(--text-dim);cursor:pointer;
   font-family:var(--mono);font-size:.55rem;letter-spacing:.09em;padding:.25rem .6rem}
 .dx-hero-dismiss:hover{color:var(--text-sec);border-color:var(--border)}
@@ -477,12 +486,22 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 .dx-hero-bar-more{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;
   color:var(--text-dim);white-space:nowrap;flex-shrink:0}
 @media(max-width:640px){
-  .dx-hero{padding:1.6rem 1rem 1.15rem}
+  .dx-hero{padding:1.6rem 0 1.15rem}
   .dx-hero-h{font-size:1.22rem;max-width:none}
   .dx-hero-sub{font-size:.79rem}
   .dx-hero-btn{flex:1;text-align:center}
-  .dx-hero-dismiss{top:.5rem;right:.7rem}
+  .dx-hero-dismiss{top:0;right:0}
 }
+
+/* Plain-language toggle — promoted out of the Settings drawer. */
+.dx-lang-toggle{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;
+  text-transform:uppercase;padding:.3rem .65rem;border:1px solid var(--border-dim);
+  border-radius:2px;background:transparent;color:var(--text-dim);cursor:pointer;
+  transition:all .15s;white-space:nowrap}
+.dx-lang-toggle:hover{border-color:var(--cyan);color:var(--cyan)}
+.dx-lang-toggle[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan);
+  background:rgba(0,212,255,.08)}
+.dx-lang-toggle strong{font-weight:700}
 
 /* ═══ INSIGHT BLOCK — What changed / Why it matters / What to watch ═══ */
 .dx-insight{border:1px solid var(--border-dim);border-left:3px solid var(--cyan);
@@ -748,8 +767,8 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
       <span class="dx-hero-sep">&middot;</span>
       <span>Brent <strong id="dxHeroBrent">&mdash;</strong></span>
     </div>
+    <button class="dx-hero-dismiss" onclick="dxHeroCollapse(true)" aria-label="Collapse introduction">Hide &#9650;</button>
   </div>
-  <button class="dx-hero-dismiss" onclick="dxHeroCollapse(true)" aria-label="Collapse introduction">Hide &#9650;</button>
 </section>
 <button id="dxHeroBar" class="dx-hero-bar" hidden onclick="dxHeroExpand()" aria-label="Show introduction">
   <span>Geopolitical events, translated into market outcomes &mdash; with the error bars shown.</span>
@@ -847,9 +866,20 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   <div style="margin-bottom:1.5rem">
     <div class="mode-strip" style="padding:.4rem 0 .6rem;border-bottom:none">
       <div class="section-label" style="margin-bottom:0">
-        Indicators — Scenario: <span id="scenarioLabel" style="color:var(--cyan);margin-left:.25rem">Armed Truce</span>
+        Indicators
+        <!-- The scenario name is no longer repeated here: the selector moved
+             directly above this strip, so it was saying the same thing twice.
+             Kept as a hidden node because other renderers write to it. -->
+        <span id="scenarioLabel" hidden>Armed Truce</span>
       </div>
-      <span class="mode-badge" id="modeBadge" style="display:none"></span>
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        <span class="mode-badge" id="modeBadge" style="display:none"></span>
+        <button class="dx-lang-toggle" id="modeToggleInline" data-mode-toggle
+                onclick="toggleMode()" aria-pressed="false"
+                title="Swap technical labels for plain English. Same numbers.">
+          Plain English: <strong>Off</strong>
+        </button>
+      </div>
     </div>
     <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)"
       role="region" aria-label="Key Performance Indicators — click any card for AI analysis">
@@ -2162,7 +2192,9 @@ const JARGON_DICT = {
    ═════════════════════════════════════════ */
 let scenario       = 'baseline';
 let allCharts      = {};
-let liveBrentPrice = null;
+let liveBrentPrice = null;   // Brent (RBRTE) ONLY — never WTI. See A2.
+let liveWtiPrice   = null;   // WTI (RWTC) — powers the WTI-labelled header pill.
+let liveBrentTrend = null;
 let liveDataDate   = null;
 let isBeginnerMode = false;
 let isColorBlind   = false;
@@ -2294,6 +2326,12 @@ function toggleMode() {
   document.body.classList.toggle('beginner-mode', isBeginnerMode);
   const btn    = document.getElementById('modeToggle');
   const badge  = document.getElementById('modeBadge');
+  /* Two controls now exist (Settings drawer + the inline one above the KPI
+     grid). Keep every [data-mode-toggle] in step so they cannot disagree. */
+  document.querySelectorAll('[data-mode-toggle]').forEach(function (t) {
+    t.setAttribute('aria-pressed', isBeginnerMode ? 'true' : 'false');
+    t.innerHTML = 'Plain English: <strong>' + (isBeginnerMode ? 'On' : 'Off') + '</strong>';
+  });
   if (isBeginnerMode) {
     btn.textContent = '🎓 EXPERT MODE';
     btn.setAttribute('aria-pressed', 'true');
@@ -2379,7 +2417,17 @@ async function fetchEIABrent() {
     const data = await res.json();
     if (data.error) throw new Error(data.error);
 
-    liveBrentPrice = data.price;
+    /* A2 — read the Brent series EXPLICITLY. data.price resolves to
+       `wti || brent` upstream, so it is WTI whenever WTI is present. If Brent
+       is absent we leave liveBrentPrice null and every Brent-labelled surface
+       degrades honestly; we never relabel WTI as Brent. */
+    const brentQuote = (data.brent && typeof data.brent.price === 'number' && data.brent.price > 0)
+      ? data.brent : null;
+    const wtiQuote   = (data.wti && typeof data.wti.price === 'number' && data.wti.price > 0)
+      ? data.wti : null;
+    liveBrentPrice = brentQuote ? brentQuote.price : null;
+    liveWtiPrice   = wtiQuote   ? wtiQuote.price   : (typeof data.price === 'number' ? data.price : null);
+    liveBrentTrend = brentQuote ? brentQuote.trend7d : null;
     liveDataDate   = data.date;
     const ratio    = liveBrentPrice / 70;   // v3.1: $70 = MEASURED pre-war Brent (was $78, matched no period)
     const base0    = OIL_DATA.baseline[0] / 70;
@@ -2406,7 +2454,9 @@ async function fetchEIABrent() {
     // Update Brent header pill with live EIA spot price
     const brentPillPrice = document.getElementById('brentHeaderPrice');
     const brentPillChg   = document.getElementById('brentHeaderChg');
-    if (brentPillPrice) brentPillPrice.textContent = `$${liveBrentPrice.toFixed(2)}`;
+    /* This pill is LABELLED "WTI" in the header markup, so it must carry WTI. */
+    if (brentPillPrice) brentPillPrice.textContent = (typeof liveWtiPrice === 'number')
+      ? `$${liveWtiPrice.toFixed(2)}` : '\u2014';
     if (brentPillChg) {
       brentPillChg.textContent = data.trend7d >= 0 ? `▲ ${data.trend7d}%` : `▼ ${Math.abs(data.trend7d)}%`;
       brentPillChg.style.color = data.trend7d >= 0 ? 'var(--green)' : 'var(--red)';
@@ -2414,7 +2464,9 @@ async function fetchEIABrent() {
     tickerData.forEach(t=>{ if(t.id==='BRENT'){t.prevPrice=t.price;t.price=liveBrentPrice;} });
     updateKpiTimestamps(liveDataDate); // Step 13: oil card shows EIA date, others show model time
     const trend = data.trend7d >= 0 ? `▲ ${data.trend7d}%` : `▼ ${Math.abs(data.trend7d)}%`;
-    showToast(`✓ EIA Live: WTI = $${liveBrentPrice.toFixed(2)}/bbl · ${trend} (7d) · ${liveDataDate}`);
+    const wtiTxt   = (typeof liveWtiPrice   === 'number') ? `WTI $${liveWtiPrice.toFixed(2)}`     : 'WTI n/a';
+    const brentTxt = (typeof liveBrentPrice === 'number') ? `Brent $${liveBrentPrice.toFixed(2)}` : 'Brent n/a';
+    showToast(`✓ EIA Live: ${wtiTxt} · ${brentTxt} · ${trend} (7d) · ${liveDataDate}`);
   } catch(err) {
     applyModelJitter();
     showToast(`⚠ EIA error: ${err.message} — model estimate active`, true);
@@ -4867,7 +4919,7 @@ function styleStructureBtns() {
     : 'Sources: EIA · FRED · Twelve Data · GDELT · IMF WEO · SIPRI · FAO · Baltic Exchange';
   const sub = document.getElementById('structSubtitle');
   if (sub) sub.textContent = ACTIVE_STRUCTURE === 'hormuz-iran'
-    ? 'Hormuz / Iran · Chokepoint structure · Armed truce since 8 Apr 2026'
+    ? 'Hormuz / Iran · Armed truce since 8 Apr 2026'
     : 'Taiwan Strait · The Unpriced Semiconductor Chokepoint';
 }
 

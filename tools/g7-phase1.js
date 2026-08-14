@@ -147,6 +147,93 @@ for (const sc of ['baseline', 'optimistic', 'pessimistic']) {
   } catch (e) { bad(`${sc}: setScenario threw — ${e.message}`); }
 }
 
+/* ── G7.6 — COMPUTED VISIBILITY ─────────────────────────────────────
+   The original gate asserted el.hidden === true, which reads the ATTRIBUTE.
+   It passed while `display:flex` silently outranked the UA stylesheet's
+   display:none and the collapsed bar rendered on top of the expanded hero.
+   Attribute state is not visibility. Assert the cascade. */
+console.log('\nG7.6 — computed visibility (the hidden-attribute defect)');
+const disp = el => w.getComputedStyle(el).display;
+/* SOURCE-LEVEL guard. jsdom's cascade resolves [hidden] to display:none even
+   without the !important rule, so it does NOT reproduce this defect — the
+   computed-style checks below are necessary but NOT sufficient. Browsers give
+   an author `display:flex` precedence over the UA stylesheet's hidden rule.
+   Assert the rule exists in source; that is the check that actually bites. */
+{
+  const css = fs.readFileSync('index.html', 'utf8');
+  /\[hidden\]\s*\{\s*display:\s*none\s*!important/.test(css)
+    ? ok('[hidden]{display:none!important} present — beats author display rules')
+    : bad('no [hidden] !important rule: any display:flex will defeat the hidden attribute');
+  const flexHidden = [];
+  for (const id of ['dxHeroBar', 'dxHeroIndex']) {
+    const cls = { dxHeroBar: 'dx-hero-bar', dxHeroIndex: 'dx-hero-index' }[id];
+    const m = css.match(new RegExp('\\.' + cls + '\\{[^}]*display:\\s*(flex|grid|block|inline-flex)'));
+    if (m) flexHidden.push(`${cls} → display:${m[1]}`);
+  }
+  flexHidden.length
+    ? ok('components that declare display are covered by the !important rule: ' + flexHidden.join(', '))
+    : ok('no conflicting display declarations on hidden components');
+}
+{
+  const bar = d.getElementById('dxHeroBar');
+  const idx = d.getElementById('dxHeroIndex');
+  const hro = d.getElementById('dxHero');
+  disp(hro) !== 'none' ? ok('hero computes visible on first visit')
+                       : bad('hero computed display:none');
+  disp(bar) === 'none' ? ok('collapsed bar computes display:none while hero is open')
+                       : bad(`collapsed bar computes ${disp(bar)} — renders alongside hero`);
+  disp(idx) === 'none' ? ok('DGSI slot computes display:none while reserved')
+                       : bad(`DGSI slot computes ${disp(idx)} — occupying layout`);
+  w.dxHeroCollapse(false);
+  disp(hro) === 'none' && disp(bar) !== 'none'
+    ? ok('collapse swaps computed visibility both ways')
+    : bad(`after collapse: hero=${disp(hro)} bar=${disp(bar)}`);
+  w.dxHeroExpand();
+}
+
+/* ── G7.7 — LAYOUT GRID ─────────────────────────────────────────── */
+console.log('\nG7.7 — hero shares the page grid');
+{
+  const css = fs.readFileSync('index.html', 'utf8');
+  /\.dx-hero-inner\{[^}]*max-width:\s*940px/.test(css)
+    ? bad('hero still imposes its own 940px container — off the page rail')
+    : ok('hero declares no competing container');
+  const inner = d.querySelector('.dx-hero-inner');
+  disp(inner) !== 'none' ? ok('hero content column renders') : bad('hero inner not rendering');
+  d.querySelector('.dx-hero-inner .dx-hero-dismiss')
+    ? ok('dismiss button sits inside the content column')
+    : bad('dismiss button still positioned against the full-bleed section');
+}
+
+/* ── G7.8 — BRENT IS BRENT ──────────────────────────────────────── */
+console.log('\nG7.8 — oil series labelling (A2)');
+{
+  const src = fs.readFileSync('index.html', 'utf8');
+  !/liveBrentPrice\s*=\s*data\.price/.test(src)
+    ? ok('liveBrentPrice no longer reads the wti||brent top-level field')
+    : bad('liveBrentPrice still reads data.price (resolves to WTI upstream)');
+  /liveWtiPrice/.test(src) ? ok('separate WTI global exists for the WTI-labelled pill')
+                           : bad('no separate WTI global — pill and hero share one number');
+  /data\.brent/.test(src) ? ok('Brent series read explicitly') : bad('Brent series not read explicitly');
+}
+
+/* ── G7.9 — PLAIN-LANGUAGE TOGGLE ───────────────────────────────── */
+console.log('\nG7.9 — plain-language toggle surfaced');
+{
+  const toggles = d.querySelectorAll('[data-mode-toggle]');
+  toggles.length >= 1 ? ok(`${toggles.length} mode toggle(s) present outside Settings`)
+                      : bad('no surfaced mode toggle');
+  const inline = d.getElementById('modeToggleInline');
+  inline && disp(inline) !== 'none' ? ok('inline toggle is visible') : bad('inline toggle hidden');
+  try {
+    w.toggleMode();
+    d.body.classList.contains('beginner-mode') ? ok('toggle enables beginner-mode') : bad('beginner-mode not applied');
+    /On/.test(inline.textContent) ? ok('toggle label reflects state') : bad('toggle label stale: ' + inline.textContent);
+    w.toggleMode();
+    !d.body.classList.contains('beginner-mode') ? ok('toggle round-trips') : bad('toggle did not round-trip');
+  } catch (e) { bad('toggleMode threw: ' + e.message); }
+}
+
 /* Hero collapse round-trip */
 console.log('\nG7.5 — hero collapse persistence');
 try {
