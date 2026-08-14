@@ -32,6 +32,8 @@
 <script src="/delax-chrome.js" defer></script>
 <script src="/delax-cms.js" defer></script>
 <script src="/risk-structures.js"></script>
+<script src="/delax-import.js" defer></script>
+<script src="/delax-export.js" defer></script>
 
 <style>
 /* ═══════════════════════════════════════════════════════
@@ -240,6 +242,68 @@ main{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:1.25rem 
 .impact-row .impact-val{font-weight:600}
 .impact-row .impact-val.up{color:var(--red)}
 .impact-row .impact-val.down{color:var(--green)}
+
+/* ═══════════ IMPORT + EXPORT ═══════════ */
+.ws-io-row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.75rem}
+.ws-io-row .ws-io-sep{flex:0 0 100%;height:0}
+.ws-io-label{font-family:var(--mono);font-size:.55rem;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;margin-right:.15rem}
+
+.dx-import-overlay,.dx-export-overlay{position:fixed;inset:0;background:rgba(4,7,12,.86);backdrop-filter:blur(3px);z-index:9000;display:none;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto}
+.dx-import-overlay.open,.dx-export-overlay.open{display:flex}
+.dx-import-modal,.dx-export-modal{background:var(--bg-card);border:1px solid var(--border);border-top:3px solid var(--amber);width:100%;max-width:760px;margin:2rem auto;padding:1.1rem 1.25rem 1.4rem}
+.dx-export-modal{max-width:900px}
+.dx-import-head,.dx-export-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.85rem}
+.dx-import-head h4,.dx-export-head h4{font-family:var(--display);font-size:1.05rem;letter-spacing:.06em;color:var(--text-pri);margin:0}
+.dx-import-note,.dx-import-hint{font-family:var(--mono);font-size:.62rem;color:var(--text-sec);line-height:1.6;margin-bottom:.85rem}
+.dx-import-hint{font-size:.58rem;color:var(--text-dim);margin-top:.6rem;margin-bottom:0}
+.dx-import-note strong{color:var(--green)}
+
+.dx-drop{border:1px dashed var(--border);background:var(--bg-panel);padding:1.6rem 1rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;border-radius:2px}
+.dx-drop:hover,.dx-drop:focus,.dx-drop.over{border-color:var(--amber);background:rgba(245,166,35,.05);outline:none}
+.dx-drop-icon{font-size:1.5rem;opacity:.5;margin-bottom:.4rem}
+.dx-drop-main{font-family:var(--mono);font-size:.68rem;color:var(--text-pri);margin-bottom:.3rem}
+.dx-drop-sub{font-family:var(--mono);font-size:.56rem;color:var(--text-dim)}
+
+.dx-import-error{font-family:var(--mono);font-size:.62rem;color:var(--red);background:rgba(255,61,74,.08);border:1px solid rgba(255,61,74,.3);padding:.6rem .75rem;margin-top:.85rem;line-height:1.55}
+.dx-import-warn{font-family:var(--mono);font-size:.6rem;color:var(--yellow);background:rgba(255,224,64,.07);border:1px solid rgba(255,224,64,.28);padding:.55rem .7rem;margin-bottom:.75rem;line-height:1.55}
+.dx-import-loading{text-align:center;padding:2.5rem 1rem;font-family:var(--mono);font-size:.65rem;color:var(--text-sec)}
+.dx-spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--amber);border-radius:50%;margin:0 auto .8rem;animation:dxspin .8s linear infinite}
+@keyframes dxspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.dx-spinner{animation:none}}
+
+.dx-rev-head,.dx-rev-row{display:grid;grid-template-columns:26px minmax(84px,1.2fr) 84px 92px 88px;gap:.4rem;align-items:center}
+.dx-rev-head{font-family:var(--mono);font-size:.53rem;color:var(--text-dim);letter-spacing:.08em;padding:.3rem 0;border-bottom:1px solid var(--border-dim)}
+.dx-rev-head span:nth-child(n+3),.dx-rev-row>.dx-rev-val{text-align:right}
+.dx-rev-body{max-height:44vh;overflow-y:auto;padding-right:.2rem}
+.dx-rev-row{padding:.4rem 0;border-bottom:1px solid var(--border-dim)}
+.dx-rev-row.flagged{background:rgba(255,224,64,.05);border-left:2px solid var(--yellow);padding-left:.35rem;margin-left:-.35rem}
+.dx-rev-input{background:var(--bg-panel);border:1px solid var(--border);color:var(--text-pri);font-family:var(--mono);font-size:.62rem;padding:.3rem .45rem;border-radius:2px;outline:none;width:100%;min-width:0}
+.dx-rev-input:focus{border-color:var(--amber)}
+.dx-rev-tick{display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.dx-rev-cov{font-family:var(--mono);font-size:.5rem;letter-spacing:.06em;text-transform:uppercase}
+.dx-rev-cov.ok{color:var(--green)}
+.dx-rev-cov.no{color:var(--text-dim)}
+.dx-rev-val{font-family:var(--mono);font-size:.62rem;color:var(--text-sec)}
+.dx-rev-flags{grid-column:1/-1;font-family:var(--mono);font-size:.53rem;color:var(--yellow);padding-top:.2rem;line-height:1.5}
+.dx-rev-check{accent-color:var(--amber);width:15px;height:15px;cursor:pointer}
+.dx-rev-total{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.63rem;color:var(--text-pri);padding:.6rem 0;border-top:1px solid var(--border);margin-top:.3rem}
+.dx-import-actions,.dx-export-actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;margin-top:.85rem}
+
+.dx-export-preview{background:var(--bg-deep);border:1px solid var(--border-dim);padding:.5rem;min-height:120px}
+.dx-export-preview canvas{display:block;width:100%;height:auto}
+.dx-export-toggle{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.62rem;color:var(--text-sec);margin-top:.85rem;cursor:pointer}
+.dx-export-toggle input{accent-color:var(--amber);width:15px;height:15px;cursor:pointer}
+.dx-export-privacy{font-family:var(--mono);font-size:.56rem;color:var(--green);margin-top:.4rem;line-height:1.55}
+.dx-export-privacy.warn{color:var(--yellow)}
+.dx-export-err{font-family:var(--mono);font-size:.62rem;color:var(--red);padding:1.5rem;text-align:center}
+
+@media(max-width:600px){
+  .dx-import-modal,.dx-export-modal{margin:.5rem auto;padding:.9rem}
+  .dx-rev-head,.dx-rev-row{grid-template-columns:22px minmax(64px,1fr) 62px 70px 68px;gap:.3rem}
+  .dx-rev-input{font-size:.58rem;padding:.25rem .3rem}
+  .dx-import-actions,.dx-export-actions{justify-content:stretch}
+  .dx-import-actions .btn,.dx-export-actions .btn{flex:1;justify-content:center}
+}
 
 /* FONT SIZE SLIDER */
 .font-slider-wrap{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.6rem;color:var(--text-dim)}
@@ -653,6 +717,15 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
         <button class="btn" onclick="clearPortfolio()"      aria-label="Clear all holdings">✕ Clear</button>
       </div>
 
+      <div class="ws-io-row">
+        <span class="ws-io-label">Or import</span>
+        <button class="btn" onclick="openHoldingsImport()"
+          aria-label="Import holdings from a spreadsheet or statement">⬆ Import from file</button>
+        <span style="font-family:var(--mono);font-size:.55rem;color:var(--text-dim)">
+          .xlsx · .csv · text PDF — read on this device, never uploaded
+        </span>
+      </div>
+
       <div class="ws-label">Your holdings</div>
       <div class="portfolio-row ws-hold-header">
         <span>TICKER</span><span>SHARES</span><span>AVG COST ($)</span><span></span>
@@ -669,6 +742,14 @@ main{max-width:1180px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
             <span style="color:var(--text-dim)">Add holdings above to see scenario impact and risk</span>
           </div>
         </div>
+        <div class="ws-io-row" id="wsExportRow" style="display:none">
+          <span class="ws-io-label">Export</span>
+          <button class="btn" onclick="DelaxExport.openPreview()" aria-label="Create a shareable image">🖼 Image</button>
+          <button class="btn" onclick="DelaxExport.xlsx()" aria-label="Download as Excel workbook">📊 Excel</button>
+          <button class="btn" onclick="DelaxExport.csv()" aria-label="Download as CSV">📄 CSV</button>
+          <button class="btn" onclick="DelaxExport.pdf()" aria-label="Download as PDF report">📕 PDF</button>
+        </div>
+
         <div class="ws-method-note">
           Impact figures apply the active structure's published sector betas, scaled by scenario.
           Value at Risk is a historical simulation of realised weekly returns — not a forecast.
@@ -1103,6 +1184,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
   loadPortfolioFromStorage();
 
+  if (window.DelaxImport) {
+    DelaxImport.configure({ onCommit: applyImportedHoldings, isCovered: isCovered });
+  }
+  if (window.DelaxExport) {
+    DelaxExport.configure({ getSnapshot: getImpactSnapshot });
+  }
+  syncExportRow();
+
   if (typeof eqUpdateSidebar === 'function') eqUpdateSidebar();
   if (typeof eqInitMobileUI === 'function') eqInitMobileUI();
 
@@ -1311,6 +1400,8 @@ function loadPreset(name) {
 }
 
 function clearPortfolio() {
+  _impactSnapshot = null;
+  syncExportRow();
   portfolioRows = [];
   renderPortfolioGrid();
   var el = document.getElementById('portfolioResults');
@@ -1536,8 +1627,90 @@ function calcPortfolioImpact() {
   results.innerHTML = rowsHtml + totalHtml + coverageNote +
     '<div class="portfolio-result-row var-row" id="varRow"></div>';
 
+  /* Single source of truth for every export format. The exporters never
+     recompute impact — a second implementation of the same arithmetic would
+     eventually disagree with the screen, and a shared card that contradicts
+     the dashboard is worse than no card at all. */
+  var meta = structureMeta();
+  _impactSnapshot = {
+    structure: { id: getStructure(), name: meta.name, tier: meta.tier },
+    scenario: scen,
+    scenarioLabel: SCENARIO_LABELS[scen] || scen,
+    mult: mult,
+    rows: rows,
+    coveredValue: coveredValue,
+    uncoveredValue: uncoveredValue,
+    totalValue: totalValue,
+    uncoveredCount: rows.filter(function (r) { return !r.covered; }).length,
+    p12: p12,
+    p36: p36,
+    varStatus: _varState.status,
+    varText: _varState.text,
+    varDetail: _varState.detail,
+    varPct: _varState.lossPct,
+    generatedAt: new Date().toISOString(),
+  };
+  syncExportRow();
+
   renderVarRow();
   scheduleVarCompute(rows.filter(function (r) { return r.covered; }));
+}
+
+/* ═════════════════════════════════════════
+   EXPORT + IMPORT WIRING
+   ═════════════════════════════════════════ */
+
+var _impactSnapshot = null;
+
+function getImpactSnapshot() { return _impactSnapshot; }
+
+function syncExportRow() {
+  var row = document.getElementById('wsExportRow');
+  if (!row) return;
+  row.style.display = (_impactSnapshot && _impactSnapshot.rows.length) ? '' : 'none';
+}
+
+function openHoldingsImport() {
+  if (!window.DelaxImport) { showToast('Import is still loading — try again in a moment.', true); return; }
+  DelaxImport.open();
+}
+
+/* Imported rows land in the same shape as manual entry, so everything
+   downstream — coverage, impact, VaR, persistence — is unchanged. */
+function applyImportedHoldings(rows, opts) {
+  if (opts && opts.replace) portfolioRows = [];
+
+  var byTicker = {};
+  portfolioRows.forEach(function (r) { byTicker[r.ticker] = r; });
+
+  var added = 0, updated = 0;
+  rows.forEach(function (n) {
+    var existing = byTicker[n.ticker];
+    if (existing) {
+      /* Merging a duplicate holds the combined position honest: a
+         share-weighted cost, not whichever figure arrived last. */
+      var total = (existing.shares || 0) + n.shares;
+      existing.cost = total > 0
+        ? ((existing.cost || 0) * (existing.shares || 0) + n.cost * n.shares) / total
+        : n.cost;
+      existing.shares = total;
+      updated++;
+      return;
+    }
+    var row = { id: nextRowId(), ticker: n.ticker, shares: n.shares, cost: n.cost };
+    portfolioRows.push(row);
+    byTicker[n.ticker] = row;
+    added++;
+  });
+
+  renderPortfolioGrid();
+  calcPortfolioImpact();
+  savePortfolioToStorage();
+  setHoldingsOpen(true);
+
+  var msg = added + (added === 1 ? ' holding imported' : ' holdings imported');
+  if (updated) msg += ', ' + updated + ' merged into existing positions';
+  showToast('\u2713 ' + msg);
 }
 
 /* ═════════════════════════════════════════
@@ -1574,10 +1747,22 @@ function scheduleVarCompute(coveredRows) {
   computeVaR(coveredRows).then(function (res) {
     if (token !== _varToken) return;   // a newer edit superseded this run
     _varState = res;
+    if (_impactSnapshot) {
+      _impactSnapshot.varStatus = res.status;
+      _impactSnapshot.varText   = res.text;
+      _impactSnapshot.varDetail = res.detail;
+      _impactSnapshot.varPct    = res.lossPct;
+    }
     renderVarRow();
   }).catch(function (err) {
     if (token !== _varToken) return;
     _varState = { status: 'error', text: 'unavailable', detail: 'Price history could not be loaded.' };
+    if (_impactSnapshot) {
+      _impactSnapshot.varStatus = 'error';
+      _impactSnapshot.varText   = 'unavailable';
+      _impactSnapshot.varDetail = 'Price history could not be loaded.';
+      _impactSnapshot.varPct    = undefined;
+    }
     renderVarRow();
     console.warn('[var]', err && err.message);
   });

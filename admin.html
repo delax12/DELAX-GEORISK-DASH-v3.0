@@ -254,6 +254,20 @@ textarea.ad-input{resize:vertical;line-height:1.8;min-height:90px}
   display:flex;align-items:center;justify-content:center;font-family:var(--mono);
   font-size:.5rem;color:var(--text-dim);text-align:center;flex-shrink:0;background:var(--bg-deep)}
 
+/* ══ EDIT PANEL ══
+   The create form and the edit panel are now the same editor over the same
+   fields. Anything you can set when writing an article you can change after,
+   which was not true before: title, summary and the hero image were writable
+   exactly once, at creation, and a typo in the summary — the sentence that
+   becomes og:description and the share hook — could only be fixed by deleting
+   the article and losing its id and created_at. */
+.ad-edit{border-top:1px solid var(--border);padding-top:.8rem;margin-top:.2rem}
+.ad-edit .ad-label{margin-top:.6rem}
+.ad-edit .ad-label:first-child{margin-top:0}
+.ad-slug-locked{font-family:var(--mono);font-size:.62rem;color:var(--text-sec);
+  background:var(--bg-deep);border:1px solid var(--border-dim);border-radius:2px;
+  padding:.4rem .55rem;word-break:break-all}
+
 </style>
 </head>
 <body data-theme="cyberpunk">
@@ -313,9 +327,10 @@ textarea.ad-input{resize:vertical;line-height:1.8;min-height:90px}
           <div style="flex:1;min-width:180px">
             <input class="ad-input" id="naImgFile" type="file"
               accept="image/jpeg,image/png,image/webp,image/avif" aria-label="Hero image"
-              onchange="uploadHero(this)"/>
+              onchange="uploadHero(this,'na')"/>
             <input class="ad-input" id="naImgAlt" placeholder="Describe the image (alt text)" aria-label="Image alt text"/>
             <input type="hidden" id="naImgUrl"/>
+            <button class="btn" onclick="clearHero('na')" aria-label="Remove hero image">Remove image</button>
           </div>
         </div>
 
@@ -439,7 +454,8 @@ window.togglePreview = function () {
 /* Hero image upload straight to Supabase Storage from the browser. The bucket
    is public-read and admin-write, enforced by storage policies — the same RLS
    model as the tables, so no server is involved and no function is consumed. */
-window.uploadHero = async function (input) {
+window.uploadHero = async function (input, prefix) {
+  prefix = prefix || 'na';
   const file = input.files && input.files[0];
   if (!file) return;
 
@@ -458,11 +474,42 @@ window.uploadHero = async function (input) {
   if (error) { input.value = ''; return msg('Upload failed: ' + error.message, 'err'); }
 
   const { data } = sb.storage.from('article-images').getPublicUrl(path);
-  $('naImgUrl').value = data.publicUrl;
-
-  const box = $('naImgBox');
-  box.outerHTML = '<img class="ad-img-preview" id="naImgBox" src="' + esc(data.publicUrl) + '" alt="Hero preview"/>';
+  const urlEl = $(prefix + 'ImgUrl');
+  if (urlEl) urlEl.value = data.publicUrl;
+  paintHero(prefix, data.publicUrl);
   msg('Image uploaded.', 'ok');
+};
+
+/* Swap the src on a node that persists, rather than replacing the node. The
+   previous version rewrote its own target with outerHTML, which destroyed the
+   element it needed next time — so a second upload in the same page load
+   silently did nothing visible. */
+window.paintHero = function (prefix, url) {
+  const box = $(prefix + 'ImgBox');
+  if (!box) return;
+  if (url) {
+    if (box.tagName === 'IMG') {
+      box.setAttribute('src', url);
+    } else {
+      box.outerHTML = '<img class="ad-img-preview" id="' + prefix +
+        'ImgBox" src="' + esc(url) + '" alt="Hero preview"/>';
+    }
+    return;
+  }
+  box.outerHTML = '<div class="ad-img-empty" id="' + prefix + 'ImgBox">no image</div>';
+};
+
+/* image_url is nullable and there was no route back to null — an image could be
+   replaced but never removed. */
+window.clearHero = function (prefix) {
+  const urlEl = $(prefix + 'ImgUrl');
+  if (urlEl) urlEl.value = '';
+  const altEl = $(prefix + 'ImgAlt');
+  if (altEl) altEl.value = '';
+  const fileEl = $(prefix + 'ImgFile');
+  if (fileEl) fileEl.value = '';
+  paintHero(prefix, '');
+  msg('Image cleared. Save to apply.', 'ok');
 };
 
 /* Deterministic filename component — no Math.random anywhere in this project. */
@@ -550,7 +597,7 @@ function excerptOf(title) { return String(title || '').trim(); }
 
 async function loadArticles() {
   const { data, error } = await sb.from('articles')
-    .select('id,slug,title,summary,status,published_at,updated_at')
+    .select('id,slug,title,summary,status,published_at,updated_at,image_url,image_alt')
     .order('updated_at', { ascending: false });
   if (error) return msg('Could not load articles: ' + error.message, 'err');
 
@@ -572,7 +619,7 @@ async function loadArticles() {
           ? `<button class="btn" onclick="setStatus('${a.id}','draft')">Unpublish</button>
              <a class="btn" href="/insights/${esc(a.slug)}" target="_blank" rel="noopener">View</a>`
           : `<button class="btn green" onclick="setStatus('${a.id}','published')">Publish</button>`}
-        <button class="btn" onclick="editBody('${a.id}')">Edit body</button>
+        <button class="btn" onclick="editArticle('${a.id}')">Edit</button>
         <button class="btn" style="border-color:var(--red);color:var(--red)"
           onclick="removeArticle('${a.id}')">Delete</button>
       </div>
@@ -591,6 +638,7 @@ async function loadArticles() {
   /* Bind the freshly-rendered rows: the native-sheet and copy handlers are
      added by delax-share.js, which only sees markup that exists when it runs. */
   if (window.DelaxShare) DelaxShare.bind(wrap);
+
 }
 
 window.createArticle = async function (status) {
@@ -622,7 +670,7 @@ window.createArticle = async function (status) {
   ['naTitle','naSlug','naSummary','naBody','naImgUrl','naImgAlt','naImgFile']
     .forEach(id => { const el = $(id); if (el) el.value = ''; });
   const box = $('naImgBox');
-  if (box) box.outerHTML = '<div class="ad-img-empty" id="naImgBox">no image</div>';
+  if (box) paintHero('na', '');
   renderPreview();
   msg(status === 'published' ? 'Published.' : 'Draft saved.', 'ok');
   loadArticles();
@@ -636,32 +684,104 @@ window.setStatus = async function (id, status) {
   loadArticles();
 };
 
-window.editBody = async function (id) {
+window.editArticle = async function (id) {
   const box = $('edit-' + id);
   if (box.style.display !== 'none') { box.style.display = 'none'; return; }
-  const { data } = await sb.from('articles').select('body').eq('id', id).limit(1);
-  const body = (data && data[0] && data[0].body) || '';
+
+  const { data, error } = await sb.from('articles')
+    .select('slug,title,summary,body,status,image_url,image_alt').eq('id', id).limit(1);
+  if (error) return msg('Could not load the article: ' + error.message, 'err');
+  const a = (data && data[0]) || {};
+  const p = 'e' + id.slice(0, 8);          // per-row id prefix for the hero widget
+  const published = a.status === 'published';
+
   box.style.display = '';
   box.innerHTML =
-    `<div class="ad-split">
-       <div class="ad-pane">
-         <textarea class="ad-input" id="body-${id}" rows="14"
-           oninput="renderEditPreview('${id}')">${esc(body)}</textarea>
+    `<div class="ad-edit">
+       <span class="ad-label">Title</span>
+       <input class="ad-input" id="t-${id}" value="${esc(a.title)}" aria-label="Title"/>
+
+       <span class="ad-label">URL slug</span>
+       ${published
+         ? `<div class="ad-slug-locked">/insights/${esc(a.slug)}</div>
+            <div class="ad-note">Locked while published. This URL may already be linked or
+              cited — unpublish first if it genuinely has to change.</div>`
+         : `<input class="ad-input" id="s-${id}" value="${esc(a.slug)}" aria-label="Slug"/>`}
+
+       <span class="ad-label">Summary</span>
+       <input class="ad-input" id="sum-${id}" value="${esc(a.summary)}"
+         placeholder="One-line summary" aria-label="Summary"/>
+       <div class="ad-note">Used as the share hook and the link-card description.</div>
+
+       <span class="ad-label">Hero image</span>
+       <div class="ad-img">
+         ${a.image_url
+           ? `<img class="ad-img-preview" id="${p}ImgBox" src="${esc(a.image_url)}" alt="Hero preview"/>`
+           : `<div class="ad-img-empty" id="${p}ImgBox">no image</div>`}
+         <div style="flex:1;min-width:180px">
+           <input class="ad-input" id="${p}ImgFile" type="file"
+             accept="image/jpeg,image/png,image/webp,image/avif" aria-label="Hero image"
+             onchange="uploadHero(this,'${p}')"/>
+           <input class="ad-input" id="${p}ImgAlt" value="${esc(a.image_alt)}"
+             placeholder="Describe the image (alt text)" aria-label="Image alt text"/>
+           <input type="hidden" id="${p}ImgUrl" value="${esc(a.image_url)}"/>
+           <button class="btn" onclick="clearHero('${p}')" aria-label="Remove hero image">Remove image</button>
+         </div>
        </div>
-       <div class="ad-pane"><div class="ad-preview" id="prev-${id}"></div></div>
-     </div>
-     <button class="btn green" onclick="saveBody('${id}')">Save body</button>`;
+
+       <span class="ad-label">Body</span>
+       <div class="ad-split">
+         <div class="ad-pane">
+           <textarea class="ad-input" id="body-${id}" rows="14"
+             oninput="renderEditPreview('${id}')" aria-label="Body">${esc(a.body)}</textarea>
+         </div>
+         <div class="ad-pane"><div class="ad-preview" id="prev-${id}"></div></div>
+       </div>
+
+       <div class="ad-actions">
+         <button class="btn green" onclick="saveArticle('${id}','${p}')">Save changes</button>
+         <button class="btn" onclick="editArticle('${id}')">Close</button>
+       </div>
+       <div class="ad-note">Check the preview before saving. Pasting from a rendered
+         document drops headings and paragraph breaks, and the damage is invisible
+         until it is live.</div>
+     </div>`;
   renderEditPreview(id);
+};
+
+window.saveArticle = async function (id, p) {
+  const title = $('t-' + id).value.trim();
+  if (title.length < 3) return msg('Title needs at least 3 characters.', 'err');
+
+  const patch = {
+    title,
+    summary:   $('sum-' + id).value.trim() || null,
+    body:      $('body-' + id).value,
+    image_url: $(p + 'ImgUrl').value || null,
+    image_alt: $(p + 'ImgAlt').value.trim() || null,
+  };
+
+  /* Present only on drafts — a published slug is a live URL. */
+  const slugEl = $('s-' + id);
+  if (slugEl) {
+    const slug = slugify(slugEl.value);
+    if (slug.length < 3) return msg('Slug needs at least 3 characters.', 'err');
+    patch.slug = slug;
+  }
+
+  const { error } = await sb.from('articles').update(patch).eq('id', id);
+  if (error) {
+    return msg(/duplicate key/.test(error.message)
+      ? 'That slug is already in use — choose another.'
+      : error.message, 'err');
+  }
+  msg('Saved.', 'ok');
+  loadArticles();
 };
 
 window.renderEditPreview = function (id) {
   const box = $('prev-' + id);
   if (box && window.DelaxCMS) box.innerHTML = DelaxCMS.renderMarkdown($('body-' + id).value);
-};
-
-window.saveBody = async function (id) {
-  const { error } = await sb.from('articles').update({ body: $('body-' + id).value }).eq('id', id);
-  msg(error ? error.message : 'Body saved.', error ? 'err' : 'ok');
 };
 
 window.removeArticle = async function (id) {
