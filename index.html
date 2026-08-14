@@ -453,8 +453,15 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
    constraint lives on the h1 (max-width:26ch), which is a readability rule,
    not a layout one. */
 .dx-hero-inner{position:relative}
-.dx-hero-h{font-family:var(--display);font-size:1.62rem;line-height:1.32;font-weight:600;
-  color:var(--text-pri);margin:0 0 .7rem;letter-spacing:.005em;max-width:26ch}
+.dx-hero-h{font-family:var(--display);font-weight:600;
+  color:var(--text-pri);margin:0 0 .7rem;letter-spacing:.005em;
+  /* Fluid, not a fixed breakpoint: shrinks continuously with viewport so the
+     line holds at one row from ~640px up to the 1600px main max-width,
+     without a hard cutoff where it suddenly wraps. */
+  font-size:clamp(.95rem, 1.7vw, 1.55rem);
+  line-height:1.3;
+  white-space:nowrap;
+  max-width:none}
 .dx-hero-sub{font-family:var(--sans);font-size:.86rem;line-height:1.65;color:var(--text-sec);
   margin:0 0 1.15rem;max-width:62ch}
 .dx-hero-cta{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.1rem}
@@ -487,7 +494,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   color:var(--text-dim);white-space:nowrap;flex-shrink:0}
 @media(max-width:640px){
   .dx-hero{padding:1.6rem 0 1.15rem}
-  .dx-hero-h{font-size:1.22rem;max-width:none}
+  .dx-hero-h{font-size:1.22rem;line-height:1.32;white-space:normal;max-width:none}
   .dx-hero-sub{font-size:.79rem}
   .dx-hero-btn{flex:1;text-align:center}
   .dx-hero-dismiss{top:0;right:0}
@@ -749,7 +756,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
      labels its confidence. It does not forecast ahead of the market. -->
 <section id="dxHero" class="dx-hero" aria-label="What DELAX GEO-RISK does">
   <div class="dx-hero-inner">
-    <h1 class="dx-hero-h">Geopolitical events, translated into market outcomes — with the error bars shown.</h1>
+    <h1 class="dx-hero-h">Geopolitical events priced into market outcomes. Uncertainty made visible.</h1>
     <p class="dx-hero-sub">Oil, inflation, shipping, FX, food, defense. Every figure carries its evidence tier:
       fitted to a real event, modelled, or honestly unpriced.</p>
     <div class="dx-hero-cta">
@@ -771,7 +778,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   </div>
 </section>
 <button id="dxHeroBar" class="dx-hero-bar" hidden onclick="dxHeroExpand()" aria-label="Show introduction">
-  <span>Geopolitical events, translated into market outcomes &mdash; with the error bars shown.</span>
+  <span>Geopolitical events priced into market outcomes. Uncertainty made visible.</span>
   <span class="dx-hero-bar-more">What is this? &#9662;</span>
 </button>
 

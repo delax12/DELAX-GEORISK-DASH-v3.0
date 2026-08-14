@@ -96,8 +96,29 @@ fatal.length === 0 ? ok('no fatal script errors on boot')
 const hero = d.getElementById('dxHero');
 hero && !hero.hidden ? ok('hero visible on first visit') : bad('hero missing or hidden on first visit');
 const h1 = d.querySelector('.dx-hero-h');
-h1 && /error bars/.test(h1.textContent) ? ok('approved headline present') : bad('headline missing');
-!/predict|Predict/.test((h1 && h1.textContent) || '') ? ok('headline makes no prediction claim') : bad('headline claims prediction');
+h1 && /priced into market outcomes/.test(h1.textContent) && /Uncertainty made visible/.test(h1.textContent)
+  ? ok('approved headline present') : bad('headline missing or stale: ' + JSON.stringify((h1||{}).textContent));
+!/predict|Predict|before markets/.test((h1 && h1.textContent) || '')
+  ? ok('headline makes no prediction claim') : bad('headline claims prediction');
+{
+  const css = fs.readFileSync('index.html', 'utf8');
+  const m = css.match(/\.dx-hero-h\{[^}]*\}/);
+  const rule = m ? m[0] : '';
+  /white-space:\s*nowrap/.test(rule) ? ok('desktop headline is single-line (nowrap)')
+                                     : bad('desktop headline rule has no nowrap — may still wrap');
+  !/max-width:\s*26ch/.test(rule) ? ok('26ch width cap removed (was forcing the old multi-line wrap)')
+                                  : bad('26ch cap still present — will force wrapping again');
+  /clamp\(/.test(rule) ? ok('font-size is fluid (clamp) rather than a fixed breakpoint jump')
+                       : bad('no fluid sizing — risk of a hard wrap cliff at some width');
+  // Matched directly on the mobile override rule itself (font-size:1.22rem is
+  // its unique fingerprint) rather than trying to bound the whole @media
+  // block with a [^}]* span, which breaks the moment an earlier sibling rule
+  // inside that same block contains its own closing brace.
+  const mob = css.match(/\.dx-hero-h\{font-size:1\.22rem;([^}]*)\}/);
+  mob && /white-space:\s*normal/.test(mob[1])
+    ? ok('mobile explicitly restores wrap (single-line was a desktop-only request)')
+    : bad('mobile does not restore wrapping — nowrap may leak onto small screens');
+}
 
 ['dxInsChanged','dxInsMatters','dxInsWatch'].forEach(id => {
   const el = d.getElementById(id);
