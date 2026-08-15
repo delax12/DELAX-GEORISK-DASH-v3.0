@@ -19,12 +19,328 @@
  */
 'use strict';
 
+const { put, list } = require('@vercel/blob');
+const gdelt = require('./gdelt.js'); // exports fetchTimelineVol alongside its own handler
+
+/* ══════════════════════════════════════════════════════════════════
+   PHASE 2 — DELAX GLOBAL STRAIN INDEX (DGSI)
+   Two new routes on this SAME function (12-function Hobby ceiling — no new
+   endpoint). Amendment A1/A2/A3 to REVAMP PLAN v6.0 govern this section:
+     - Published in standard-deviation units. NEVER 0–100. NEVER "score".
+     - Brent (RBRTE), not WTI — confirmedBrent() is the sanctioned path
+       everywhere else on the platform; the index inherits that rule.
+     - GDELT conflict-attention component is CONDITIONAL: it only joins the
+       weighting if Tests A and C (below) both pass against real backfilled
+       data. Test B sets level-vs-change, not go/no-go. Fail either A or C →
+       the component stays off and the index ships macro-only, labelled as
+       such in methodology.html.
+     - Fails closed everywhere: a missing input degrades that day's reading
+       to unavailable rather than silently reweighting around the gap or
+       inventing a number. Same discipline as applyModelJitter's removal.
+   ══════════════════════════════════════════════════════════════════ */
+
+const DGSI_PATH = 'index/baseline.json';
+
+/* FRED_SERIES_START — 2015 gives a decade-plus of history: enough for a
+   stable mean/SD, and it spans both the 2022 Ukraine invasion and the 2026
+   Hormuz war for sanity-checking the composite against known shocks. */
+const FRED_SERIES_START = '2015-01-01';
+const EIA_BRENT_START    = '2015-01-01';
+
+/* GDELT gate windows — fixed, not tunable per run, so the test always means
+   the same thing. Hormuz war: 28 Feb – 8 Apr 2026 (Test A, positive control).
+   Baseline-drift check compares 2017–18 to 2024–25 (Test C). Ukraine decay
+   (Test B) is recorded but does not gate. */
+const GDELT_QUERY   = '(hormuz OR "strait of hormuz" OR iran OR "oil tanker")';
+const TEST_A_WINDOW  = { start: '20260228000000', end: '20260408235959' };
+const TEST_A_CONTROL = { start: '20250901000000', end: '20260131235959' }; // pre-war baseline to compare the excursion against
+const TEST_B_QUERY   = '(ukraine OR "russian invasion")';
+const TEST_B_WINDOW  = { start: '20220224000000', end: '20221224235959' };
+const TEST_C_EARLY   = { start: '20170101000000', end: '20181231235959' };
+const TEST_C_RECENT  = { start: '20240101000000', end: '20251231235959' };
+
+async function readJsonBlobDGSI(pathname) {
+  const { blobs } = await list({ prefix: pathname, limit: 1 });
+  if (!blobs.length) return null;
+  const r = await fetch(blobs[0].url, { cache: 'no-store' });
+  return r.ok ? r.json() : null;
+}
+
+function mean(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
+function stdev(arr, m) {
+  const v = arr.reduce((a, b) => a + (b - m) * (b - m), 0) / (arr.length - 1);
+  return Math.sqrt(v);
+}
+function clipZ(z) { return Math.max(-3, Math.min(3, z)); }
+
+/* Backfill-only FRED fetch — deliberately separate from the existing
+   fetchFRED() below, which is capped at limit=10 for the dashboard's
+   "latest reading" use. This one asks FRED for full history from
+   FRED_SERIES_START and is only ever called from index-backfill. */
+async function fetchFredHistory(key, seriesId, observationStart) {
+  const url = `https://api.stlouisfed.org/fred/series/observations`
+    + `?series_id=${seriesId}&api_key=${key}&file_type=json`
+    + `&observation_start=${observationStart}&sort_order=asc`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`FRED HTTP ${r.status} (${seriesId})`);
+  const data = await r.json();
+  if (data && data.error_code) throw new Error(data.error_message || `FRED error (${seriesId})`);
+  const obs = (data && data.observations) || [];
+  return obs
+    .filter(o => o.value !== '.')
+    .map(o => ({ date: o.date, value: parseFloat(o.value) }));
+}
+
+/* Backfill-only Brent history — separate from api/eia-oil.js, which returns
+   only the last ~30 trading days (length=60 across two series) for the live
+   ticker pill. This asks EIA for a date-bounded range directly rather than
+   paginating with offset, which keeps a decade of daily Brent inside one
+   request comfortably under Vercel's execution limit. */
+async function fetchEiaBrentHistory(key, startDate) {
+  const url = 'https://api.eia.gov/v2/petroleum/pri/spt/data/'
+    + '?api_key=' + encodeURIComponent(key)
+    + '&frequency=daily&data[0]=value'
+    + '&facets[series][]=RBRTE'
+    + '&start=' + startDate
+    + '&sort[0][column]=period&sort[0][direction]=asc'
+    + '&length=5000';
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`EIA HTTP ${r.status} (Brent history)`);
+  const json = await r.json();
+  const rows = (json && json.response && json.response.data) || [];
+  return rows
+    .filter(r => r.series === 'RBRTE' && r.value != null)
+    .map(r => ({ date: r.period, value: parseFloat(r.value) }));
+}
+
+/* fetchEiaBrentLatest — single most-recent Brent print, for the live
+   ?type=index reading. Separate small call rather than reusing eia-oil.js's
+   handler directly, since that is a distinct deployed function and calling
+   it would mean an internal HTTP hop between two serverless invocations. */
+async function fetchEiaBrentLatest(key) {
+  const url = 'https://api.eia.gov/v2/petroleum/pri/spt/data/'
+    + '?api_key=' + encodeURIComponent(key)
+    + '&frequency=daily&data[0]=value&facets[series][]=RBRTE'
+    + '&sort[0][column]=period&sort[0][direction]=desc&length=1';
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`EIA HTTP ${r.status} (Brent latest)`);
+  const json = await r.json();
+  const row = json && json.response && json.response.data && json.response.data[0];
+  if (!row || row.value == null) return null;
+  return { date: row.period, value: parseFloat(row.value) };
+}
+
+/* runGdeltGate — Tests A and C, run once during backfill. Returns
+   {enabled, tests} so the decision AND its evidence are both stored, not
+   just the boolean — an auditable gate, not a silent switch. */
+async function runGdeltGate() {
+  const out = { enabled: false, tests: {}, evaluatedAt: new Date().toISOString() };
+  try {
+    const [warWindow, warControl, early, recent] = await Promise.all([
+      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_WINDOW.start, TEST_A_WINDOW.end),
+      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_CONTROL.start, TEST_A_CONTROL.end),
+      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_EARLY.start, TEST_C_EARLY.end),
+      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_RECENT.start, TEST_C_RECENT.end),
+    ]);
+    if (!warWindow || !warControl || !early || !recent) {
+      out.tests.error = 'one or more timelinevol calls returned an unparseable shape — see fetchTimelineVol comment in gdelt.js';
+      return out;
+    }
+    const warMean     = mean(warWindow.map(p => p.value));
+    const controlMean = mean(warControl.map(p => p.value));
+    const testA = { warMean, controlMean, ratio: warMean / (controlMean || 1e-9) };
+    // Positive control: coverage during the war should be a CLEAR multiple
+    // of the pre-war baseline, not a marginal bump.
+    testA.pass = testA.ratio >= 1.5;
+    out.tests.A = testA;
+
+    const earlyMean  = mean(early.map(p => p.value));
+    const recentMean = mean(recent.map(p => p.value));
+    const testC = { earlyMean, recentMean, drift: Math.abs(recentMean - earlyMean) / (earlyMean || 1e-9) };
+    // Drift check: if the 2017–18 and 2024–25 baselines have wandered apart
+    // by more than 15%, timelinevol's normalization is not doing its job and
+    // the corpus-growth trap is back.
+    testC.pass = testC.drift <= 0.15;
+    out.tests.C = testC;
+
+    // Test B recorded, never gating — sets level-vs-change for the UI, not
+    // a pass/fail condition.
+    try {
+      const ukraine = await gdelt.fetchTimelineVol(TEST_B_QUERY, TEST_B_WINDOW.start, TEST_B_WINDOW.end);
+      if (ukraine && ukraine.length) {
+        const peak = Math.max(...ukraine.map(p => p.value));
+        const last = ukraine[ukraine.length - 1].value;
+        out.tests.B = { peak, endOfWindow: last, decayRatio: last / (peak || 1e-9) };
+      }
+    } catch (e) { out.tests.B = { error: e.message }; }
+
+    out.enabled = !!(testA.pass && testC.pass);
+  } catch (err) {
+    out.tests.error = err.message;
+  }
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const type = req.query.type || 'all';
+
+  /* ── type=index-backfill ── Bearer CRON_SECRET only. Expensive, rare-run:
+     pulls years of history, computes baseline mean/SD, runs the GDELT gate,
+     writes ONE blob that every ?type=index request then reads cheaply.
+     Mirrors the CRON_SECRET pattern already used by api/snapshot.js. */
+  if (type === 'index-backfill') {
+    const auth = req.headers.authorization || '';
+    const secret = process.env.CRON_SECRET;
+    if (!secret || auth !== `Bearer ${secret}`) {
+      return res.status(401).json({ error: 'index-backfill requires Authorization: Bearer $CRON_SECRET' });
+    }
+    const fredKey = process.env.FRED_API_KEY;
+    const eiaKey  = process.env.EIA_API_KEY;
+    if (!fredKey || !eiaKey) {
+      return res.status(500).json({ error: 'FRED_API_KEY and EIA_API_KEY are both required for backfill' });
+    }
+    try {
+      const [cpi, food, gas, brent, gdeltGate] = await Promise.all([
+        fetchFredHistory(fredKey, 'CPIAUCSL',    FRED_SERIES_START),
+        fetchFredHistory(fredKey, 'PFOODINDEXM', FRED_SERIES_START),
+        fetchFredHistory(fredKey, 'DHHNGSP',     FRED_SERIES_START),
+        fetchEiaBrentHistory(eiaKey, EIA_BRENT_START),
+        runGdeltGate(),
+      ]);
+      const series = { CPIAUCSL: cpi, PFOODINDEXM: food, DHHNGSP: gas, RBRTE: brent };
+      const stats = {};
+      for (const [id, rows] of Object.entries(series)) {
+        if (!rows || rows.length < 10) {
+          return res.status(502).json({ error: `insufficient history for ${id} (${rows ? rows.length : 0} points)` });
+        }
+        const values = rows.map(r => r.value);
+        const m = mean(values);
+        stats[id] = { mean: m, sd: stdev(values, m), n: values.length,
+          from: rows[0].date, to: rows[rows.length - 1].date };
+      }
+      const baseline = {
+        computedAt: new Date().toISOString(),
+        seriesStart: FRED_SERIES_START,
+        stats,
+        gdelt: gdeltGate,
+      };
+      await put(DGSI_PATH, JSON.stringify(baseline), {
+        access: 'public', contentType: 'application/json',
+        addRandomSuffix: false, allowOverwrite: true,
+      });
+      return res.status(200).json({ ok: true, baseline });
+    } catch (err) {
+      return res.status(502).json({ error: 'backfill failed', detail: err.message });
+    }
+  }
+
+  /* ── type=index ── Public GET. Cheap: reads the cached baseline from Blob,
+     fetches TODAY's four values fresh, z-scores and weights. Never
+     recomputes the backfill itself — that only happens in index-backfill. */
+  if (type === 'index') {
+    const baseline = await readJsonBlobDGSI(DGSI_PATH);
+    if (!baseline) {
+      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+      return res.status(200).json({ available: false, reason: 'baseline not yet computed — run index-backfill' });
+    }
+    const fredKey = process.env.FRED_API_KEY;
+    const eiaKey  = process.env.EIA_API_KEY;
+    if (!fredKey || !eiaKey) {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json({ available: false, reason: 'FRED_API_KEY or EIA_API_KEY not set' });
+    }
+    try {
+      const [cpiRes, foodRes, gasRes, brentRes] = await Promise.all([
+        fetchFRED(fredKey, 'CPIAUCSL'),
+        fetchFRED(fredKey, 'PFOODINDEXM'),
+        fetchFRED(fredKey, 'DHHNGSP'),
+        fetchEiaBrentLatest(eiaKey),
+      ]);
+      const latest = id => {
+        const obs = ((id === 'CPIAUCSL' ? cpiRes : id === 'PFOODINDEXM' ? foodRes : gasRes) || {}).observations;
+        const v = obs && obs.filter(o => o.value !== '.').slice(-1)[0];
+        return v ? { date: v.date, value: parseFloat(v.value) } : null;
+      };
+      const today = {
+        CPIAUCSL:    latest('CPIAUCSL'),
+        PFOODINDEXM: latest('PFOODINDEXM'),
+        DHHNGSP:     latest('DHHNGSP'),
+        RBRTE:       brentRes,
+      };
+      // FAIL CLOSED: any missing input means no reading today. No silent
+      // reweighting around the gap, no fabricated fill-in value.
+      const missing = Object.entries(today).filter(([, v]) => !v).map(([k]) => k);
+      if (missing.length) {
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).json({ available: false, reason: `missing today's value for: ${missing.join(', ')}` });
+      }
+      const zscores = {};
+      for (const id of Object.keys(today)) {
+        const s = baseline.stats[id];
+        zscores[id] = s ? clipZ((today[id].value - s.mean) / (s.sd || 1e-9)) : null;
+      }
+      const gdeltOn = !!(baseline.gdelt && baseline.gdelt.enabled);
+      // Weights: equal-weight the four macro/energy inputs. If GDELT is
+      // enabled, it takes HALF a normal slot (deliberately down-weighted —
+      // it is the noisiest input on the board, per REVAMP PLAN v6.0 §5
+      // Phase 2). Computed, not hand-tuned to round numbers, so
+      // methodology.html always matches what actually ran.
+      const macroIds = ['RBRTE', 'CPIAUCSL', 'PFOODINDEXM', 'DHHNGSP'];
+      const shares = gdeltOn ? macroIds.length + 0.5 : macroIds.length;
+      const weights = {};
+      macroIds.forEach(id => { weights[id] = 1 / shares; });
+      let gdeltZ = null;
+      if (gdeltOn) {
+        // Conflict-attention component: today's timelinevol reading is a
+        // live-window fetch, not part of the four-input Promise.all above,
+        // since it is conditional and shares no code path with the FRED/EIA
+        // fetches. Kept out of `missing` fail-closed logic on purpose: if
+        // GDELT alone is unreachable today, the index still prints on its
+        // macro components rather than going dark for a component that is
+        // explicitly optional.
+        try {
+          const nowISO = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+          const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().replace(/[-:T]/g, '').slice(0, 14);
+          const pts = await gdelt.fetchTimelineVol(GDELT_QUERY, weekAgo, nowISO);
+          if (pts && pts.length) {
+            const todayVal = pts[pts.length - 1].value;
+            const s = baseline.gdelt.stats; // computed at backfill time if present
+            if (s) gdeltZ = clipZ((todayVal - s.mean) / (s.sd || 1e-9));
+          }
+        } catch (e) { /* GDELT optional — silently absent today, weights.gdelt still published */ }
+        weights.GDELT = 0.5 / shares;
+      }
+
+      const components = macroIds.map(id => ({
+        id, weight: weights[id], z: zscores[id], contribution: weights[id] * zscores[id],
+      }));
+      let dgsi = components.reduce((a, c) => a + c.contribution, 0);
+      if (gdeltOn && gdeltZ !== null) {
+        const c = { id: 'GDELT', weight: weights.GDELT, z: gdeltZ, contribution: weights.GDELT * gdeltZ };
+        components.push(c);
+        dgsi += c.contribution;
+      }
+
+      res.setHeader('Cache-Control', 's-maxage=21600, stale-while-revalidate=3600');
+      return res.status(200).json({
+        available: true,
+        value: parseFloat(dgsi.toFixed(2)),
+        unit: 'sd',
+        asOf: today.RBRTE.date,
+        gdeltEnabled: gdeltOn,
+        components,
+        baselineComputedAt: baseline.computedAt,
+      });
+    } catch (err) {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json({ available: false, reason: err.message });
+    }
+  }
+
   const avKey   = process.env.ALPHA_VANTAGE_KEY;
   const fredKey = process.env.FRED_API_KEY;
 
@@ -38,6 +354,7 @@ module.exports = async function handler(req, res) {
   const fetchWorldBank = type === 'all' || type === 'worldbank';
 
   const tasks = [];
+
 
   /* ══ 1. ALPHA VANTAGE — Equity quotes ══
      Symbols: XOM, LMT, RTX, DAL, GLD, SPY, GDX, CCJ

@@ -104,6 +104,7 @@
     <div><dt>Structures</dt><dd>2 live</dd></div>
     <div><dt>Hormuz</dt><dd class="g">Empirical</dd></div>
     <div><dt>Taiwan</dt><dd class="a">Unpriced</dd></div>
+    <div><dt>DGSI</dt><dd class="a">Macro, pending GDELT gate</dd></div>
     <div><dt>Reviewed</dt><dd>2026-07-15</dd></div>
   </dl>
 
@@ -163,8 +164,41 @@
     <p><strong>The impact model:</strong> scenario magnitudes are anchored to Bloomberg Economics (February 2026): a year-long blockade at −5.0% of world GDP; war at −9.6%, some $10.6 trillion in the first year; lagging-edge chip output −35% and −62% respectively. Sector sensitivities are then set analytically from revenue exposure and supply-share reasoning so the model reproduces outcomes consistent with those published figures. They are estimates of a never-observed event — a map, not a forecast — and the platform labels them accordingly everywhere they appear.</p>
   </section>
 
+  <section id="dgsi">
+    <div class="eyebrow">05 · The DELAX Global Strain Index (DGSI)</div>
+    <h2>One number that moves in war and in peace</h2>
+    <p>Risk structures answer "what does <em>this</em> conflict do." They are necessarily quiet in a calm week. The <strong>DELAX Global Strain Index</strong> answers a different question &mdash; how much pressure is the world's energy and household-cost system under, right now, relative to its own history &mdash; and it moves every day whether or not any single structure is active. It is modelled on the same z-score composite approach as the Chicago Fed's National Financial Conditions Index.</p>
+    <p><strong>Published in standard-deviation units, never as a 0&ndash;100 score.</strong> Zero is the historical norm for each input; positive means more strain than that norm, negative means less. Each input is converted to a z-score against its own history (<code>(value &minus; mean) / SD</code>, capped at &plusmn;3 so no single input can dominate the composite), then combined into one weighted figure.</p>
+    <table class="tbl">
+      <thead><tr><th>Input</th><th>Source</th><th class="num">Cadence</th><th class="num">Weight</th></tr></thead>
+      <tbody>
+        <tr><td>Brent crude</td><td>EIA, series RBRTE</td><td class="num">Daily</td><td class="num">0.25 (0.222 if GDELT enabled)</td></tr>
+        <tr><td>US CPI</td><td>FRED, CPIAUCSL</td><td class="num">Monthly</td><td class="num">0.25 (0.222)</td></tr>
+        <tr><td>Global food prices</td><td>FRED, PFOODINDEXM</td><td class="num">Monthly</td><td class="num">0.25 (0.222)</td></tr>
+        <tr><td>Henry Hub natural gas</td><td>FRED, DHHNGSP</td><td class="num">Daily</td><td class="num">0.25 (0.222)</td></tr>
+        <tr><td>Conflict news attention <span class="muted">(conditional)</span></td><td>GDELT DOC 2.0, TimelineVol</td><td class="num">Daily</td><td class="num">0.111 if enabled, else 0</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Brent, not WTI:</strong> <code>confirmedBrent()</code> is the only sanctioned oil price on this platform, and the Hormuz normalizer is Brent-anchored at $70. The index inherits that rule rather than setting its own.</p>
+    <p><strong>Honest characterization:</strong> with its four always-on inputs, this is an energy-and-household-cost strain index &mdash; not a direct measure of geopolitical conflict. Two of its four core inputs step only once a month, so on most days the reading moves because Brent or Henry Hub moved, not because CPI or global food prices did. The conflict-attention component below is what earns the "geopolitical" in the name, and it ships only if it clears its own evidence bar.</p>
+    <div class="key">
+      <div class="eyebrow">The GDELT gate &mdash; conditional, not deferred</div>
+      <p>Raw event counts from any global news monitor trend upward simply because monitored coverage has grown since 2017 &mdash; a naive z-score of that trend would report the world "getting more violent" as an artifact of better internet indexing, not more conflict. GDELT's <code>TimelineVol</code> mode avoids this by construction: it reports volume as a <strong>percentage of all articles GDELT monitored</strong> in each period, not a raw count.</p>
+      <p>The component still has to earn its place. Two automated tests run against real data during each backfill:</p>
+      <table class="tbl">
+        <thead><tr><th>Test</th><th>Checks</th><th>Bar</th></tr></thead>
+        <tbody>
+          <tr><td><strong>A &middot; Positive control</strong></td><td>Coverage during the 28 Feb&ndash;8 Apr 2026 Hormuz war vs. the pre-war baseline</td><td class="num">&ge;1.5&times; the baseline</td></tr>
+          <tr><td><strong>C &middot; Drift check</strong></td><td>2017&ndash;18 baseline vs. 2024&ndash;25 baseline</td><td class="num">&le;15% apart</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">A third test (B &middot; Ukraine attention decay, Feb&ndash;Dec 2022) is recorded for reference but does not gate &mdash; it sets whether the component is read as a level or a rate of change, not whether it ships. Both A and C must pass for the conflict component to join the weighting; failing either keeps the index on its four macro inputs and the fact is stated here, not hidden.</p>
+    </div>
+    <p><strong>Monetization:</strong> the headline DGSI figure is free, permanently &mdash; the same posture as the NFCI, the Geopolitical Risk Index, and the Fear &amp; Greed Index, all of which build credibility by being citable without a paywall. Pro access adds the full component breakdown, historical download, and threshold alerts.</p>
+  </section>
+
   <section>
-    <div class="eyebrow">05 · Using the platform</div>
+    <div class="eyebrow">06 · Using the platform</div>
     <h2>Four tools that answer real questions</h2>
 
     <div class="howto">
@@ -186,7 +220,7 @@
   </section>
 
   <section>
-    <div class="eyebrow">06 · Limits</div>
+    <div class="eyebrow">07 · Limits</div>
     <h2>What this model does not claim</h2>
     <div class="limit"><h3>One war is one sample.</h3>
       <p>The 2026 Hormuz war ran six weeks to ceasefire. A longer closure could transmit through corporate earnings in ways a six-week shock never did. Empirical sensitivities describe what has happened, not every tail that hasn't.</p></div>
