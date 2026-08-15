@@ -519,6 +519,47 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   background:rgba(0,212,255,.08)}
 .dx-lang-toggle strong{font-weight:700}
 
+/* ═══ GLOBAL RISK LANDSCAPE — Phase 3 default view ═══ */
+.dx-land{border-bottom:1px solid var(--border-dim);padding:1.35rem 0 1.15rem}
+.dx-land-head{display:flex;align-items:baseline;justify-content:space-between;
+  gap:1rem;flex-wrap:wrap;margin-bottom:.15rem}
+.dx-land-title{font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-sec)}
+.dx-land-sub{font-family:var(--sans);font-size:.72rem;color:var(--text-dim);
+  margin:0 0 .9rem;max-width:64ch}
+.dx-land-group{margin-bottom:.9rem}
+.dx-land-glabel{font-family:var(--mono);font-size:.55rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-dim);margin-bottom:.4rem;
+  display:flex;align-items:center;gap:.5rem}
+.dx-land-glabel::after{content:'';flex:1;height:1px;background:var(--border-dim)}
+.dx-land-empty{font-family:var(--sans);font-size:.72rem;color:var(--text-dim);
+  font-style:italic;padding:.15rem 0 .35rem}
+.dx-land-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:.65rem}
+.dx-land-card{border:1px solid var(--border-dim);border-left:3px solid var(--border);
+  border-radius:3px;background:var(--bg-card);padding:.75rem .85rem;cursor:pointer;
+  transition:border-color .15s,background .15s;text-align:left;width:100%;font:inherit}
+.dx-land-card:hover{border-color:var(--cyan);background:rgba(0,212,255,.04)}
+.dx-land-card.is-active{border-left-color:var(--cyan)}
+.dx-land-card.tier-empirical{border-left-color:var(--green)}
+.dx-land-card.tier-unpriced{border-left-color:var(--amber)}
+.dx-land-name{font-family:var(--display);font-size:.94rem;font-weight:600;
+  color:var(--text-pri);margin-bottom:.15rem}
+.dx-land-flow{font-family:var(--sans);font-size:.7rem;line-height:1.5;
+  color:var(--text-dim);margin-bottom:.5rem}
+.dx-land-row{display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap;
+  font-family:var(--mono);font-size:.58rem;letter-spacing:.04em;color:var(--text-dim)}
+.dx-land-likely{color:var(--text-sec)}
+.dx-land-likely strong{color:var(--text-pri);font-weight:600}
+.dx-land-tier{padding:1px 6px;border-radius:2px;border:1px solid currentColor;
+  font-size:.52rem;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.dx-land-tier.empirical{color:var(--green)}
+.dx-land-tier.unpriced{color:var(--amber)}
+.dx-land-tier.draft{color:var(--text-dim)}
+@media(max-width:640px){
+  .dx-land-grid{grid-template-columns:1fr}
+  .dx-land{padding:1.1rem 0 .9rem}
+}
+
 /* ═══ INSIGHT BLOCK — What changed / Why it matters / What to watch ═══ */
 .dx-insight{border:1px solid var(--border-dim);border-left:3px solid var(--cyan);
   border-radius:3px;background:var(--bg-card);padding:.9rem 1.05rem;margin-bottom:1.1rem}
@@ -797,6 +838,22 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   <span>Geopolitical events priced into market outcomes. Uncertainty made visible.</span>
   <span class="dx-hero-bar-more">What is this? &#9662;</span>
 </button>
+
+<!-- ═══════════════ GLOBAL RISK LANDSCAPE ═══════════════
+     Phase 3. The platform no longer opens on a single conflict. Rendered
+     entirely from fields that already exist in risk-structures.js — nothing
+     here is authored twice, and adding a third structure requires no change
+     to this view. -->
+<section class="dx-land" id="dxLandscape" aria-label="Global risk landscape">
+  <div class="dx-hero-inner">
+    <div class="dx-land-head">
+      <div class="dx-land-title">Global Risk Landscape</div>
+    </div>
+    <p class="dx-land-sub">Every situation currently modelled, with how confident we are in
+      each and its most likely outcome. Select one to see it in full below.</p>
+    <div id="dxLandGroups"></div>
+  </div>
+</section>
 
 <!-- NAV TABS — sticky right above Global News banner -->
 <!-- AMBIENT NEWS STRIP — 28px, always visible, rotates top headline — Fix 2.3 -->
@@ -5339,11 +5396,11 @@ function dxHeroExpand() {
   if (bar)  bar.hidden  = true;
   try { localStorage.removeItem(DX_HERO_KEY); } catch (e) {}
 }
-/* Phase 3 replaces this with a route to the Global Risk Landscape view.
-   Until that exists, the landscape IS the active structure's indicator
-   surface, so the CTA scrolls there rather than linking to a dead page. */
+/* Phase 3: the landscape now exists, so the CTA points at it rather than at
+   the active structure's indicator block. Falls back to the insight block if
+   the landscape is somehow absent. */
 function dxHeroGoAnalysis() {
-  const t = document.getElementById('dxInsight');
+  const t = document.getElementById('dxLandscape') || document.getElementById('dxInsight');
   if (t && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -5440,6 +5497,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHeroProof();
   renderInsight();
   renderDGSI();
+  renderLandscape();
 });
 
 /* ── DGSI — DELAX Global Strain Index (Phase 2) ─────────────────────
@@ -5497,8 +5555,81 @@ async function renderDGSI() {
   }
 }
 
+/* ── GLOBAL RISK LANDSCAPE (Phase 3) ──────────────────────────────
+   A view over the registry. Reads meta.status, meta.calibration, meta.flow
+   and scenarios[].probability — all of which already existed. It invents no
+   figure and duplicates no prose, so a third structure appears here
+   automatically with zero edits to this function. */
+const DX_LAND_GROUPS = [
+  { key: 'active',     label: 'Active',
+    empty: 'No situations are currently active.' },
+  { key: 'dormant',    label: 'Watch',
+    empty: 'Nothing on watch. A situation moves here when its pressure subsides but its triggers remain live.' },
+  { key: 'historical', label: 'Historical',
+    empty: 'No situations retired yet. Resolved situations stay here so their record can still be examined.' },
+];
+
+/* Plain-English tier wording — matches methodology.html, which leads with
+   these words and keeps the technical term as a secondary reference. */
+const DX_TIER_WORD = {
+  empirical: { word: 'Measured',    tip: 'Fitted to a real event we could measure. Margin of error is published.' },
+  unpriced:  { word: 'Estimated',   tip: 'This has never happened, so there is nothing to measure. Reasoned estimate, anchored to published research.' },
+  draft:     { word: 'Rough draft', tip: 'A first pass, not yet checked against anything.' },
+};
+
+function dxMostLikely(S) {
+  /* MOST PROBABLE, not "baseline". Taiwan's likeliest outcome is
+     Gray-Zone Pressure at 60% — a de-escalation case, and the single most
+     probable outcome on the platform. Leading with the baseline scenario
+     buried it behind the blockade case and made the whole platform read as
+     a war tracker. */
+  const list = (S.scenarios || []).filter(x => typeof x.probability === 'number');
+  if (!list.length) return null;
+  return list.reduce((a, b) => (b.probability > a.probability ? b : a));
+}
+
+function renderLandscape() {
+  const host = document.getElementById('dxLandGroups');
+  if (!host || !window.RISK_STRUCTURES) return;
+  const all = Object.values(RISK_STRUCTURES);
+
+  host.innerHTML = DX_LAND_GROUPS.map(group => {
+    const inGroup = all.filter(S => (S.meta.status || 'active') === group.key);
+    const body = inGroup.length
+      ? '<div class="dx-land-grid">' + inGroup.map(S => {
+          const cal  = S.meta.calibration || 'draft';
+          const tier = DX_TIER_WORD[cal] || DX_TIER_WORD.draft;
+          const ml   = dxMostLikely(S);
+          const on   = S.id === window.ACTIVE_STRUCTURE;
+          return `<button class="dx-land-card tier-${cal}${on ? ' is-active' : ''}"
+              onclick="dxLandSelect('${S.id}')"
+              aria-label="Select ${S.meta.short}">
+            <div class="dx-land-name">${S.meta.short}</div>
+            <div class="dx-land-flow">${S.meta.flow || ''}</div>
+            <div class="dx-land-row">
+              <span class="dx-land-tier ${cal}" title="${tier.tip}">${tier.word}</span>
+              ${ml ? `<span class="dx-land-likely">Most likely:
+                <strong>${ml.label}</strong> ${Math.round(ml.probability * 100)}%</span>` : ''}
+            </div>
+          </button>`;
+        }).join('') + '</div>'
+      : `<div class="dx-land-empty">${group.empty}</div>`;
+    return `<div class="dx-land-group">
+      <div class="dx-land-glabel">${group.label}${inGroup.length ? ' &middot; ' + inGroup.length : ''}</div>
+      ${body}
+    </div>`;
+  }).join('');
+}
+
+function dxLandSelect(id) {
+  if (typeof setStructure === 'function') setStructure(id);
+  renderLandscape();                       // repaint so the active card updates
+  const t = document.getElementById('dxInsight');
+  if (t && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 /* Keep hero + insight in step with structure, scenario and live-price changes. */
-document.addEventListener('delax:statechange', () => { renderHeroProof(); renderInsight(); });
+document.addEventListener('delax:statechange', () => { renderHeroProof(); renderInsight(); renderLandscape(); });
 (function () {
   let last = null;
   setInterval(() => {
