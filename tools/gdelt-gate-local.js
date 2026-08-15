@@ -38,10 +38,75 @@ const TEST_A_BAR = 1.5;   // war coverage must be >= 1.5x the pre-war baseline
 const TEST_C_BAR = 0.15;  // 2017 vs 2025 baselines must be <= 15% apart
 
 const ATTEMPTS = 5;        // generous: no request budget to respect here
-const PAUSE_MS = 4000;     // between calls — GDELT throttles rapid connections
+const PAUSE_MS = 12000;    // between calls. Raised from 4s: the 15 Aug run
+                           // showed GDELT dropping connections (rather than
+                           // refusing them) under rapid repeat access, which
+                           // surfaces as UND_ERR_CONNECT_TIMEOUT rather than
+                           // an honest 429.
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const mean  = a => a.reduce((x, y) => x + y, 0) / a.length;
+
+/* ── ISOLATE MODE ────────────────────────────────────────────────
+   node tools/gdelt-gate-local.js --isolate
+
+   The 15 Aug local run eliminated every structural explanation at once:
+   Test B succeeded with a 2-clause query over 303 DAYS, while Test A failed
+   with a 4-clause query over 39 days. So it is not window size, not
+   parentheses, not quoted phrases, not Vercel, and not accumulated
+   rate-limiting (B ran LAST and still worked).
+
+   The remaining variable is the query itself. This mode holds the window
+   CONSTANT at Test A's 39-day war window and varies only the query, from a
+   single bare word up to the full four-clause form, so the exact element
+   that breaks it is identifiable rather than guessed at. */
+const ISOLATE_WINDOW = TEST_A_WINDOW;
+const ISOLATE_QUERIES = [
+  ['bare word, known-good pattern',      'iran'],
+  ['bare word, the actual subject',      'hormuz'],
+  ['2 clauses, no quoted phrase',        '(hormuz OR iran)'],
+  ['2 clauses, one quoted phrase',       '(hormuz OR "strait of hormuz")'],
+  ['3 clauses',                          '(hormuz OR iran OR "oil tanker")'],
+  ['full 4-clause query (the failing one)', GDELT_QUERY],
+];
+
+async function runIsolate() {
+  console.log('\nISOLATE — window held constant at Test A\'s 39-day war window.');
+  console.log('Only the query varies. First failure identifies the breaking element.\n');
+  const results = [];
+  for (const [label, q] of ISOLATE_QUERIES) {
+    console.log(`  ${label}`);
+    console.log(`    query: ${q}`);
+    try {
+      const pts = await timelineVol(q, ISOLATE_WINDOW, '    ');
+      results.push({ label, query: q, ok: true, points: pts.length });
+    } catch (e) {
+      results.push({ label, query: q, ok: false, error: e.message });
+    }
+    await sleep(PAUSE_MS * 2); // GDELT throttles hard; be generous between probes
+  }
+  console.log('\n' + '═'.repeat(62));
+  console.log('ISOLATE RESULT');
+  console.log('═'.repeat(62));
+  results.forEach(r => console.log(` ${r.ok ? 'OK  ' : 'FAIL'}  ${r.label}`));
+  const lastOk = [...results].reverse().find(r => r.ok);
+  const firstFail = results.find(r => !r.ok);
+  if (lastOk && firstFail) {
+    console.log(`\nRichest query that WORKS: ${lastOk.query}`);
+    console.log(`First query that FAILS  : ${firstFail.query}`);
+    console.log('\nUse the working form as GDELT_QUERY in BOTH this file and');
+    console.log('api/market-data.js — if they drift, the recorded verdict stops');
+    console.log('describing what the platform actually measures.');
+  } else if (!firstFail) {
+    console.log('\nEverything passed — the earlier failures were transient after all.');
+    console.log('Re-run the full gate: node tools/gdelt-gate-local.js');
+  } else {
+    console.log('\nEverything failed, including a bare single word. That points at');
+    console.log('the connection, not the query — retry later from a different network.');
+  }
+  console.log('\n' + JSON.stringify({ isolate: results, at: new Date().toISOString() }, null, 2));
+}
+
 
 async function timelineVol(query, win, label) {
   const url = 'https://api.gdeltproject.org/api/v2/doc/doc'
@@ -77,7 +142,12 @@ async function timelineVol(query, win, label) {
   }
 }
 
+const ARGV = process.argv.slice(2);
+const ONLY = (ARGV.find(a => a.startsWith('--test=')) || '').split('=')[1];
+
 (async () => {
+  if (ARGV.includes('--isolate')) { await runIsolate(); return; }
+
   console.log('\nDGSI — GDELT gate, running locally');
   console.log('Query:', GDELT_QUERY);
   console.log('This makes 5 calls with pauses; expect a few minutes.\n');
@@ -85,6 +155,7 @@ async function timelineVol(query, win, label) {
   const tests = {};
 
   // ── TEST A — positive control ────────────────────────────────────
+  if (!ONLY || ONLY.toUpperCase() === 'A') {
   console.log('TEST A — does the 2026 Hormuz war show up as a clear excursion?');
   try {
     const war     = await timelineVol(GDELT_QUERY, TEST_A_WINDOW, 'war window  ');
@@ -98,10 +169,12 @@ async function timelineVol(query, win, label) {
     console.log(`  war mean ${warMean.toFixed(4)} · baseline ${ctlMean.toFixed(4)}`);
     console.log(`  RATIO ${ratio.toFixed(2)}x  (bar: >= ${TEST_A_BAR})  → ${tests.A.pass ? 'PASS' : 'FAIL'}\n`);
   } catch (e) { tests.A = { error: e.message }; console.log(`  TEST A UNRESOLVED: ${e.message}\n`); }
+  }
 
   await sleep(PAUSE_MS);
 
   // ── TEST C — baseline drift ──────────────────────────────────────
+  if (!ONLY || ONLY.toUpperCase() === 'C') {
   console.log('TEST C — has the baseline drifted between 2017 and 2025?');
   try {
     const early  = await timelineVol(GDELT_QUERY, TEST_C_EARLY,  '2017 window ');
@@ -115,10 +188,12 @@ async function timelineVol(query, win, label) {
     console.log(`  2017 mean ${eM.toFixed(4)} · 2025 mean ${rM.toFixed(4)}`);
     console.log(`  DRIFT ${(drift * 100).toFixed(1)}%  (bar: <= ${TEST_C_BAR * 100}%)  → ${tests.C.pass ? 'PASS' : 'FAIL'}\n`);
   } catch (e) { tests.C = { error: e.message }; console.log(`  TEST C UNRESOLVED: ${e.message}\n`); }
+  }
 
   await sleep(PAUSE_MS);
 
   // ── TEST B — attention decay (never gating) ──────────────────────
+  if (!ONLY || ONLY.toUpperCase() === 'B') {
   console.log('TEST B — Ukraine attention decay (records level-vs-change; never gates)');
   try {
     const uk = await timelineVol(TEST_B_QUERY, TEST_B_WINDOW, 'ukraine 2022');
@@ -128,6 +203,7 @@ async function timelineVol(query, win, label) {
     console.log(`  peak ${peak.toFixed(4)} → end of window ${last.toFixed(4)}`);
     console.log(`  retained ${(tests.B.decayRatio * 100).toFixed(1)}% of peak after 10 months\n`);
   } catch (e) { tests.B = { error: e.message }; console.log(`  TEST B UNRESOLVED: ${e.message}\n`); }
+  }
 
   const enabled = !!(tests.A && tests.A.pass && tests.C && tests.C.pass);
 
