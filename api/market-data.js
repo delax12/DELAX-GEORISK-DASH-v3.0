@@ -159,6 +159,56 @@ async function fetchEiaBrentLatest(key) {
 async function runGdeltTest(which) {
   const seq = async (q, w) => gdelt.fetchTimelineVol(q, w.start, w.end);
 
+  /* PING — diagnostic ladder, not a gate test. Three failed live runs
+     reported three different errors (abort, HTTP 429, "fetch failed") and
+     none of them said WHICH variable was at fault. This runs four probes
+     from cheapest to most expensive so one invocation isolates the cause
+     instead of another blind fix:
+       1. artlist, 48h  — the mode already running in production for the
+          globe overlay. If THIS fails, GDELT is unreachable from Vercel
+          entirely and nothing about timelinevol is the problem.
+       2. timelinevol, simple one-word query, 7d — is the mode itself usable?
+       3. timelinevol, the real multi-clause query, 7d — is the query syntax
+          (parentheses, quoted phrases) the problem?
+       4. timelinevol, real query, 152d — is it purely window SIZE?
+     Each probe reports pass/fail with its real reason. */
+  if (which === 'PING') {
+    const now  = new Date();
+    const fmt  = d => d.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+    const back = days => fmt(new Date(now.getTime() - days * 86400000));
+    const probes = [];
+
+    const probe = async (label, fn) => {
+      const t0 = Date.now();
+      try {
+        const out = await fn();
+        probes.push({ label, ok: true, ms: Date.now() - t0,
+          points: Array.isArray(out) ? out.length : (out === null ? 'null (shape mismatch)' : 'n/a') });
+      } catch (err) {
+        probes.push({ label, ok: false, ms: Date.now() - t0, error: err.message });
+      }
+    };
+
+    await probe('1. artlist 48h (mode already live in production)', async () => {
+      const r = await fetch('https://api.gdeltproject.org/api/v2/doc/doc'
+        + '?query=' + encodeURIComponent('conflict OR war')
+        + '&mode=artlist&maxrecords=10&timespan=48h&format=json',
+        { headers: { Accept: 'application/json' } });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const t = (await r.text()).trim();
+      if (!t.startsWith('{')) throw new Error(`non-JSON: "${t.slice(0, 60)}"`);
+      return JSON.parse(t).articles || [];
+    });
+    await probe('2. timelinevol, simple query "iran", 7d',
+      () => gdelt.fetchTimelineVol('iran', back(7), fmt(now)));
+    await probe('3. timelinevol, real multi-clause query, 7d',
+      () => gdelt.fetchTimelineVol(GDELT_QUERY, back(7), fmt(now)));
+    await probe('4. timelinevol, real query, 152d (Test A control size)',
+      () => gdelt.fetchTimelineVol(GDELT_QUERY, back(152), fmt(now)));
+
+    return { diagnostic: true, probes, queryUsed: GDELT_QUERY };
+  }
+
   if (which === 'A') {
     const warWindow  = await seq(GDELT_QUERY, TEST_A_WINDOW);
     const warControl = await seq(GDELT_QUERY, TEST_A_CONTROL);
@@ -197,7 +247,7 @@ async function runGdeltTest(which) {
     return { peak, endOfWindow: last, decayRatio: last / (peak || 1e-9), points: ukraine.length };
   }
 
-  throw new Error(`unknown test "${which}" — expected A, B or C`);
+  throw new Error(`unknown test "${which}" — expected A, B, C or PING`);
 }
 
 module.exports = async function handler(req, res) {
@@ -281,8 +331,16 @@ module.exports = async function handler(req, res) {
       return res.status(401).json({ error: 'gdelt-gate requires Authorization: Bearer $CRON_SECRET' });
     }
     const which = String(req.query.test || '').toUpperCase();
-    if (!['A', 'B', 'C'].includes(which)) {
-      return res.status(400).json({ error: 'gdelt-gate requires &test=A, &test=B or &test=C' });
+    if (!['A', 'B', 'C', 'PING'].includes(which)) {
+      return res.status(400).json({ error: 'gdelt-gate requires &test=A, &test=B, &test=C, or &test=PING (diagnostic)' });
+    }
+    /* PING is diagnostic only — it never touches the blob or the verdict. */
+    if (which === 'PING') {
+      try {
+        return res.status(200).json(await runGdeltTest('PING'));
+      } catch (err) {
+        return res.status(200).json({ diagnostic: true, error: err.message });
+      }
     }
     const baseline = await readJsonBlobDGSI(DGSI_PATH);
     if (!baseline) {

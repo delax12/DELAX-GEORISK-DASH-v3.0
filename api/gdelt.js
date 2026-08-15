@@ -213,6 +213,18 @@ async function fetchTimelineVolAttempt(query, startdatetime, enddatetime, timeou
   let r;
   try {
     r = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+  } catch (err) {
+    /* undici sets err.message to the bare string "fetch failed" for EVERY
+       transport-level failure and puts the actual reason on err.cause. The
+       15 Aug runs reported "fetch failed" with no further detail precisely
+       because that cause was being discarded. Surface it — a diagnosis is
+       worth more than a retry. */
+    if (err.name === 'AbortError' || /aborted/i.test(err.message || '')) throw err;
+    const cause = err.cause ? (err.cause.code || err.cause.message || String(err.cause)) : 'no cause reported';
+    const wrapped = new Error(`fetch failed (${cause})`);
+    wrapped.cause = err.cause;
+    wrapped.transport = true;
+    throw wrapped;
   } finally {
     clearTimeout(timeout);
   }
@@ -260,11 +272,13 @@ async function fetchTimelineVol(query, startdatetime, enddatetime) {
       return await fetchTimelineVolAttempt(query, startdatetime, enddatetime, PER_ATTEMPT_TIMEOUT_MS);
     } catch (err) {
       lastErr = err;
-      // Retry a rate-limit OR a timeout/abort — both are transient upstream
-      // conditions. A genuine error (bad query, 4xx) still fails fast, since
-      // retrying cannot fix it and would only burn the budget.
+      // Retry a rate-limit, a timeout/abort, OR a transport failure — all
+      // three are transient upstream conditions. A genuine error (bad query,
+      // 4xx) still fails fast, since retrying cannot fix it and would only
+      // burn the budget. Transport errors carry .transport from the wrapper
+      // above and report their real cause in the message.
       const isTransient = err.status === 429 || err.name === 'AbortError'
-        || /aborted/i.test(err.message || '');
+        || /aborted/i.test(err.message || '') || err.transport === true;
       if (!isTransient || attempt === MAX_ATTEMPTS) throw err;
       // Honour Retry-After if GDELT sent one; otherwise a short fixed pause.
       const backoffMs = !isNaN(err.retryAfter) ? err.retryAfter * 1000 : 1500;
