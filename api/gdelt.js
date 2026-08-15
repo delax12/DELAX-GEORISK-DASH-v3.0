@@ -193,7 +193,14 @@ module.exports = async function handler(req, res) {
    response before trusting index-backfill's GDELT gate results — if the
    shape is wrong this parser returns null defensively rather than crash or
    fabricate a series, which fails the gate closed exactly as intended. */
-async function fetchTimelineVol(query, startdatetime, enddatetime) {
+/* fetchTimelineVol makes ONE attempt; fetchTimelineVolWithRetry wraps it with
+   429-aware backoff. Split deliberately: a real error (bad query syntax, a
+   response-shape mismatch) should fail immediately and not burn retry budget
+   — only a 429 (rate limited) is worth waiting out. This is exactly the
+   failure mode the 15 Aug backfill run hit: firing all five calls in one
+   Promise.allSettled batch (the fix for the PREVIOUS timeout problem) landed
+   them on GDELT's rate limiter simultaneously. */
+async function fetchTimelineVolAttempt(query, startdatetime, enddatetime, timeoutMs) {
   const url = 'https://api.gdeltproject.org/api/v2/doc/doc'
     + '?query=' + encodeURIComponent(query)
     + '&mode=TimelineVol'
@@ -202,19 +209,29 @@ async function fetchTimelineVol(query, startdatetime, enddatetime) {
     + '&format=json';
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   let r;
   try {
     r = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
   } finally {
     clearTimeout(timeout);
   }
-  if (!r.ok) throw new Error(`GDELT HTTP ${r.status}`);
+  if (!r.ok) {
+    const err = new Error(`GDELT HTTP ${r.status}`);
+    err.status = r.status;
+    err.retryAfter = parseFloat(r.headers.get('retry-after')); // seconds, may be NaN
+    throw err;
+  }
 
   const bodyText = (await r.text()).trim();
   if (!bodyText.startsWith('{')) {
     // Same rate-limiter guard as the artlist path: plain-text body, not JSON.
-    throw new Error(`non-JSON upstream body: "${bodyText.slice(0, 80)}"`);
+    // GDELT's rate limiter sometimes returns HTTP 200 with a plain-text body
+    // instead of a proper 429 — treat that the same as a 429 for retry
+    // purposes, since it is the same underlying condition.
+    const err = new Error(`non-JSON upstream body: "${bodyText.slice(0, 80)}"`);
+    err.status = 429;
+    throw err;
   }
   const data = JSON.parse(bodyText);
 
@@ -227,4 +244,30 @@ async function fetchTimelineVol(query, startdatetime, enddatetime) {
     .filter(function (r) { return r.date && !isNaN(r.value); });
 }
 
+async function fetchTimelineVol(query, startdatetime, enddatetime) {
+  const PER_ATTEMPT_TIMEOUT_MS = 12000; // was a single 30s try; now up to 3 shorter tries
+  const MAX_ATTEMPTS = 3;
+  let lastErr;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await fetchTimelineVolAttempt(query, startdatetime, enddatetime, PER_ATTEMPT_TIMEOUT_MS);
+    } catch (err) {
+      lastErr = err;
+      const isRateLimit = err.status === 429;
+      if (!isRateLimit || attempt === MAX_ATTEMPTS) throw err; // real error, or out of retries — fail fast/closed
+      // Honour Retry-After if GDELT sent one; otherwise back off 1.5s, 3.5s.
+      const backoffMs = !isNaN(err.retryAfter) ? err.retryAfter * 1000 : attempt * 2000 - 500;
+      await new Promise(resolve => setTimeout(resolve, backoffMs));
+    }
+  }
+  throw lastErr;
+}
+
 module.exports.fetchTimelineVol = fetchTimelineVol;
+
+/* TIMING BUDGET, worst case, one call: 3 attempts × 12s timeout
+   + ~5s cumulative backoff ≈ 41s. Stagger adds ≤3.6s before the last of the
+   five even starts. Total worst case ≈ 45s, inside the 60s maxDuration set
+   in api/market-data.js with room to spare. If GDELT's rate limiting turns
+   out to need MORE backoff than this, raise maxDuration and this budget
+   together — do not silently widen one without the other. */

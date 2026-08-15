@@ -110,6 +110,18 @@ console.log('\nG10.9 — timeout architecture (from the live backfill run, 15 Au
   ? ok('Test B no longer runs as a second sequential await after the main batch')
   : bad('Test B still sequential — doubles worst-case gate time');
 
+console.log('\nG10.10 — 429 retry + stagger (from the live GDELT 429s, 15 Aug 2026)');
+/retry-after/.test(gd)
+  ? ok('Retry-After header is read from the GDELT response')
+  : bad('Retry-After header not read — retries will use blind backoff only');
+/isRateLimit\s*=\s*err\.status\s*===\s*429/.test(gd)
+  ? ok('retry logic distinguishes 429 (retry) from other errors (fail fast)')
+  : bad('no 429-specific branch — may retry errors that retrying cannot fix, or vice versa');
+/MAX_ATTEMPTS\s*=\s*3/.test(gd) ? ok('retry attempts are bounded (3), not unbounded')
+                                : bad('no bounded attempt count found — risk of runaway retry loop');
+/staggered\(/.test(md) ? ok('the five GDELT calls are staggered, not fired simultaneously')
+                       : bad('calls still fire simultaneously — the exact condition that produced the 429s');
+
 
 console.log('\n' + '-'.repeat(60));
 console.log(fails === 0 ? '\x1b[32mG10 ALL PASS\x1b[0m' : `\x1b[31m${fails} FAIL\x1b[0m`);

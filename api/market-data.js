@@ -149,12 +149,22 @@ async function fetchEiaBrentLatest(key) {
         below rather than left to the account default. */
 async function runGdeltGate() {
   const out = { enabled: false, tests: {}, evaluatedAt: new Date().toISOString() };
+  // STAGGERED, not simultaneous. The 15 Aug backfill run got a clean
+  // "GDELT HTTP 429" on all three tests — the Promise.allSettled fix for the
+  // PREVIOUS problem (timeout) fired all five calls in the same instant,
+  // which tripped GDELT's rate limiter. delay(i) spaces the five starts
+  // ~900ms apart (≤3.6s added) rather than all landing on GDELT at once.
+  // fetchTimelineVol also retries once or twice on a 429 that gets through
+  // anyway — see gdelt.js. Both are needed: staggering lowers the odds of
+  // hitting the limiter, retry recovers if it happens regardless.
+  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const staggered = (fn, i) => delay(i * 900).then(fn);
   const jobs = [
-    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_WINDOW.start, TEST_A_WINDOW.end),
-    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_CONTROL.start, TEST_A_CONTROL.end),
-    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_EARLY.start, TEST_C_EARLY.end),
-    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_RECENT.start, TEST_C_RECENT.end),
-    gdelt.fetchTimelineVol(TEST_B_QUERY, TEST_B_WINDOW.start, TEST_B_WINDOW.end),
+    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_WINDOW.start, TEST_A_WINDOW.end), 0),
+    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_CONTROL.start, TEST_A_CONTROL.end), 1),
+    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_EARLY.start, TEST_C_EARLY.end), 2),
+    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_RECENT.start, TEST_C_RECENT.end), 3),
+    staggered(() => gdelt.fetchTimelineVol(TEST_B_QUERY, TEST_B_WINDOW.start, TEST_B_WINDOW.end), 4),
   ];
   const settled = await Promise.allSettled(jobs);
   const val = i => (settled[i].status === 'fulfilled' ? settled[i].value : null);
