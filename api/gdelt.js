@@ -202,7 +202,7 @@ async function fetchTimelineVol(query, startdatetime, enddatetime) {
     + '&format=json';
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
   let r;
   try {
     r = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
