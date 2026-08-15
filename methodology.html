@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Methodology · DELAX GEO-RISK</title>
-<meta name="description" content="How DELAX GEO-RISK measures geopolitical portfolio exposure: calibration standards, honesty tiers, validation against the 2026 Hormuz war, and how to use the platform.">
-<meta property="og:title" content="Methodology · DELAX GEO-RISK">
-<meta property="og:description" content="Calibration standards, honesty tiers, and validation record. Sector sensitivities fitted to the 2026 Hormuz war; Taiwan modelled as an unpriced risk, anchored to Bloomberg Economics.">
+<title>How This Works · DELAX GEO-RISK</title>
+<meta name="description" content="How DELAX GEO-RISK works, in plain English: what we measure, how confident we are in each number, what we got wrong and fixed, and what the model cannot tell you.">
+<meta property="og:title" content="How This Works · DELAX GEO-RISK">
+<meta property="og:description" content="Plain-English explanation of how DELAX GEO-RISK turns geopolitical events into market outcomes, how much to trust each figure, and where the limits are.">
 <meta property="og:type" content="article">
 <style>
   :root{
@@ -88,158 +88,184 @@
   <nav class="nav">
     <a class="brand" href="/">DELAX <span>GEO-RISK</span></a>
     <div class="navlinks">
-      <a class="navbtn" href="/">← Dashboard</a>
-      <a class="navbtn cy" href="/exposure-desk.html">⚡ Exposure Desk</a>
+      <a class="navbtn" href="/">&larr; Dashboard</a>
+      <a class="navbtn cy" href="/exposure-desk.html">&#9889; Exposure Desk</a>
     </div>
   </nav>
 
   <header>
-    <div class="eyebrow">Methodology &amp; Model Governance</div>
-    <h1>How DELAX GEO-RISK measures <em>geopolitical exposure</em>.</h1>
-    <p class="lede">DELAX GEO-RISK treats geopolitical risk as a measurable, cross-asset layer over equities, currencies, shipping, and commodities. This page sets out the calibration standards behind every number on the platform, the validation record, the limits, and how to put the tools to work.</p>
+    <div class="eyebrow">How this works</div>
+    <h1>What we measure, and <em>how much to trust it</em>.</h1>
+    <p class="lede">When something happens in the world &mdash; a war, a blockade, a shipping lane closing &mdash; it eventually shows up in oil prices, grocery bills, and the value of what you own. This page explains how we work out the size of that effect, how confident we are in each number, and what we still cannot tell you. No background in finance required.</p>
   </header>
 
   <dl class="stamp">
-    <div><dt>Model</dt><dd>v4.2</dd></div>
-    <div><dt>Structures</dt><dd>2 live</dd></div>
-    <div><dt>Hormuz</dt><dd class="g">Empirical</dd></div>
-    <div><dt>Taiwan</dt><dd class="a">Unpriced</dd></div>
-    <div><dt>DGSI</dt><dd class="a">Macro, pending GDELT gate</dd></div>
-    <div><dt>Reviewed</dt><dd>2026-07-15</dd></div>
+    <div><dt>Situations tracked</dt><dd>2</dd></div>
+    <div><dt>Hormuz / Iran</dt><dd class="g">Measured</dd></div>
+    <div><dt>Taiwan Strait</dt><dd class="a">Estimated</dd></div>
+    <div><dt>Strain Index</dt><dd class="a">Cost &amp; energy only</dd></div>
+    <div><dt>Last checked</dt><dd>15 Aug 2026</dd></div>
   </dl>
 
   <section>
-    <div class="eyebrow">01 · The framework</div>
-    <h2>Risk structures, not headlines</h2>
-    <p>The platform models each geopolitical situation as a <strong>risk structure</strong>: a defined set of transmission channels (oil, shipping, chip supply, currencies, defense spending, growth), a set of probability-weighted scenarios, and a matrix of sector sensitivities that translate channel stress into expected portfolio impact. The Exposure Score you see anywhere on the platform is your holdings, weighted, run through that matrix — computed in your browser, against the same numbers documented here.</p>
-    <p>Two structures are live: the <strong>Strait of Hormuz / Iran</strong> standoff and the <strong>Taiwan Strait</strong> semiconductor chokepoint. They are deliberately different instruments: Hormuz transmits chiefly through energy and shipping; Taiwan through chip supply and the technology complex, with no oil channel at all. Geopolitical risk is not one trade, and the platform does not model it as one.</p>
+    <div class="eyebrow">01 &middot; The basic idea</div>
+    <h2>A crisis reaches your money by specific routes</h2>
+    <p>A conflict on the other side of the world does not affect your savings by magic. It travels along particular routes: it pushes the oil price up, it makes shipping slower and dearer, it raises the cost of food, it moves currencies, it changes what governments spend on defence.</p>
+    <p>We map each situation as a set of those routes. For every route, we ask one question: <strong>when this route is under pressure, how much does each kind of investment typically move?</strong> Oil companies tend to gain when oil spikes. Airlines tend to suffer, because fuel is one of their biggest costs. Shipping firms gain when freight rates jump. We measure those typical movements from real market history, then add them up across everything you own.</p>
+    <p>Two situations are live on the platform. The <strong>Strait of Hormuz</strong>, the narrow sea passage most of the world's oil tankers pass through, works mainly through oil and shipping. The <strong>Taiwan Strait</strong> works mainly through computer chips, and has no oil route at all. They are deliberately different, because geopolitical risk is not one single thing that moves everything the same way.</p>
+    <div class="key">
+      <div class="eyebrow">Your holdings never leave your browser</div>
+      <p>If you enter what you own, the sums are done on your own device. Nothing is uploaded, stored, or sent to us. You can disconnect from the internet after the page loads and it will still work.</p>
+    </div>
   </section>
 
   <section>
-    <div class="eyebrow">02 · The calibration standard</div>
-    <h2>Every number carries its evidence tier</h2>
-    <p>Not all model figures deserve equal confidence, and the platform says so on its face. Every structure carries a visible calibration tier:</p>
+    <div class="eyebrow">02 &middot; How much to trust each number</div>
+    <h2>Every figure says how it was arrived at</h2>
+    <p>Some of our numbers come from measuring what actually happened in a real crisis. Others are careful estimates of something that has never happened. Those deserve very different levels of confidence, and we label which is which rather than presenting them as equally solid.</p>
     <table class="tbl">
-      <thead><tr><th>Tier</th><th>Meaning</th><th>Applied to</th></tr></thead>
+      <thead><tr><th>Label</th><th>What it means</th><th>Used for</th></tr></thead>
       <tbody>
-        <tr><td><span class="tierbadge" style="color:var(--up);border-color:var(--up)">EMPIRICAL</span></td>
-          <td>Sensitivities fitted to the structure's own observed event</td><td>Hormuz / Iran</td></tr>
-        <tr><td><span class="tierbadge" style="color:var(--accent);border-color:var(--accent)">UNPRICED</span></td>
-          <td>Analytical estimates anchored to published institutional research; the event has never occurred, so no market response exists to fit</td><td>Taiwan Strait</td></tr>
-        <tr><td><span class="tierbadge" style="color:var(--dim);border-color:var(--dim)">DRAFT</span></td>
-          <td>Unvalidated first pass — never shipped to users</td><td>—</td></tr>
+        <tr><td><span class="tierbadge" style="color:var(--up);border-color:var(--up)">MEASURED</span></td>
+          <td>The event actually happened, and we measured how markets really responded</td><td>Hormuz / Iran</td></tr>
+        <tr><td><span class="tierbadge" style="color:var(--accent);border-color:var(--accent)">ESTIMATED</span></td>
+          <td>This has never happened, so there is nothing to measure. The figures are reasoned estimates, anchored to published research</td><td>Taiwan Strait</td></tr>
+        <tr><td><span class="tierbadge" style="color:var(--dim);border-color:var(--dim)">ROUGH DRAFT</span></td>
+          <td>A first pass that has not been checked against anything. Never shown to you</td><td>&mdash;</td></tr>
       </tbody>
     </table>
-    <p>Three rules govern the tiers. A structure never inherits another structure's tier. A tier can only be upgraded by evidence — an event occurring and being measured. And each structure carries a standing maintenance contract: scheduled reviews (visible as the "Reviewed / next" stamp beside every tier badge), defined re-test triggers, and an append-only revision log.</p>
+    <p>Three rules keep these labels honest. A new situation never inherits another one's label &mdash; it has to earn its own. A label can only be upgraded by evidence, meaning something actually happened and we measured it. And every situation has a scheduled re-check date and a written list of things that would force us to redo the numbers, both shown on the page.</p>
+    <p class="muted">If you prefer the technical terms: these labels are <em>empirical</em>, <em>unpriced</em> and <em>draft</em> in the underlying model, and appear that way in the published source code.</p>
   </section>
 
   <section>
-    <div class="eyebrow">03 · Hormuz — the empirical record</div>
-    <h2>Fitted to the 2026 war, and validated against it</h2>
-    <p>The Strait of Hormuz was closed by war between 28 February and the ceasefire of 8 April 2026. Brent ran from a $70.9 pre-war average to a peak of <strong>$138.2 on 7 April</strong> (FRED daily spot) and has since returned to roughly $69. The war reached ceasefire; the crisis has not — transits remain below pre-war levels, war-risk premiums persist, and the model's central case treats the present armed truce, not a hypothetical conflict, as the baseline.</p>
-    <p>Because the event occurred inside the price history, the model's sector sensitivities are <strong>fitted to it directly</strong>: 41 instruments, weekly closes 2020–2026, with every sector return measured net of the S&amp;P 500 over identical windows. Market-netting is the load-bearing methodological choice — it strips the concurrent Federal Reserve cycle (2022) and the AI equity cycle (2026) out of the conflict signal. The 2022 Ukraine invasion serves as a secondary calibration event at reduced weight; the 2023–24 Red Sea crisis serves as a falsification test, confirming that oil-sensitive sensitivities do not fire when oil stress is absent.</p>
+    <div class="eyebrow">03 &middot; Hormuz &mdash; what we measured</div>
+    <h2>A real war, and what it actually did to markets</h2>
+    <p>The Strait of Hormuz was closed by war from 28 February to the ceasefire on 8 April 2026. Oil went from about <strong>$70.90</strong> a barrel before the war to a peak of <strong>$138.20</strong> on 7 April, then came back down. The fighting stopped; the crisis did not. Fewer ships pass through than before, insurance for those that do is still expensive, and our main working assumption treats today's uneasy truce &mdash; not a hypothetical war &mdash; as the normal state.</p>
+    <p>Because this really happened, we did not have to guess. We took 41 investments, looked at their weekly prices from 2020 to 2026, and measured how each one moved during the crisis.</p>
+    <div class="key">
+      <div class="eyebrow">The one technique worth understanding</div>
+      <p>There is a trap here, and avoiding it is the most important decision in the whole model. Markets are always moving for reasons that have nothing to do with the crisis &mdash; interest rate changes, an artificial-intelligence boom, ordinary business cycles. If you simply measure how much oil companies rose during the war, you capture all of that too, and you overstate the war's effect.</p>
+      <p>So for every measurement, <strong>we subtract what the whole stock market did over the exact same days</strong>. If energy shares rose 25% while the market as a whole rose 6%, we record the war's effect as 19%, not 25%. That single subtraction is what separates the crisis signal from everything else happening at the time.</p>
+    </div>
     <table class="tbl">
-      <thead><tr><th>Sector</th><th>Channel</th><th class="num">Model</th><th class="num">Observed 2026</th></tr></thead>
+      <thead><tr><th>Type of investment</th><th>Affected through</th><th class="num">We predicted</th><th class="num">What really happened</th></tr></thead>
       <tbody>
-        <tr><td>Gulf producers</td><td>oil</td><td class="num">+4.9%</td><td class="num up">+3.3%</td></tr>
-        <tr><td>Energy producers</td><td>oil</td><td class="num">+19.6%</td><td class="num up">+19.4%</td></tr>
-        <tr><td>Tankers</td><td>shipping</td><td class="num">+24.8%</td><td class="num up">+25.1%</td></tr>
-        <tr><td>Utilities</td><td>defensive bid</td><td class="num">+9.3%</td><td class="num up">+10.1%</td></tr>
-        <tr><td>Aviation</td><td>fuel / demand</td><td class="num">−8.7%</td><td class="num down">−9.9%</td></tr>
-        <tr><td>Luxury</td><td>demand</td><td class="num">−17.9%</td><td class="num down">−19.7%</td></tr>
+        <tr><td>Gulf oil producers</td><td>oil price</td><td class="num">+4.9%</td><td class="num up">+3.3%</td></tr>
+        <tr><td>Energy companies</td><td>oil price</td><td class="num">+19.6%</td><td class="num up">+19.4%</td></tr>
+        <tr><td>Oil tanker operators</td><td>shipping costs</td><td class="num">+24.8%</td><td class="num up">+25.1%</td></tr>
+        <tr><td>Utilities</td><td>seen as a safe haven</td><td class="num">+9.3%</td><td class="num up">+10.1%</td></tr>
+        <tr><td>Airlines</td><td>fuel costs, fewer flights</td><td class="num">&minus;8.7%</td><td class="num down">&minus;9.9%</td></tr>
+        <tr><td>Luxury goods</td><td>people spend less</td><td class="num">&minus;17.9%</td><td class="num down">&minus;19.7%</td></tr>
       </tbody>
     </table>
     <div class="key">
-      <div class="eyebrow">Validation record</div>
-      <p>Tested out of sample against the full 2026 event, the current model's mean absolute error is <strong>2.5 percentage points per sector</strong>. The preceding version — calibrated on the Ukraine analogue before the Hormuz event could be used — erred by 19.0 points and systematically overstated conflict sensitivity. It was replaced, and the revision is logged.</p>
+      <div class="eyebrow">How accurate was it?</div>
+      <p>We tested the model against the full 2026 war &mdash; the real event, which it had not been shown while being built. On average it was off by about <strong>2.5 percentage points</strong> per category. That is the honest margin of error, and it travels with every figure on the platform.</p>
+      <p>The previous version of the model was off by <strong>19 points</strong>. It had been built by assuming the Ukraine war was a good stand-in for a Middle East oil crisis, and it dramatically overstated how badly everything would be hit. We replaced it, and the change is on the record.</p>
     </div>
-    <p>That replacement reflects the platform's governing discipline: <strong>when observation contradicts the model, the model changes.</strong> Airline sensitivity was cut 3.6× when measured fuel-cost impact proved milder than assumed; commodity funds mis-grouped with gold were re-classified when their wartime behaviour diverged (+24.5% versus gold's +0.9%); emerging-market sensitivities were re-signed when both 2022 and 2026 showed exporter gains outweighing importer pain. Corrections of this kind are not exceptions to the methodology — they are the methodology.</p>
+    <p>That replacement is the rule, not the exception: <strong>when reality disagrees with the model, the model changes.</strong> We cut our airline estimate by more than three times when the real fuel-cost damage turned out milder than assumed. We had grouped commodity funds with gold, expecting them to behave similarly; in the war they rose 24.5% while gold managed 0.9%, so we separated them. We had assumed developing-country investments would suffer; in both wars we measured, the ones that export raw materials gained more than the ones that import them lost, so we changed the sign. Corrections like these are not embarrassments to be buried. They are how the thing gets more accurate.</p>
   </section>
 
   <section>
-    <div class="eyebrow">04 · Taiwan — the unpriced risk</div>
-    <h2>Measured absence of pricing, anchored analysis of impact</h2>
-    <p>No Taiwan blockade has ever occurred. Chip supply has never been interrupted by geopolitics. There is therefore no market response to fit — and rather than disguise that, the platform makes it the structure's central, testable finding.</p>
-    <p><strong>The pricing evidence:</strong> five candidate analogues were tested with the same market-excess method used for Hormuz. The December 2025 PLA escalation — the sharpest in decades — saw the foundry complex rise <strong>20.6% against the market</strong>; the AI demand cycle did not merely mute the risk signal, it inverted it. The August 2022 Pelosi episode produced the only coherent fear response on record (foundry −8.3%), and it was small. Physical fab damage (the April 2024 Hualien earthquake) and genuine chip scarcity (2021) left no usable price signature. Each test, with windows and verdicts, is published in the structure's Pricing Evidence panel, and every future escalation is re-tested by a frozen, validated pipeline against a fixed threshold.</p>
-    <p><strong>The impact model:</strong> scenario magnitudes are anchored to Bloomberg Economics (February 2026): a year-long blockade at −5.0% of world GDP; war at −9.6%, some $10.6 trillion in the first year; lagging-edge chip output −35% and −62% respectively. Sector sensitivities are then set analytically from revenue exposure and supply-share reasoning so the model reproduces outcomes consistent with those published figures. They are estimates of a never-observed event — a map, not a forecast — and the platform labels them accordingly everywhere they appear.</p>
+    <div class="eyebrow">04 &middot; Taiwan &mdash; what we cannot measure</div>
+    <h2>Honest about a risk nobody has priced</h2>
+    <p>Taiwan has never been blockaded. The world's supply of advanced computer chips has never been cut off by conflict. So unlike Hormuz, there is no real event to measure &mdash; and rather than hide that, we made it the headline finding for this situation.</p>
+    <p><strong>What we found:</strong> we tested five past scare episodes to see whether markets had ever priced this risk in. They had not. During the December 2025 Chinese military escalation &mdash; the most serious in decades &mdash; chipmaker shares <strong>rose 20.6%</strong> relative to the market. The artificial-intelligence boom did not merely drown out the fear, it reversed it. The August 2022 Pelosi visit produced the only genuine fear response we could find, and it was small: chipmakers fell 8.3%. A major earthquake that physically damaged chip factories in 2024, and the real chip shortage of 2021, left no usable trace at all. Every test, with its dates and verdict, is published on the platform.</p>
+    <p><strong>What we estimated instead:</strong> our figures are anchored to published research from Bloomberg Economics, dated February 2026. It puts a year-long blockade at a 5.0% hit to the world economy. A war it puts at 9.6% &mdash; roughly $10.6 trillion in the first year. We then worked out how each kind of investment would likely fare, based on how much of its business depends on Taiwan. These are reasoned estimates of something that has never occurred. They are useful for comparing your exposure and for thinking through what would matter. They are not a forecast, and we label them that way everywhere they appear.</p>
   </section>
 
   <section id="dgsi">
-    <div class="eyebrow">05 · The DELAX Global Strain Index (DGSI)</div>
-    <h2>One number that moves in war and in peace</h2>
-    <p>Risk structures answer "what does <em>this</em> conflict do." They are necessarily quiet in a calm week. The <strong>DELAX Global Strain Index</strong> answers a different question &mdash; how much pressure is the world's energy and household-cost system under, right now, relative to its own history &mdash; and it moves every day whether or not any single structure is active. It is modelled on the same z-score composite approach as the Chicago Fed's National Financial Conditions Index.</p>
-    <p><strong>Published in standard-deviation units, never as a 0&ndash;100 score.</strong> Zero is the historical norm for each input; positive means more strain than that norm, negative means less. Each input is converted to a z-score against its own history (<code>(value &minus; mean) / SD</code>, capped at &plusmn;3 so no single input can dominate the composite), then combined into one weighted figure.</p>
+    <div class="eyebrow">05 &middot; The Strain Index</div>
+    <h2>One number for whether things are tighter than usual</h2>
+    <p>The two situations above go quiet for long stretches. Nothing is exploding this month, so those pages sit still. The <strong>DELAX Global Strain Index</strong> exists for exactly those weeks: it answers a different question &mdash; is the cost of energy and everyday living higher or lower than normal right now? &mdash; and it moves every day regardless of whether any particular crisis is active.</p>
+    <div class="key">
+      <div class="eyebrow">How to read it</div>
+      <p><strong>Zero means normal.</strong> Not zero pressure &mdash; normal pressure, the typical level over the last decade.</p>
+      <p><strong>Above zero means tighter than usual. Below zero means easier than usual.</strong> A reading of +1 means conditions are one ordinary-sized swing above the normal level &mdash; noticeably elevated, but the sort of thing that happens from time to time. A reading of +2 or beyond is genuinely unusual, the kind of pressure seen only a handful of times in a decade.</p>
+      <p>It is deliberately <em>not</em> a mark out of 100. A score out of 100 implies a fixed worst case, and there isn't one &mdash; conditions can always get tighter than they have been before.</p>
+    </div>
+    <p><strong>How it is built:</strong> we take four things that get measured constantly, and for each one we ask the same question &mdash; compared with its own past decade, is today's figure unusually high or unusually low? Then we average those four answers into a single number.</p>
     <table class="tbl">
-      <thead><tr><th>Input</th><th>Source</th><th class="num">Cadence</th><th class="num">Weight</th></tr></thead>
+      <thead><tr><th>What we look at</th><th>Where it comes from</th><th class="num">Updated</th><th class="num">Share</th></tr></thead>
       <tbody>
-        <tr><td>Brent crude</td><td>EIA, series RBRTE</td><td class="num">Daily</td><td class="num">0.25 (0.222 if GDELT enabled)</td></tr>
-        <tr><td>US CPI</td><td>FRED, CPIAUCSL</td><td class="num">Monthly</td><td class="num">0.25 (0.222)</td></tr>
-        <tr><td>Global food prices</td><td>FRED, PFOODINDEXM</td><td class="num">Monthly</td><td class="num">0.25 (0.222)</td></tr>
-        <tr><td>Henry Hub natural gas</td><td>FRED, DHHNGSP</td><td class="num">Daily</td><td class="num">0.25 (0.222)</td></tr>
-        <tr><td>Conflict news attention <span class="muted">(conditional)</span></td><td>GDELT DOC 2.0, TimelineVol</td><td class="num">Daily</td><td class="num">0.111 if enabled, else 0</td></tr>
+        <tr><td>Oil price (Brent crude)</td><td>US Energy Information Administration</td><td class="num">Daily</td><td class="num">One quarter</td></tr>
+        <tr><td>US consumer prices</td><td>Federal Reserve economic data</td><td class="num">Monthly</td><td class="num">One quarter</td></tr>
+        <tr><td>World food prices</td><td>Federal Reserve economic data</td><td class="num">Monthly</td><td class="num">One quarter</td></tr>
+        <tr><td>Natural gas price</td><td>Federal Reserve economic data</td><td class="num">Daily</td><td class="num">One quarter</td></tr>
       </tbody>
     </table>
-    <p><strong>Brent, not WTI:</strong> <code>confirmedBrent()</code> is the only sanctioned oil price on this platform, and the Hormuz normalizer is Brent-anchored at $70. The index inherits that rule rather than setting its own.</p>
-    <p><strong>Honest characterization:</strong> with its four always-on inputs, this is an energy-and-household-cost strain index &mdash; not a direct measure of geopolitical conflict. Two of its four core inputs step only once a month, so on most days the reading moves because Brent or Henry Hub moved, not because CPI or global food prices did. The conflict-attention component below is what earns the "geopolitical" in the name, and it ships only if it clears its own evidence bar.</p>
+    <p>No single one of the four can dominate: each is capped so that even an extraordinary move in one input cannot swamp the other three.</p>
     <div class="key">
-      <div class="eyebrow">The GDELT gate &mdash; conditional, not deferred</div>
-      <p>Raw event counts from any global news monitor trend upward simply because monitored coverage has grown since 2017 &mdash; a naive z-score of that trend would report the world "getting more violent" as an artifact of better internet indexing, not more conflict. GDELT's <code>TimelineVol</code> mode avoids this by construction: it reports volume as a <strong>percentage of all articles GDELT monitored</strong> in each period, not a raw count.</p>
-      <p>The component still has to earn its place. Two automated tests run against real data during each backfill:</p>
+      <div class="eyebrow">What this index is, and is not</div>
+      <p><strong>It is a cost-of-living and energy pressure gauge</strong> &mdash; an energy-and-household-cost strain index, to give it its precise name. Right now it does not measure conflict directly. Two of its four inputs are updated only once a month, so on most days it moves because oil or gas moved, not because the other two did. We would rather say that plainly than let the name imply more than the number delivers.</p>
+      <p><strong>It does not predict.</strong> Every input is a price that has already been recorded. The index describes the pressure that exists today. It does not tell you what happens next, and we will never claim it does.</p>
+    </div>
+    <p><strong>Why there is no conflict measure in it yet.</strong> We wanted to add a fifth input: how much of the world's news coverage is about conflict. Before adding it, we ran tests to check the measure was trustworthy. One of those tests has now produced a clear and awkward answer.</p>
+    <div class="key">
+      <div class="eyebrow">What we found &mdash; measured 15 August 2026</div>
+      <p>We tracked news coverage of the Ukraine invasion from February to December 2022. Coverage peaked at <strong>32.7%</strong> of all news being monitored, then fell to <strong>7.6%</strong> by the end of that period &mdash; under a quarter of its peak. The war was still fully underway the whole time.</p>
+      <p>So a measure built on news attention would have reported that Ukraine risk had mostly gone away by the end of 2022, when nothing on the ground had improved. <strong>The world stops reporting on a war long before the war stops.</strong> If we ever do add this input, it will have to measure how sharply attention is <em>changing</em>, not how high it currently sits &mdash; and that is now based on measurement rather than assumption.</p>
+      <p>Two further checks have to pass before this input could ever be added, and we set the pass marks in advance rather than after seeing the results:</p>
       <table class="tbl">
-        <thead><tr><th>Test</th><th>Checks</th><th>Bar</th></tr></thead>
+        <thead><tr><th>Check</th><th>What it asks</th><th>Pass mark</th></tr></thead>
         <tbody>
-          <tr><td><strong>A &middot; Positive control</strong></td><td>Coverage during the 28 Feb&ndash;8 Apr 2026 Hormuz war vs. the pre-war baseline</td><td class="num">&ge;1.5&times; the baseline</td></tr>
-          <tr><td><strong>C &middot; Drift check</strong></td><td>2017&ndash;18 baseline vs. 2024&ndash;25 baseline</td><td class="num">&le;15% apart</td></tr>
+          <tr><td><strong>Does it react?</strong></td>
+            <td>Coverage during the 2026 Hormuz war, compared with the months before it</td>
+            <td class="num">At least 1.5 times higher</td></tr>
+          <tr><td><strong>Does it stay comparable?</strong></td>
+            <td>The normal level in 2017, compared with the normal level in 2025</td>
+            <td class="num">No more than 15% apart</td></tr>
         </tbody>
       </table>
-      <p class="muted">A third test (B &middot; Ukraine attention decay, Feb&ndash;Dec 2022) is recorded for reference but does not gate &mdash; it sets whether the component is read as a level or a rate of change, not whether it ships. Both A and C must pass for the conflict component to join the weighting; failing either keeps the index on its four macro inputs and the fact is stated here, not hidden.</p>
+      <p class="muted">Neither check has finished running: the news service repeatedly drops our connection. Until both pass, the index runs on its four cost-and-energy inputs, and we say so here rather than quietly retrying in the background. The second check matters more than it sounds &mdash; news coverage of everything has grown enormously since 2017, so a measure that simply counted articles would show the world getting steadily more dangerous purely because more news is being published. The measure we chose reports conflict coverage as a share of all coverage, which cancels that out; the check confirms it actually worked.</p>
     </div>
-    <p><strong>Monetization:</strong> the headline DGSI figure is free, permanently &mdash; the same posture as the NFCI, the Geopolitical Risk Index, and the Fear &amp; Greed Index, all of which build credibility by being citable without a paywall. Pro access adds the full component breakdown, historical download, and threshold alerts.</p>
+    <p><strong>The headline number stays free, permanently.</strong> The most respected gauges of this kind &mdash; the Chicago Federal Reserve's financial conditions index, the Geopolitical Risk index, the Fear and Greed index &mdash; are all free to look up, and that is exactly why people trust and cite them. A paid tier adds the breakdown by component, the full history, and alerts when the number crosses a threshold.</p>
   </section>
 
   <section>
-    <div class="eyebrow">06 · Using the platform</div>
-    <h2>Four tools that answer real questions</h2>
+    <div class="eyebrow">06 &middot; Using the platform</div>
+    <h2>Four things you can actually do</h2>
 
     <div class="howto">
-      <h3><span class="n">01</span> Score your actual portfolio — the Exposure Desk</h3>
-      <p>Open the <a href="/exposure-desk.html">Exposure Desk</a>, add your holdings (search covers 100+ names; custom tickers can be sector-tagged), pick a structure and scenario, and read your Conflict Exposure Score: the modelled move of <em>your</em> book, decomposed by channel and by holding, worst-hit first. Everything computes in your browser — your portfolio is never sent anywhere.</p>
+      <h3><span class="n">01</span> See how your own holdings would fare</h3>
+      <p>Open the <a href="/exposure-desk.html">Exposure Desk</a> and enter what you own. You will get a figure for how your particular mix would be affected, broken down by which route the damage travels along and which holding is hit hardest. Everything is calculated on your own device.</p>
     </div>
     <div class="howto">
-      <h3><span class="n">02</span> Compare risks — the structure switcher</h3>
-      <p>On the <a href="/">dashboard</a>, switch between HORMUZ and TAIWAN and watch the same portfolio tell two different stories. An oil crisis barely touches a typical tech-heavy book; a Taiwan blockade transforms it. Then use the scenario tabs — each carries its probability, in numbers and plain words — to see the range, not just the base case.</p>
+      <h3><span class="n">02</span> Compare two very different risks</h3>
+      <p>On the <a href="/">dashboard</a>, switch between Hormuz and Taiwan with the same holdings loaded. An oil crisis barely touches a technology-heavy portfolio; a Taiwan blockade transforms it. Then switch between the outcomes &mdash; each one shows how likely we think it is, in numbers and in plain words.</p>
     </div>
     <div class="howto">
-      <h3><span class="n">03</span> Ask your own question — Investor Intelligence</h3>
-      <p>The AI panel on the dashboard answers free-form questions ("How exposed is my portfolio to a Taiwan blockade?") using the live model state — the active structure, scenario, and current data — and answers in a fixed discipline: what changed, why it matters to you, what to watch next. It describes exposure; it does not give buy or sell instructions.</p>
+      <h3><span class="n">03</span> Ask a question in your own words</h3>
+      <p>The question box on the dashboard takes plain questions like "how exposed am I if Taiwan is blockaded?" and answers using the current figures. It will tell you what changed, why it matters to you, and what to watch next. It will not tell you to buy or sell anything.</p>
     </div>
     <div class="howto">
-      <h3><span class="n">04</span> Judge the confidence — tiers and evidence</h3>
-      <p>Before acting on any number, check its badge. <span style="color:var(--up)">EMPIRICAL</span> means fitted to an observed event; <span style="color:var(--accent)">UNPRICED</span> means analytical and anchored. On the Taiwan view, the Monthly tab holds the full Pricing Evidence ledger — every escalation tested, every verdict, and the running count. The review stamp beside each badge shows when the structure was last examined and when it is due again.</p>
+      <h3><span class="n">04</span> Check the confidence before you rely on it</h3>
+      <p>Every figure carries a label. <span style="color:var(--up)">MEASURED</span> means it came from a real event. <span style="color:var(--accent)">ESTIMATED</span> means it is reasoned, because the event has never happened. On the Taiwan view you can see every past scare we tested and what each one showed. Beside each label is the date we last reviewed it and when it is next due.</p>
     </div>
   </section>
 
   <section>
-    <div class="eyebrow">07 · Limits</div>
-    <h2>What this model does not claim</h2>
-    <div class="limit"><h3>One war is one sample.</h3>
-      <p>The 2026 Hormuz war ran six weeks to ceasefire. A longer closure could transmit through corporate earnings in ways a six-week shock never did. Empirical sensitivities describe what has happened, not every tail that hasn't.</p></div>
-    <div class="limit"><h3>Some channels are judgment-tier, and are labelled.</h3>
-      <p>No free high-frequency series exists for tanker rates, real-time global GDP, or defense appropriations; their stress levels are stated estimates. The emerging-market currency channel is the weakest-evidenced in the model — in both measured conflicts, exporter and importer moves largely offset. Confidence scores on the dashboard's indicators reflect these gradations.</p></div>
-    <div class="limit"><h3>Unpriced means unpriced.</h3>
-      <p>Taiwan figures are anchored estimates of a never-observed event. They are built for exposure comparison and stress-thinking, not point prediction, and the linear model's extreme-scenario outputs should be read as order of magnitude.</p></div>
+    <div class="eyebrow">07 &middot; Limits</div>
+    <h2>What this does not claim to do</h2>
+    <div class="limit"><h3>One war is one example.</h3>
+      <p>The 2026 Hormuz war lasted six weeks. A closure lasting a year could damage company profits in ways a six-week shock never did. Our measurements describe what has happened, not every possibility that hasn't.</p></div>
+    <div class="limit"><h3>Some figures are judgement, and are marked as such.</h3>
+      <p>There is no free, constantly-updated source for shipping rates, real-time global economic output, or defence budgets. Where we have had to estimate, we say so on the figure itself. Our weakest area is the effect on developing-country currencies: in both wars we measured, gains and losses largely cancelled out.</p></div>
+    <div class="limit"><h3>Estimated means estimated.</h3>
+      <p>The Taiwan figures describe something that has never occurred. They are built for comparing exposure and thinking through consequences, not for precision. Treat the extreme scenarios as rough magnitudes.</p></div>
     <div class="limit"><h3>This is analysis, not advice.</h3>
-      <p>The platform measures and explains exposure. It does not issue investment recommendations, and nothing on it should be read as a personalised instruction to buy or sell.</p></div>
+      <p>We measure and explain exposure. We do not tell you what to buy or sell, and nothing here should be read as a personal recommendation. If you want advice about your own situation, speak to someone qualified and regulated to give it.</p></div>
   </section>
 
   <section>
     <h2>Why this page exists</h2>
-    <p>An exposure score you cannot interrogate is a number taken on faith. Everything above can be checked: the events are public, the instruments are liquid, the windows are stated, the anchors are cited, and the method is one line of arithmetic — sector return minus market return. Where the model has been wrong, the correction is on the record. If you believe a sensitivity is still wrong, this page gives you everything needed to make that case.</p>
+    <p>A number you cannot question is a number you are taking on faith. Everything above can be checked: the events are public, the investments are widely traded, the dates are stated, the outside research is named, and the core method is one subtraction &mdash; what this investment did, minus what the whole market did. Where we have been wrong, the correction is written down. If you think one of our figures is still wrong, this page gives you what you need to make that argument.</p>
   </section>
 
   <footer>
-    <span>DELAX GEO-RISK · Model v4.2 · Reviewed 2026-07-15</span>
-    <span><a href="/">Dashboard</a> · <a href="/exposure-desk.html">Exposure Desk</a> · Not financial advice.</span>
+    <span>DELAX GEO-RISK &middot; Last reviewed 15 August 2026</span>
+    <span><a href="/">Dashboard</a> &middot; <a href="/exposure-desk.html">Exposure Desk</a> &middot; Not financial advice.</span>
   </footer>
 
 </div>

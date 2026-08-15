@@ -76,8 +76,12 @@ console.log('\nG10.6 — Amendment A3: GDELT is conditional, evidence-based, not
 /g\.enabled\s*=\s*!!\(g\.tests\.A\s*&&\s*g\.tests\.A\.pass\s*&&\s*g\.tests\.C\s*&&\s*g\.tests\.C\.pass\)/.test(md)
   ? ok('gdeltEnabled requires BOTH Test A and Test C to pass')
   : bad('gdelt enable condition does not require both A and C');
-/UNVERIFIED/.test(gd) ? ok('response-shape uncertainty is flagged in source, not asserted as fact')
-                      : bad('no uncertainty flag on the unverified GDELT response shape');
+/VERIFIED 15 Aug 2026/.test(gd)
+  ? ok('response shape claim cites the live evidence that settled it')
+  : bad('shape claim has no evidence citation — do not assert a shape that was never observed');
+/UND_ERR_CONNECT_TIMEOUT/.test(gd)
+  ? ok('the open problem (connection reliability) is recorded where the code lives')
+  : bad('connection-reliability finding not documented in gdelt.js');
 
 console.log('\nG10.7 — hero slot (Phase 1 contract honoured)');
 /id="dxHeroIndex"[^>]*hidden/.test(idx) ? ok('DGSI slot still ships hidden by default')
@@ -93,7 +97,7 @@ console.log('\nG10.8 — methodology published (non-negotiable per plan §5 Phas
 /energy-and-household-cost strain index/.test(meth)
   ? ok('honest macro-only characterization is stated in methodology')
   : bad('honest characterization sentence missing from methodology');
-/1\.5.*baseline|baseline.*1\.5/.test(meth) && /15%/.test(meth)
+/1\.5\s*times|>=\s*1\.5|1\.5x/i.test(meth) && /15%/.test(meth)
   ? ok('GDELT gate thresholds are published, not just implemented')
   : bad('GDELT gate thresholds not stated in methodology.html');
 const linkHref = idx.match(/href="\/methodology\.html#dgsi"/);

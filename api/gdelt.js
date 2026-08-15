@@ -185,8 +185,16 @@ module.exports = async function handler(req, res) {
    z-scoring that would publish "the world getting more violent" as an
    artifact of better internet coverage, not more conflict.
 
-   RESPONSE SHAPE — UNVERIFIED against a live call from this build environment
-   (no GDELT egress from the sandbox this was built in); documented only.
+   RESPONSE SHAPE — VERIFIED 15 Aug 2026 by the PING diagnostic running on
+   Vercel: a 7-day TimelineVol call returned 166 points and parsed correctly
+   through this function. The {timeline:[{data:[{date,value}]}]} shape below
+   is confirmed, not assumed.
+   CONNECTION RELIABILITY IS THE OPEN PROBLEM, not the shape: the same
+   diagnostic saw UND_ERR_CONNECT_TIMEOUT (TCP connect never completing) on
+   three of four probes, and the one success took 27s for a 7-day window.
+   The gate's own windows are 365 days, so the GATE runs locally instead —
+   see tools/gdelt-gate-local.js. This function remains correct for the
+   short-window live component IF the gate ever enables it.
    GDELT's JSON timeline response nests as
      { timeline: [ { series: "...", data: [ { date, value, ... }, ... ] } ] }
    per the DOC 2.0 API documentation. Confirm this shape against one real
