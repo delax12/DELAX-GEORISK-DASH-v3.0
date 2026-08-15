@@ -73,7 +73,7 @@ console.log('\nG10.6 — Amendment A3: GDELT is conditional, evidence-based, not
                                      : bad('Test A threshold not found or changed');
 /testC\.pass\s*=.*<=\s*0\.15/.test(md) ? ok('Test C threshold (<=15% drift) present')
                                       : bad('Test C threshold not found or changed');
-/out\.enabled\s*=\s*!!\(testA\.pass\s*&&\s*testC\.pass\)/.test(md)
+/out\.enabled\s*=\s*!!\(out\.tests\.A\s*&&\s*out\.tests\.A\.pass\s*&&\s*out\.tests\.C\s*&&\s*out\.tests\.C\.pass\)/.test(md)
   ? ok('gdeltEnabled requires BOTH Test A and Test C to pass')
   : bad('gdelt enable condition does not require both A and C');
 /UNVERIFIED/.test(gd) ? ok('response-shape uncertainty is flagged in source, not asserted as fact')
@@ -98,6 +98,18 @@ console.log('\nG10.8 — methodology published (non-negotiable per plan §5 Phas
   : bad('GDELT gate thresholds not stated in methodology.html');
 const linkHref = idx.match(/href="\/methodology\.html#dgsi"/);
 linkHref ? ok('hero links directly to the methodology anchor') : bad('hero does not link to #dgsi');
+
+console.log('\nG10.9 — timeout architecture (from the live backfill run, 15 Aug 2026)');
+/module\.exports\.config\s*=\s*\{\s*maxDuration:\s*60\s*\}/.test(md)
+  ? ok('explicit maxDuration:60 set — not left to the account default')
+  : bad('no explicit maxDuration — function can be killed by the platform mid-GDELT-gate');
+/Promise\.allSettled\(jobs\)/.test(md)
+  ? ok('all 5 GDELT calls run in ONE allSettled batch (not split across two sequential awaits)')
+  : bad('GDELT calls still split into sequential batches — worst-case time risk remains');
+!/const ukraine = await gdelt\.fetchTimelineVol\(TEST_B_QUERY/.test(md)
+  ? ok('Test B no longer runs as a second sequential await after the main batch')
+  : bad('Test B still sequential — doubles worst-case gate time');
+
 
 console.log('\n' + '-'.repeat(60));
 console.log(fails === 0 ? '\x1b[32mG10 ALL PASS\x1b[0m' : `\x1b[31m${fails} FAIL\x1b[0m`);

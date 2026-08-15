@@ -473,7 +473,8 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
 .dx-hero-btn.primary:hover{background:rgba(0,212,255,.13)}
 /* DGSI slot — reserved for Phase 2 (DELAX Global Strain Index). Renders nothing
    until the index ships. Do NOT populate with a placeholder number. */
-.dx-hero-index{display:flex;align-items:baseline;gap:.55rem;margin-bottom:.9rem;flex-wrap:wrap}
+.dx-hero-index{margin-bottom:.9rem;max-width:56ch}
+.dx-hero-index-row{display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;margin-bottom:.35rem}
 .dx-hero-index-val{font-family:var(--display);font-size:1.9rem;font-weight:700;color:var(--text-pri)}
 .dx-hero-index-val.pos{color:var(--amber)}
 .dx-hero-index-val.neg{color:var(--cyan)}
@@ -481,6 +482,7 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
   text-transform:uppercase;color:var(--text-sec)}
 .dx-hero-index-lbl a{color:var(--text-dim);text-decoration:none;border-bottom:1px dotted var(--text-dim)}
 .dx-hero-index-lbl a:hover{color:var(--cyan);border-color:var(--cyan)}
+.dx-hero-index-blurb{font-family:var(--sans);font-size:.76rem;line-height:1.55;color:var(--text-sec)}
 .dx-hero-proof{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;
   font-family:var(--mono);font-size:.6rem;letter-spacing:.05em;color:var(--text-dim)}
 .dx-hero-proof strong{color:var(--text-sec);font-weight:600}
@@ -774,9 +776,12 @@ body.beginner-mode .kpi-value{font-size:2.4rem}
          Stays hidden and EMPTY until the index publishes. Never place a
          placeholder figure here. -->
     <div id="dxHeroIndex" class="dx-hero-index" hidden>
-      <span class="dx-hero-index-val" id="dxHeroIndexVal">&mdash;</span>
-      <span class="dx-hero-index-lbl">DELAX Global Strain Index &middot;
-        <a href="/methodology.html#dgsi">how this is measured</a></span>
+      <div class="dx-hero-index-row">
+        <span class="dx-hero-index-val" id="dxHeroIndexVal">&mdash;</span>
+        <span class="dx-hero-index-lbl">DELAX Global Strain Index &middot;
+          <a href="/methodology.html#dgsi">how this is measured</a></span>
+      </div>
+      <p class="dx-hero-index-blurb" id="dxHeroIndexBlurb"></p>
     </div>
     <div class="dx-hero-proof" id="dxHeroProof">
       <span id="dxHeroStruct">&mdash;</span>
@@ -5443,10 +5448,35 @@ document.addEventListener('DOMContentLoaded', () => {
    today) — the slot simply stays hidden, exactly as it shipped in Phase 1.
    Never writes a placeholder number while waiting. */
 let dxDgsiRendered = false;
+/* dgsiPlainLanguage — turns a bare SD figure into one sentence a first-time
+   visitor can act on without leaving the page. Banded by magnitude rather
+   than hand-authored per reading, so it can never go stale against the
+   number sitting next to it — same discipline as kpiDeltas() deriving every
+   subline from KPI_MAP instead of hardcoding it (that staleness is exactly
+   what produced the "3.8x worse" defect in Phase 1).
+   Bands are deliberately coarse — three tiers each side of zero — because a
+   composite z-score does not support more precision of INTERPRETATION than
+   that, even though the number itself prints to two decimals. */
+function dgsiPlainLanguage(v, gdeltEnabled) {
+  const a = Math.abs(v);
+  const rising = v >= 0;
+  const scope = gdeltEnabled
+    ? 'global energy, household-cost, and conflict-attention pressure'
+    : 'global energy and household-cost pressure'; // honest scope when GDELT is off — see methodology §05
+  if (a < 0.3) {
+    return `Near its historical norm: ${scope} is tracking close to the last decade's typical level.`;
+  }
+  const intensity = a < 1.0 ? 'modestly' : a < 2.0 ? 'well' : 'far';
+  const tail = a >= 2.0 ? ' — one of the more extreme readings in over a decade' : '';
+  return `${intensity[0].toUpperCase()}${intensity.slice(1)} ${rising ? 'elevated' : 'eased'}: `
+       + `${scope} is running ${rising ? 'higher' : 'lower'} than the last decade's typical level${tail}.`;
+}
+
 async function renderDGSI() {
-  const slot = document.getElementById('dxHeroIndex');
-  const val  = document.getElementById('dxHeroIndexVal');
-  if (!slot || !val) return;
+  const slot  = document.getElementById('dxHeroIndex');
+  const val   = document.getElementById('dxHeroIndexVal');
+  const blurb = document.getElementById('dxHeroIndexBlurb');
+  if (!slot || !val || !blurb) return;
   try {
     const r = await fetch('/api/market-data?type=index', { cache: 'no-store' });
     const d = await r.json();
@@ -5454,6 +5484,10 @@ async function renderDGSI() {
     const v = d.value;
     val.textContent = (v >= 0 ? '+' : '') + v.toFixed(2);
     val.className = 'dx-hero-index-val ' + (v >= 0 ? 'pos' : 'neg');
+    // The interpretation ships WITH the number in the same render pass —
+    // never a bare figure with only a link out. That gap is exactly the
+    // 30-second-test failure Phase 0 diagnosed on the rest of the platform.
+    blurb.textContent = dgsiPlainLanguage(v, !!d.gdeltEnabled);
     slot.hidden = false;
     dxDgsiRendered = true;
   } catch (e) {

@@ -133,19 +133,35 @@ async function fetchEiaBrentLatest(key) {
 /* runGdeltGate — Tests A and C, run once during backfill. Returns
    {enabled, tests} so the decision AND its evidence are both stored, not
    just the boolean — an auditable gate, not a silent switch. */
+/* runGdeltGate — Tests A and C gate; Test B is recorded, never gating.
+   All FIVE timelinevol calls fire in ONE Promise.allSettled batch — not
+   Promise.all, and Test B is no longer a second sequential await after the
+   first batch resolves. Two real problems that showed up on the first live
+   run motivated this:
+     1. Promise.all is all-or-nothing: one slow GDELT call nulled out every
+        test, including two that had actually already succeeded.
+     2. Test B running AFTER the batch doubled the worst-case serial time
+        (timeout + timeout) — with the per-call timeout raised to 30s to fix
+        the original abort, that pushed worst case to 60s, which the Vercel
+        platform ceiling can kill outright (a raw platform timeout, worse
+        than the graceful {tests:{error}} response this is supposed to
+        produce). Ceiling is now stated explicitly via module.exports.config
+        below rather than left to the account default. */
 async function runGdeltGate() {
   const out = { enabled: false, tests: {}, evaluatedAt: new Date().toISOString() };
-  try {
-    const [warWindow, warControl, early, recent] = await Promise.all([
-      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_WINDOW.start, TEST_A_WINDOW.end),
-      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_CONTROL.start, TEST_A_CONTROL.end),
-      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_EARLY.start, TEST_C_EARLY.end),
-      gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_RECENT.start, TEST_C_RECENT.end),
-    ]);
-    if (!warWindow || !warControl || !early || !recent) {
-      out.tests.error = 'one or more timelinevol calls returned an unparseable shape — see fetchTimelineVol comment in gdelt.js';
-      return out;
-    }
+  const jobs = [
+    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_WINDOW.start, TEST_A_WINDOW.end),
+    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_CONTROL.start, TEST_A_CONTROL.end),
+    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_EARLY.start, TEST_C_EARLY.end),
+    gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_RECENT.start, TEST_C_RECENT.end),
+    gdelt.fetchTimelineVol(TEST_B_QUERY, TEST_B_WINDOW.start, TEST_B_WINDOW.end),
+  ];
+  const settled = await Promise.allSettled(jobs);
+  const val = i => (settled[i].status === 'fulfilled' ? settled[i].value : null);
+  const [warWindow, warControl, early, recent, ukraine] = [val(0), val(1), val(2), val(3), val(4)];
+  const failure = i => settled[i].status === 'rejected' ? settled[i].reason.message : 'unparseable response shape';
+
+  if (warWindow && warControl) {
     const warMean     = mean(warWindow.map(p => p.value));
     const controlMean = mean(warControl.map(p => p.value));
     const testA = { warMean, controlMean, ratio: warMean / (controlMean || 1e-9) };
@@ -153,7 +169,11 @@ async function runGdeltGate() {
     // of the pre-war baseline, not a marginal bump.
     testA.pass = testA.ratio >= 1.5;
     out.tests.A = testA;
+  } else {
+    out.tests.A = { error: !warWindow ? failure(0) : failure(1) };
+  }
 
+  if (early && recent) {
     const earlyMean  = mean(early.map(p => p.value));
     const recentMean = mean(recent.map(p => p.value));
     const testC = { earlyMean, recentMean, drift: Math.abs(recentMean - earlyMean) / (earlyMean || 1e-9) };
@@ -162,22 +182,21 @@ async function runGdeltGate() {
     // the corpus-growth trap is back.
     testC.pass = testC.drift <= 0.15;
     out.tests.C = testC;
-
-    // Test B recorded, never gating — sets level-vs-change for the UI, not
-    // a pass/fail condition.
-    try {
-      const ukraine = await gdelt.fetchTimelineVol(TEST_B_QUERY, TEST_B_WINDOW.start, TEST_B_WINDOW.end);
-      if (ukraine && ukraine.length) {
-        const peak = Math.max(...ukraine.map(p => p.value));
-        const last = ukraine[ukraine.length - 1].value;
-        out.tests.B = { peak, endOfWindow: last, decayRatio: last / (peak || 1e-9) };
-      }
-    } catch (e) { out.tests.B = { error: e.message }; }
-
-    out.enabled = !!(testA.pass && testC.pass);
-  } catch (err) {
-    out.tests.error = err.message;
+  } else {
+    out.tests.C = { error: !early ? failure(2) : failure(3) };
   }
+
+  // Test B recorded, never gating — sets level-vs-change for the UI, not a
+  // pass/fail condition. Failing to fetch it does not block A or C.
+  if (ukraine && ukraine.length) {
+    const peak = Math.max(...ukraine.map(p => p.value));
+    const last = ukraine[ukraine.length - 1].value;
+    out.tests.B = { peak, endOfWindow: last, decayRatio: last / (peak || 1e-9) };
+  } else {
+    out.tests.B = { error: failure(4) };
+  }
+
+  out.enabled = !!(out.tests.A && out.tests.A.pass && out.tests.C && out.tests.C.pass);
   return out;
 }
 
@@ -549,3 +568,15 @@ async function fetchWorldBankGDP(countryCode) {
   const latest = obs.find(o => o.value !== null);
   return latest ? parseFloat(latest.value.toFixed(2)) : null;
 }
+
+/* Explicit Vercel function timeout. index-backfill's worst case is now one
+   Promise.allSettled batch of five GDELT calls (each up to the 30s
+   AbortController timeout in gdelt.js) running alongside the FRED/EIA
+   fetches — not two sequential batches, per the fix above, but still
+   comfortably able to exceed a default account ceiling if left unstated.
+   60s keeps this a controlled, diagnosable timeout via our own AbortController
+   rather than an abrupt platform kill. This is an admin/CRON-triggered path,
+   not user-facing, so the extra budget costs nothing in perceived latency.
+   Confirm 60s is within your Vercel plan's allowed maxDuration range — Hobby
+   plans have raised this ceiling over time but it is account/plan-dependent. */
+module.exports.config = { maxDuration: 60 };
