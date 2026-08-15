@@ -56,8 +56,13 @@ const TEST_A_WINDOW  = { start: '20260228000000', end: '20260408235959' };
 const TEST_A_CONTROL = { start: '20250901000000', end: '20260131235959' }; // pre-war baseline to compare the excursion against
 const TEST_B_QUERY   = '(ukraine OR "russian invasion")';
 const TEST_B_WINDOW  = { start: '20220224000000', end: '20221224235959' };
-const TEST_C_EARLY   = { start: '20170101000000', end: '20181231235959' };
-const TEST_C_RECENT  = { start: '20240101000000', end: '20251231235959' };
+/* Narrowed from 2-year to 1-year windows (15 Aug 2026). The 729/730-day spans
+   were the two calls that timed out: timelinevol over multi-year ranges is
+   genuinely slow, and 365 daily points is already far more than a baseline
+   mean comparison needs. Test C asks whether the 2017 baseline and the recent
+   baseline have drifted — one clean year on each side answers that. */
+const TEST_C_EARLY   = { start: '20170101000000', end: '20171231235959' };
+const TEST_C_RECENT  = { start: '20250101000000', end: '20251231235959' };
 
 async function readJsonBlobDGSI(pathname) {
   const { blobs } = await list({ prefix: pathname, limit: 1 });
@@ -130,84 +135,69 @@ async function fetchEiaBrentLatest(key) {
   return { date: row.period, value: parseFloat(row.value) };
 }
 
-/* runGdeltGate — Tests A and C, run once during backfill. Returns
-   {enabled, tests} so the decision AND its evidence are both stored, not
-   just the boolean — an auditable gate, not a silent switch. */
-/* runGdeltGate — Tests A and C gate; Test B is recorded, never gating.
-   All FIVE timelinevol calls fire in ONE Promise.allSettled batch — not
-   Promise.all, and Test B is no longer a second sequential await after the
-   first batch resolves. Two real problems that showed up on the first live
-   run motivated this:
-     1. Promise.all is all-or-nothing: one slow GDELT call nulled out every
-        test, including two that had actually already succeeded.
-     2. Test B running AFTER the batch doubled the worst-case serial time
-        (timeout + timeout) — with the per-call timeout raised to 30s to fix
-        the original abort, that pushed worst case to 60s, which the Vercel
-        platform ceiling can kill outright (a raw platform timeout, worse
-        than the graceful {tests:{error}} response this is supposed to
-        produce). Ceiling is now stated explicitly via module.exports.config
-        below rather than left to the account default. */
-async function runGdeltGate() {
-  const out = { enabled: false, tests: {}, evaluatedAt: new Date().toISOString() };
-  // STAGGERED, not simultaneous. The 15 Aug backfill run got a clean
-  // "GDELT HTTP 429" on all three tests — the Promise.allSettled fix for the
-  // PREVIOUS problem (timeout) fired all five calls in the same instant,
-  // which tripped GDELT's rate limiter. delay(i) spaces the five starts
-  // ~900ms apart (≤3.6s added) rather than all landing on GDELT at once.
-  // fetchTimelineVol also retries once or twice on a 429 that gets through
-  // anyway — see gdelt.js. Both are needed: staggering lowers the odds of
-  // hitting the limiter, retry recovers if it happens regardless.
-  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-  const staggered = (fn, i) => delay(i * 900).then(fn);
-  const jobs = [
-    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_WINDOW.start, TEST_A_WINDOW.end), 0),
-    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_A_CONTROL.start, TEST_A_CONTROL.end), 1),
-    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_EARLY.start, TEST_C_EARLY.end), 2),
-    staggered(() => gdelt.fetchTimelineVol(GDELT_QUERY, TEST_C_RECENT.start, TEST_C_RECENT.end), 3),
-    staggered(() => gdelt.fetchTimelineVol(TEST_B_QUERY, TEST_B_WINDOW.start, TEST_B_WINDOW.end), 4),
-  ];
-  const settled = await Promise.allSettled(jobs);
-  const val = i => (settled[i].status === 'fulfilled' ? settled[i].value : null);
-  const [warWindow, warControl, early, recent, ukraine] = [val(0), val(1), val(2), val(3), val(4)];
-  const failure = i => settled[i].status === 'rejected' ? settled[i].reason.message : 'unparseable response shape';
+/* runGdeltTest — runs ONE test per invocation, SEQUENTIALLY.
 
-  if (warWindow && warControl) {
+   Three failed live runs drove this shape, and each fix exposed the next:
+     1. 8s timeout  → "operation aborted" (timeout too short)
+     2. 30s + one parallel batch → "GDELT HTTP 429" x3 (all 5 calls landed on
+        the rate limiter simultaneously)
+     3. 12s + retry + stagger → "operation aborted" again. The 12s per-attempt
+        timeout was chosen to fit 3 retries inside the budget, but run 2 had
+        already PROVEN these queries need longer than that — GDELT answered
+        with real 429s at 30s. Trading a working timeout for a retry budget
+        was the wrong trade.
+
+   The structural problem underneath all three: the gate was riding inside
+   index-backfill, sharing one 60s budget with the FRED/EIA work that already
+   succeeds perfectly. So it now has its OWN route (?type=gdelt-gate&test=A),
+   runs at most 2 calls, and runs them one after another rather than at once —
+   sequential eliminates the 429 condition by construction instead of trying
+   to recover from it. Budget per invocation: 2 x 25s worst case, inside 60s.
+
+   Test C's windows were also narrowed 2y -> 1y; those two 730-day spans were
+   the calls that actually timed out. */
+async function runGdeltTest(which) {
+  const seq = async (q, w) => gdelt.fetchTimelineVol(q, w.start, w.end);
+
+  if (which === 'A') {
+    const warWindow  = await seq(GDELT_QUERY, TEST_A_WINDOW);
+    const warControl = await seq(GDELT_QUERY, TEST_A_CONTROL);
+    if (!warWindow || !warControl) throw new Error('unparseable response shape');
     const warMean     = mean(warWindow.map(p => p.value));
     const controlMean = mean(warControl.map(p => p.value));
-    const testA = { warMean, controlMean, ratio: warMean / (controlMean || 1e-9) };
+    const testA = { warMean, controlMean, ratio: warMean / (controlMean || 1e-9),
+      points: { war: warWindow.length, control: warControl.length } };
     // Positive control: coverage during the war should be a CLEAR multiple
     // of the pre-war baseline, not a marginal bump.
     testA.pass = testA.ratio >= 1.5;
-    out.tests.A = testA;
-  } else {
-    out.tests.A = { error: !warWindow ? failure(0) : failure(1) };
+    return testA;
   }
 
-  if (early && recent) {
+  if (which === 'C') {
+    const early  = await seq(GDELT_QUERY, TEST_C_EARLY);
+    const recent = await seq(GDELT_QUERY, TEST_C_RECENT);
+    if (!early || !recent) throw new Error('unparseable response shape');
     const earlyMean  = mean(early.map(p => p.value));
     const recentMean = mean(recent.map(p => p.value));
-    const testC = { earlyMean, recentMean, drift: Math.abs(recentMean - earlyMean) / (earlyMean || 1e-9) };
-    // Drift check: if the 2017–18 and 2024–25 baselines have wandered apart
-    // by more than 15%, timelinevol's normalization is not doing its job and
-    // the corpus-growth trap is back.
+    const testC = { earlyMean, recentMean, drift: Math.abs(recentMean - earlyMean) / (earlyMean || 1e-9),
+      points: { early: early.length, recent: recent.length } };
+    // Drift check: if the 2017 and 2025 baselines have wandered apart by more
+    // than 15%, timelinevol's normalization is not doing its job and the
+    // corpus-growth trap is back.
     testC.pass = testC.drift <= 0.15;
-    out.tests.C = testC;
-  } else {
-    out.tests.C = { error: !early ? failure(2) : failure(3) };
+    return testC;
   }
 
-  // Test B recorded, never gating — sets level-vs-change for the UI, not a
-  // pass/fail condition. Failing to fetch it does not block A or C.
-  if (ukraine && ukraine.length) {
+  if (which === 'B') {
+    // Recorded, never gating — sets level-vs-change for the UI, not pass/fail.
+    const ukraine = await seq(TEST_B_QUERY, TEST_B_WINDOW);
+    if (!ukraine || !ukraine.length) throw new Error('unparseable response shape');
     const peak = Math.max(...ukraine.map(p => p.value));
     const last = ukraine[ukraine.length - 1].value;
-    out.tests.B = { peak, endOfWindow: last, decayRatio: last / (peak || 1e-9) };
-  } else {
-    out.tests.B = { error: failure(4) };
+    return { peak, endOfWindow: last, decayRatio: last / (peak || 1e-9), points: ukraine.length };
   }
 
-  out.enabled = !!(out.tests.A && out.tests.A.pass && out.tests.C && out.tests.C.pass);
-  return out;
+  throw new Error(`unknown test "${which}" — expected A, B or C`);
 }
 
 module.exports = async function handler(req, res) {
@@ -233,12 +223,17 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({ error: 'FRED_API_KEY and EIA_API_KEY are both required for backfill' });
     }
     try {
-      const [cpi, food, gas, brent, gdeltGate] = await Promise.all([
+      /* GDELT is NO LONGER run here. It has its own route (?type=gdelt-gate)
+         so a slow or rate-limited GDELT can never stall — or force a repeat of
+         — the FRED/EIA work, which has succeeded cleanly on every run. Any
+         existing gdelt verdict in the blob is PRESERVED across a re-backfill
+         rather than being wiped back to enabled:false. */
+      const priorBaseline = await readJsonBlobDGSI(DGSI_PATH);
+      const [cpi, food, gas, brent] = await Promise.all([
         fetchFredHistory(fredKey, 'CPIAUCSL',    FRED_SERIES_START),
         fetchFredHistory(fredKey, 'PFOODINDEXM', FRED_SERIES_START),
         fetchFredHistory(fredKey, 'DHHNGSP',     FRED_SERIES_START),
         fetchEiaBrentHistory(eiaKey, EIA_BRENT_START),
-        runGdeltGate(),
       ]);
       const series = { CPIAUCSL: cpi, PFOODINDEXM: food, DHHNGSP: gas, RBRTE: brent };
       const stats = {};
@@ -255,7 +250,11 @@ module.exports = async function handler(req, res) {
         computedAt: new Date().toISOString(),
         seriesStart: FRED_SERIES_START,
         stats,
-        gdelt: gdeltGate,
+        gdelt: (priorBaseline && priorBaseline.gdelt) || {
+          enabled: false,
+          tests: {},
+          note: 'not yet evaluated — run ?type=gdelt-gate&test=A, then &test=C (and optionally &test=B)',
+        },
       };
       await put(DGSI_PATH, JSON.stringify(baseline), {
         access: 'public', contentType: 'application/json',
@@ -265,6 +264,56 @@ module.exports = async function handler(req, res) {
     } catch (err) {
       return res.status(502).json({ error: 'backfill failed', detail: err.message });
     }
+  }
+
+  /* ── type=gdelt-gate&test=A|B|C ── Bearer CRON_SECRET only.
+     ONE test per invocation, so the whole 60s budget belongs to at most two
+     sequential GDELT calls instead of five parallel ones sharing it with the
+     FRED/EIA backfill. Merges its verdict into the existing baseline blob
+     rather than rewriting it, so the macro stats (which have been correct on
+     every run) are never recomputed just to re-test GDELT.
+     Run: &test=A, then &test=C. Both must pass for the component to enable.
+     &test=B is optional and never gating. */
+  if (type === 'gdelt-gate') {
+    const auth = req.headers.authorization || '';
+    const secret = process.env.CRON_SECRET;
+    if (!secret || auth !== `Bearer ${secret}`) {
+      return res.status(401).json({ error: 'gdelt-gate requires Authorization: Bearer $CRON_SECRET' });
+    }
+    const which = String(req.query.test || '').toUpperCase();
+    if (!['A', 'B', 'C'].includes(which)) {
+      return res.status(400).json({ error: 'gdelt-gate requires &test=A, &test=B or &test=C' });
+    }
+    const baseline = await readJsonBlobDGSI(DGSI_PATH);
+    if (!baseline) {
+      return res.status(409).json({ error: 'no baseline yet — run ?type=index-backfill first' });
+    }
+    const g = baseline.gdelt && baseline.gdelt.tests ? baseline.gdelt : { enabled: false, tests: {} };
+    try {
+      g.tests[which] = await runGdeltTest(which);
+    } catch (err) {
+      // Record the failure in the blob rather than losing it — an
+      // auditable gate keeps its misses, not just its passes.
+      g.tests[which] = { error: err.message };
+    }
+    g.evaluatedAt = new Date().toISOString();
+    // Only A and C gate. Recomputed from whatever is currently in the blob,
+    // so running the tests across separate invocations still resolves
+    // correctly once both are present.
+    g.enabled = !!(g.tests.A && g.tests.A.pass && g.tests.C && g.tests.C.pass);
+    baseline.gdelt = g;
+    await put(DGSI_PATH, JSON.stringify(baseline), {
+      access: 'public', contentType: 'application/json',
+      addRandomSuffix: false, allowOverwrite: true,
+    });
+    const remaining = ['A', 'C'].filter(t => !(g.tests[t] && typeof g.tests[t].pass === 'boolean'));
+    return res.status(200).json({
+      ok: true,
+      ran: which,
+      result: g.tests[which],
+      gdeltEnabled: g.enabled,
+      remainingGatingTests: remaining,
+    });
   }
 
   /* ── type=index ── Public GET. Cheap: reads the cached baseline from Blob,

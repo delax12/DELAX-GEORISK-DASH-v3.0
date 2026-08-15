@@ -73,7 +73,7 @@ console.log('\nG10.6 — Amendment A3: GDELT is conditional, evidence-based, not
                                      : bad('Test A threshold not found or changed');
 /testC\.pass\s*=.*<=\s*0\.15/.test(md) ? ok('Test C threshold (<=15% drift) present')
                                       : bad('Test C threshold not found or changed');
-/out\.enabled\s*=\s*!!\(out\.tests\.A\s*&&\s*out\.tests\.A\.pass\s*&&\s*out\.tests\.C\s*&&\s*out\.tests\.C\.pass\)/.test(md)
+/g\.enabled\s*=\s*!!\(g\.tests\.A\s*&&\s*g\.tests\.A\.pass\s*&&\s*g\.tests\.C\s*&&\s*g\.tests\.C\.pass\)/.test(md)
   ? ok('gdeltEnabled requires BOTH Test A and Test C to pass')
   : bad('gdelt enable condition does not require both A and C');
 /UNVERIFIED/.test(gd) ? ok('response-shape uncertainty is flagged in source, not asserted as fact')
@@ -99,29 +99,37 @@ console.log('\nG10.8 — methodology published (non-negotiable per plan §5 Phas
 const linkHref = idx.match(/href="\/methodology\.html#dgsi"/);
 linkHref ? ok('hero links directly to the methodology anchor') : bad('hero does not link to #dgsi');
 
-console.log('\nG10.9 — timeout architecture (from the live backfill run, 15 Aug 2026)');
+console.log('\nG10.9 — gate architecture (after 3 failed live runs, 15 Aug 2026)');
 /module\.exports\.config\s*=\s*\{\s*maxDuration:\s*60\s*\}/.test(md)
   ? ok('explicit maxDuration:60 set — not left to the account default')
-  : bad('no explicit maxDuration — function can be killed by the platform mid-GDELT-gate');
-/Promise\.allSettled\(jobs\)/.test(md)
-  ? ok('all 5 GDELT calls run in ONE allSettled batch (not split across two sequential awaits)')
-  : bad('GDELT calls still split into sequential batches — worst-case time risk remains');
-!/const ukraine = await gdelt\.fetchTimelineVol\(TEST_B_QUERY/.test(md)
-  ? ok('Test B no longer runs as a second sequential await after the main batch')
-  : bad('Test B still sequential — doubles worst-case gate time');
+  : bad('no explicit maxDuration — function can be killed by the platform mid-gate');
+/type === 'gdelt-gate'/.test(md)
+  ? ok('GDELT gate has its OWN route — not sharing the backfill budget')
+  : bad('gate still rides inside index-backfill — one slow GDELT stalls the FRED/EIA work');
+!/runGdeltGate\(\),/.test(md)
+  ? ok('index-backfill no longer runs the GDELT gate')
+  : bad('index-backfill still calls the gate — macro stats held hostage to GDELT');
+/priorBaseline && priorBaseline\.gdelt/.test(md)
+  ? ok('re-running backfill PRESERVES an existing gdelt verdict rather than wiping it')
+  : bad('re-backfill would reset the gdelt verdict to enabled:false');
+/async function runGdeltTest\(which\)/.test(md)
+  ? ok('gate runs ONE test per invocation (resumable, not all-or-nothing)')
+  : bad('gate is not per-test — a single failure still loses every result');
+!/Promise\.allSettled\(jobs\)/.test(md) && !/staggered\(/.test(md)
+  ? ok('calls are sequential — the 429 condition is eliminated by construction')
+  : bad('calls still fire in parallel — the exact condition that produced the 429s');
 
-console.log('\nG10.10 — 429 retry + stagger (from the live GDELT 429s, 15 Aug 2026)');
-/retry-after/.test(gd)
-  ? ok('Retry-After header is read from the GDELT response')
-  : bad('Retry-After header not read — retries will use blind backoff only');
-/isRateLimit\s*=\s*err\.status\s*===\s*429/.test(gd)
-  ? ok('retry logic distinguishes 429 (retry) from other errors (fail fast)')
-  : bad('no 429-specific branch — may retry errors that retrying cannot fix, or vice versa');
-/MAX_ATTEMPTS\s*=\s*3/.test(gd) ? ok('retry attempts are bounded (3), not unbounded')
-                                : bad('no bounded attempt count found — risk of runaway retry loop');
-/staggered\(/.test(md) ? ok('the five GDELT calls are staggered, not fired simultaneously')
-                       : bad('calls still fire simultaneously — the exact condition that produced the 429s');
-
+console.log('\nG10.10 — retry policy');
+/PER_ATTEMPT_TIMEOUT_MS = 25000/.test(gd)
+  ? ok('per-attempt timeout is 25s — 12s was proven too short by the 02:53 run')
+  : bad('per-attempt timeout is not 25s — check it against the live evidence before changing');
+/err\.status === 429 \|\| err\.name === 'AbortError'/.test(gd)
+  ? ok('both 429 and abort are retried as transient')
+  : bad('aborts not treated as transient — a slow GDELT will not be retried');
+/retry-after/.test(gd) ? ok('Retry-After header is honoured when present')
+                       : bad('Retry-After header not read');
+/MAX_ATTEMPTS\s*=\s*2/.test(gd) ? ok('retry attempts bounded at 2 (fits 2 calls inside 60s)')
+                                 : bad('attempt count not 2 — recheck the timing budget');
 
 console.log('\n' + '-'.repeat(60));
 console.log(fails === 0 ? '\x1b[32mG10 ALL PASS\x1b[0m' : `\x1b[31m${fails} FAIL\x1b[0m`);
@@ -132,4 +140,8 @@ console.log('     curl -X GET "https://delaxcom.org/api/market-data?type=index-b
 console.log('       -H "Authorization: Bearer $CRON_SECRET"');
 console.log('  3. Read the returned baseline.gdelt.tests block — confirm A and C before trusting gdeltEnabled.');
 console.log('  4. Update methodology.html\'s stamp row once the real verdict is known.');
+console.log('\nGATE RUN ORDER (one test per call — each has the full 60s):');
+console.log('  curl "https://delaxcom.org/api/market-data?type=gdelt-gate&test=A" -H "Authorization: Bearer $CRON_SECRET"');
+console.log('  curl "https://delaxcom.org/api/market-data?type=gdelt-gate&test=C" -H "Authorization: Bearer $CRON_SECRET"');
+console.log('  curl "https://delaxcom.org/api/market-data?type=gdelt-gate&test=B" -H "Authorization: Bearer $CRON_SECRET"  # optional, never gating');
 process.exit(fails ? 1 : 0);

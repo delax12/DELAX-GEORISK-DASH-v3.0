@@ -245,18 +245,29 @@ async function fetchTimelineVolAttempt(query, startdatetime, enddatetime, timeou
 }
 
 async function fetchTimelineVol(query, startdatetime, enddatetime) {
-  const PER_ATTEMPT_TIMEOUT_MS = 12000; // was a single 30s try; now up to 3 shorter tries
-  const MAX_ATTEMPTS = 3;
+  /* 25s, NOT 12s. The 15 Aug 02:53 run proved 12s was too short: it aborted
+     every call, where the earlier 30s run had reached GDELT and come back
+     with real 429s. 12s had been chosen only to fit 3 retries inside the
+     budget — trading a working timeout for a retry budget, which was the
+     wrong trade. Callers now run ONE test (max 2 sequential calls) per
+     invocation, so 2 x 25s fits the 60s ceiling without needing the timeout
+     shortened. */
+  const PER_ATTEMPT_TIMEOUT_MS = 25000;
+  const MAX_ATTEMPTS = 2;
   let lastErr;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       return await fetchTimelineVolAttempt(query, startdatetime, enddatetime, PER_ATTEMPT_TIMEOUT_MS);
     } catch (err) {
       lastErr = err;
-      const isRateLimit = err.status === 429;
-      if (!isRateLimit || attempt === MAX_ATTEMPTS) throw err; // real error, or out of retries — fail fast/closed
-      // Honour Retry-After if GDELT sent one; otherwise back off 1.5s, 3.5s.
-      const backoffMs = !isNaN(err.retryAfter) ? err.retryAfter * 1000 : attempt * 2000 - 500;
+      // Retry a rate-limit OR a timeout/abort — both are transient upstream
+      // conditions. A genuine error (bad query, 4xx) still fails fast, since
+      // retrying cannot fix it and would only burn the budget.
+      const isTransient = err.status === 429 || err.name === 'AbortError'
+        || /aborted/i.test(err.message || '');
+      if (!isTransient || attempt === MAX_ATTEMPTS) throw err;
+      // Honour Retry-After if GDELT sent one; otherwise a short fixed pause.
+      const backoffMs = !isNaN(err.retryAfter) ? err.retryAfter * 1000 : 1500;
       await new Promise(resolve => setTimeout(resolve, backoffMs));
     }
   }
@@ -265,9 +276,12 @@ async function fetchTimelineVol(query, startdatetime, enddatetime) {
 
 module.exports.fetchTimelineVol = fetchTimelineVol;
 
-/* TIMING BUDGET, worst case, one call: 3 attempts × 12s timeout
-   + ~5s cumulative backoff ≈ 41s. Stagger adds ≤3.6s before the last of the
-   five even starts. Total worst case ≈ 45s, inside the 60s maxDuration set
-   in api/market-data.js with room to spare. If GDELT's rate limiting turns
-   out to need MORE backoff than this, raise maxDuration and this budget
-   together — do not silently widen one without the other. */
+/* TIMING BUDGET, worst case: 2 attempts × 25s + 1.5s backoff ≈ 51.5s for a
+   SINGLE call. The gate route (?type=gdelt-gate&test=X) runs at most 2 calls
+   and runs them sequentially, so a fully-degraded Test A could exceed 60s —
+   in that case it returns {error} for that one test and the operator re-runs
+   just that test, which is exactly why the gate is now per-test and
+   resumable rather than all-or-nothing. Typical case is far below this: one
+   attempt each, no backoff. If GDELT proves slower still, narrow the query
+   windows before widening maxDuration — a smaller span is cheaper for
+   everyone, and Test C's windows were already cut 2y → 1y for this reason. */
