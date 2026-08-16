@@ -101,6 +101,28 @@ function esc(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/* OG IMAGE ABSOLUTISATION — fail closed.
+   The admin image field is free text, so an author can save a site-relative
+   path ('/og-card.png'), a protocol-relative one ('//cdn/x.jpg') or something
+   that isn't a URL at all. X, Facebook and LinkedIn all require an absolute
+   HTTPS URL and will drop the entire card — not just the image — when handed
+   anything else, silently and with no error surfaced anywhere.
+
+   A site-relative path is unambiguous, so we resolve it against SITE. Anything
+   that is not then https:// returns '', which makes shell() omit og:image and
+   fall back to twitter:card=summary. A small card is a degraded result; a
+   broken og:image is no card at all. Same reasoning as numbersAreVerified():
+   emit nothing rather than emit something unverifiable.
+
+   http:// is rejected deliberately, not upgraded — we cannot know the origin
+   serves TLS, and a guess that 404s costs the card anyway. */
+function absImage(raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return '';
+  const abs = s.startsWith('/') && !s.startsWith('//') ? SITE + s : s;
+  return /^https:\/\/[^\s/]+\.[^\s/]/i.test(abs) ? abs : '';
+}
+
 /* Markdown renderer — deliberately identical in behaviour to the one in
    /delax-cms.js, so the admin preview, the client path and this server path all
    produce the same HTML. If one changes, change all three.
@@ -247,6 +269,7 @@ ${desc ? `<meta name="description" content="${desc}"/>` : ''}
 ${desc ? `<meta property="og:description" content="${desc}"/>` : ''}
 <meta property="og:url" content="${url}"/>
 ${img ? `<meta property="og:image" content="${img}"/>
+<meta property="og:image:secure_url" content="${img}"/>
 <meta property="og:image:alt" content="${esc(opts.imageAlt || opts.title)}"/>` : ''}
 <meta name="twitter:card" content="${img ? 'summary_large_image' : 'summary'}"/>
 <meta name="twitter:title" content="${title}"/>
@@ -384,7 +407,7 @@ async function renderArticle(req, res, slug) {
 
   const desc = a.summary || excerpt(a.body, 155);
   const url  = SITE + '/insights/' + a.slug;
-  const img  = a.image_url || '';
+  const img  = absImage(a.image_url);
 
   const jsonLd = JSON.stringify({
     '@context': 'https://schema.org',
@@ -453,6 +476,11 @@ async function renderIndex(req, res) {
     title: 'Insights — DELAX GEO-RISK',
     description: intro,
     url: SITE + '/insights',
+    /* The hub had no image, so it shared as a small summary card while
+       individual articles shared large — the index looked less substantial
+       than its own contents. Uses the same site card as the dashboard. */
+    image: SITE + '/og-card.png',
+    imageAlt: 'DELAX GEO-RISK — cross-asset geopolitical risk intelligence',
     body: `<div class="ins-head"><h1>Insights</h1>
              <p class="ins-standfirst">${esc(intro)}</p></div>${list}`,
   }));
